@@ -6,6 +6,9 @@
     <title>Spartiti Messa</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="logo192.png">
+    <meta name="theme-color" content="#673ab7">
+    
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script async defer src="https://apis.google.com/js/api.js"></script>
     <script async defer src="https://accounts.google.com/gsi/client"></script>
@@ -29,6 +32,13 @@
         <section id="library" class="view active">
             
             <header class="sticky-header no-print">
+                <div id="installContainer" class="hidden" style="margin-bottom: 10px;">
+                    <button onclick="installApp()" class="btn-block-primary" style="background:#ff4081;">
+                        <span class="material-icons-round" style="vertical-align:middle; margin-right:5px;">download</span> 
+                        INSTALLA APP
+                    </button>
+                </div>
+
                 <div class="search-bar-container">
                     <span class="material-icons-round search-icon">search</span>
                     <input type="text" id="searchInput" placeholder="Cerca canto..." onkeyup="applyFilters()">
@@ -58,12 +68,8 @@
                 </div>
             </header>
 
-            <div id="songList" class="song-list-container">
-                </div>
-
-            <button class="fab no-print" onclick="openAddMenu()">
-                <span class="material-icons-round">add</span>
-            </button>
+            <div id="songList" class="song-list-container"></div>
+            <button class="fab no-print" onclick="openAddMenu()"><span class="material-icons-round">add</span></button>
         </section>
 
         <div id="addMenu" class="modal hidden no-print">
@@ -72,10 +78,8 @@
                     <h3 id="modalTitle">Nuovo Canto</h3>
                     <button onclick="closeAddMenu()" class="btn-icon"><span class="material-icons-round">close</span></button>
                 </div>
-                
                 <div class="modal-body">
                     <input type="text" id="manualTitle" class="input-lg" placeholder="Titolo del Canto">
-                    
                     <div class="row-inputs">
                         <select id="newSongCategory" class="input-std">
                             <option value="Ingresso">Ingresso</option>
@@ -96,12 +100,10 @@
                             <option value="Pasqua">Pasqua</option>
                         </select>
                     </div>
-
                     <div class="tabs">
                         <button class="tab-btn active" onclick="switchInputTab('file')">File / Foto</button>
                         <button class="tab-btn" onclick="switchInputTab('text')">Testo e Accordi</button>
                     </div>
-
                     <div id="tab-file" class="tab-content">
                         <div class="file-upload-area">
                             <div id="previewContainer" class="preview-box hidden">
@@ -109,7 +111,6 @@
                                 <button class="remove-preview" onclick="clearFileSelection()">×</button>
                             </div>
                             <div id="driveStatus" class="status-msg hidden"></div>
-                            
                             <div class="upload-buttons">
                                 <button onclick="initGoogleDriveImport()" class="btn-outline">
                                     <span class="material-icons-round">add_to_drive</span> Drive
@@ -121,14 +122,11 @@
                             </div>
                         </div>
                     </div>
-
                     <div id="tab-text" class="tab-content hidden">
                         <textarea id="textContent" class="lyrics-input" placeholder="Incolla qui testo e accordi..."></textarea>
                     </div>
-
                     <input type="hidden" id="editId">
                 </div>
-
                 <div class="modal-footer">
                     <button onclick="saveSongData()" class="btn-block-primary">SALVA CANTO</button>
                 </div>
@@ -151,7 +149,6 @@
                     <span class="switch-label">Stampa Spartiti</span>
                 </div>
             </header>
-
             <div id="printSheet" class="paper-sheet">
                 <h2 contenteditable="true" id="messaTitle" class="messa-title">Santa Messa</h2>
                 <p contenteditable="true" id="messaDate" class="messa-date">Data: ________________</p>
@@ -161,21 +158,12 @@
                     <div contenteditable="true" class="note-line"></div>
                 </div>
             </div>
-
             <div id="scoresContainer" class="scores-print-area hidden"></div>
-
             <div class="fab-actions no-print">
-                <button onclick="saveSetlist()" class="btn-action secondary">
-                    <span class="material-icons-round">save</span>
-                </button>
-                <button onclick="prepareAndPrint()" class="btn-action primary">
-                    <span class="material-icons-round">print</span> Stampa
-                </button>
-                <button onclick="resetScaletta()" class="btn-action danger">
-                    <span class="material-icons-round">restart_alt</span>
-                </button>
+                <button onclick="saveSetlist()" class="btn-action secondary"><span class="material-icons-round">save</span></button>
+                <button onclick="prepareAndPrint()" class="btn-action primary"><span class="material-icons-round">print</span> Stampa</button>
+                <button onclick="resetScaletta()" class="btn-action danger"><span class="material-icons-round">restart_alt</span></button>
             </div>
-
             <div id="historyPanel" class="side-panel hidden no-print">
                 <div class="panel-header">
                     <h3>Storico Messe</h3>
@@ -208,11 +196,42 @@
     </div>
 
     <script>
-        // --- LOGICA IDENTICA ALLA PRECEDENTE MA RIFINITA ---
+        // --- GESTIONE INSTALLAZIONE PWA ---
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Impedisci al browser di mostrare il prompt automatico subito
+            e.preventDefault();
+            // Salva l'evento per usarlo dopo
+            deferredPrompt = e;
+            // Mostra il pulsante "Installa"
+            document.getElementById('installContainer').classList.remove('hidden');
+        });
+
+        async function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                    document.getElementById('installContainer').classList.add('hidden');
+                }
+                deferredPrompt = null;
+            }
+        }
+
+        // --- REGISTRAZIONE SERVICE WORKER (Fondamentale) ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('SW registrato:', reg))
+                .catch(err => console.log('SW errore:', err));
+        }
+
+        // --- CODICE APPLICAZIONE (Invariato) ---
+        // (Incolla qui tutto il blocco <script> che avevamo nella risposta precedente,
+        //  dalla riga "let db..." fino alla fine)
         let db; let tempDriveFile=null; let activeInputMode='file'; let currentCategoryFilter='Tutti';
         const PARTS = ['Ingresso', 'Gloria', 'Salmo', 'Alleluia', 'Offertorio', 'Santo', 'Comunione', 'Finale'];
 
-        // Init DB
         const request = indexedDB.open("SpartitiMessaPro", 4);
         request.onupgradeneeded = (e) => {
             db = e.target.result;
@@ -221,11 +240,9 @@
         };
         request.onsuccess = (e) => { db=e.target.result; loadLibrary(); buildScalettaUI(); };
 
-        // UI Helpers
         function switchTab(id){ document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); document.getElementById('btn-'+id).classList.add('active'); if(id==='library')loadLibrary(); }
         function switchInputTab(mode){ activeInputMode=mode; document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); event.target.classList.add('active'); document.getElementById('tab-file').className = mode==='file'?'tab-content':'tab-content hidden'; document.getElementById('tab-text').className = mode==='text'?'tab-content':'tab-content hidden'; }
         
-        // Modal Logic
         function openAddMenu(editId=null){ 
             document.getElementById('addMenu').classList.remove('hidden'); document.getElementById('editId').value=editId||""; document.getElementById('modalTitle').innerText=editId?"Modifica Canto":"Nuovo Canto";
             if(editId){
@@ -238,7 +255,6 @@
         }
         function closeAddMenu(){ document.getElementById('addMenu').classList.add('hidden'); }
 
-        // Save Logic
         function saveSongData(){
             const id=document.getElementById('editId').value; const title=document.getElementById('manualTitle').value; const cat=document.getElementById('newSongCategory').value; const season=document.getElementById('newSongSeason').value; const lyrics=document.getElementById('textContent').value; const inp=document.getElementById('fileInput');
             if(!title) return alert("Inserisci Titolo");
@@ -255,7 +271,6 @@
             } else persist(null,'text/plain');
         }
 
-        // Library & Filters
         function filterCategory(c){ currentCategoryFilter=c; document.querySelectorAll('.chip').forEach(el=>el.classList.remove('active')); document.querySelector(`.chip[data-cat="${c}"]`).classList.add('active'); applyFilters(); }
         function applyFilters(){
             const seas=document.getElementById('filterSeason').value; const search=document.getElementById('searchInput').value.toLowerCase(); const list=document.getElementById('songList'); list.innerHTML="";
@@ -274,7 +289,6 @@
         function loadLibrary(){ applyFilters(); populateAllSelectors(); }
         function deleteSong(id){ if(confirm("Eliminare?")){ db.transaction(["songs"],"readwrite").objectStore("songs").delete(id); loadLibrary(); } }
 
-        // Scaletta Logic
         function buildScalettaUI(){ const g=document.querySelector('.scaletta-grid'); if(g.children.length===0) PARTS.forEach(p=>{ const d=document.createElement('div'); d.className='slot-container'; d.dataset.part=p; d.innerHTML=`<div class="slot-header"><span>${p}</span><button class="btn-add-slot no-print" onclick="addSelector('${p}')">+</button></div><div class="selectors-list" id="list-${p}"></div>`; g.appendChild(d); addSelector(p); }); }
         function addSelector(p,id=null){ const c=document.getElementById(`list-${p}`); const r=document.createElement('div'); r.className='selector-row'; r.innerHTML=`<select class="song-selector no-print" onchange="updatePrintText(this)"><option value="">Seleziona...</option></select><span class="print-text"></span><button class="btn-del-slot no-print" onclick="removeSelector(this)">×</button>`; c.appendChild(r); populateSingleSelect(r.querySelector('select'),id); }
         function removeSelector(b){ const r=b.parentElement; if(r.parentElement.children.length>1) r.remove(); else {const s=r.querySelector('select'); s.value=""; updatePrintText(s);} if(document.getElementById('printScoresCheck').checked)renderScores(); }
@@ -282,7 +296,6 @@
         function populateAllSelectors(){document.querySelectorAll('.song-selector').forEach(s=>populateSingleSelect(s));}
         function updatePrintText(s){s.nextElementSibling.innerText=s.value?s.options[s.selectedIndex].text:""; if(document.getElementById('printScoresCheck').checked)renderScores();}
         
-        // Print & Scores
         function toggleScoresMode(){ const c=document.getElementById('scoresContainer'); if(document.getElementById('printScoresCheck').checked){c.classList.remove('hidden'); renderScores();}else{c.classList.add('hidden');} }
         function renderScores(){
             const c=document.getElementById('scoresContainer'); c.innerHTML="";
@@ -296,14 +309,12 @@
         }
         function prepareAndPrint(){ if(document.getElementById('printScoresCheck').checked){renderScores(); setTimeout(()=>window.print(),500);}else window.print(); }
 
-        // History
         function saveSetlist(){ const t=document.getElementById('messaTitle').innerText; const d=document.getElementById('messaDate').innerText; const sel={}; document.querySelectorAll('.slot-container').forEach(sl=>{const p=sl.dataset.part; const ids=[]; sl.querySelectorAll('select').forEach(s=>{if(s.value)ids.push(s.value)}); sel[p]=ids;}); db.transaction(["setlists"],"readwrite").objectStore("setlists").add({title:t,dateStr:d,selections:sel}).oncomplete=()=>{alert("Salvata!");}; }
         function toggleHistory(){ const p=document.getElementById('historyPanel'); const l=document.getElementById('historyList'); if(p.classList.contains('hidden')){ p.classList.remove('hidden'); l.innerHTML=""; const tx=db.transaction(["setlists"],"readonly").objectStore("setlists"); tx.openCursor(null,'prev').onsuccess=(e)=>{const c=e.target.result; if(c){const x=c.value; const d=document.createElement('div'); d.className='history-item'; d.innerHTML=`<div><strong>${x.title}</strong><br><small>${x.dateStr}</small></div><div><button onclick="loadSetlist(${x.id})">Carica</button> <button onclick="deleteSetlist(${x.id})" style="color:red">×</button></div>`; l.appendChild(d); c.continue();} }; } else p.classList.add('hidden'); }
         function loadSetlist(id){ db.transaction(["setlists"]).objectStore("setlists").get(id).onsuccess=(e)=>{const r=e.target.result; document.getElementById('messaTitle').innerText=r.title; document.getElementById('messaDate').innerText=r.dateStr; document.querySelectorAll('.selectors-list').forEach(l=>l.innerHTML=""); for(const[p,ids]of Object.entries(r.selections)){ if(!ids.length)addSelector(p); else ids.forEach(i=>addSelector(p,i)); } toggleHistory(); } }
         function deleteSetlist(id){ if(confirm("Eliminare?")){db.transaction(["setlists"],"readwrite").objectStore("setlists").delete(id); toggleHistory(); setTimeout(toggleHistory,50);} }
         function resetScaletta(){ document.querySelectorAll('.selectors-list').forEach(l=>{l.innerHTML=""; addSelector(l.parentElement.dataset.part)}); document.getElementById('messaTitle').innerText="Santa Messa"; }
 
-        // File & Drive
         function handleLocalFile(i){if(i.files[0]){const f=i.files[0];showPreview(URL.createObjectURL(f));const n=f.name;document.getElementById('manualTitle').value=n.substring(0,n.lastIndexOf('.'))||n;tempDriveFile=null;document.getElementById('driveStatus').classList.add('hidden');}}
         function showPreview(u){document.getElementById('previewImg').src=u;document.getElementById('previewContainer').classList.remove('hidden');}
         function clearFileSelection(){document.getElementById('previewContainer').classList.add('hidden');document.getElementById('fileInput').value="";tempDriveFile=null;}
@@ -314,8 +325,6 @@
         function saveGoogleKeys(){localStorage.setItem('g_api',document.getElementById('gApiKey').value);localStorage.setItem('g_client',document.getElementById('gClientId').value);alert("Salvato");}
         function exportData(){const exp={songs:[],setlists:[]};const tx=db.transaction(["songs","setlists"],"readonly");tx.objectStore("songs").getAll().onsuccess=e=>{exp.songs=e.target.result;tx.objectStore("setlists").getAll().onsuccess=e2=>{exp.setlists=e2.target.result;const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(exp)],{type:'application/json'}));a.download="backup_messa.json";a.click();}};}
         function importData(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");if(d.songs)d.songs.forEach(s=>tx.objectStore("songs").put(s));if(d.setlists)d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{alert("Ripristinato!");loadLibrary();}};r.readAsText(f);}
-
-        if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js');
     </script>
 </body>
 </html>
