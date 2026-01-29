@@ -1,9 +1,11 @@
-const CACHE_NAME = 'spartiti-messa-ultimate-v1';
+const CACHE_NAME = 'spartiti-messa-install-fix-v2';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './manifest.json',
+  './logo192.png',
+  './logo512.png',
   'https://fonts.googleapis.com/icon?family=Material+Icons+Round',
   'https://apis.google.com/js/api.js',
   'https://accounts.google.com/gsi/client'
