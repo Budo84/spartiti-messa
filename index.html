@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spartiti Drive</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <script async defer src="https://apis.google.com/js/api.js"></script>
+    <script async defer src="https://accounts.google.com/gsi/client"></script>
+</head>
+<body>
+
+    <header>
+        <h1>Spartiti Drive</h1>
+        <div id="authBtnContainer">
+            <button onclick="handleAuthClick()" id="authorize_button" class="btn-light">Accedi a Google</button>
+        </div>
+    </header>
+
+    <nav>
+        <button onclick="showSection('library')" class="active">Archivio</button>
+        <button onclick="showSection('scaletta')">Nuova Messa</button>
+    </nav>
+
+    <main id="library" class="section">
+        <div class="card" id="uploadCard" style="display:none;">
+            <h2>Collega Spartito da Drive</h2>
+            <p>Scegli un file dal tuo Google Drive da aggiungere all'archivio.</p>
+            
+            <select id="categoryInput">
+                <option value="Ingresso">Ingresso</option>
+                <option value="Gloria">Gloria</option>
+                <option value="Salmo">Salmo</option>
+                <option value="Alleluia">Alleluia</option>
+                <option value="Offertorio">Offertorio</option>
+                <option value="Santo">Santo</option>
+                <option value="Comunione">Comunione</option>
+                <option value="Finale">Finale</option>
+                <option value="Altro">Altro</option>
+            </select>
+            <button onclick="openDrivePicker()" class="btn-primary">Scegli da Google Drive</button>
+        </div>
+
+        <div id="songList" class="song-grid">
+            </div>
+    </main>
+
+    <main id="scaletta" class="section hidden">
+        <div class="card">
+            <h2>Componi Messa</h2>
+            <div id="scalettaContainer"></div>
+            <button onclick="window.print()" class="btn-primary">Stampa Scaletta</button>
+        </div>
+    </main>
+
+    <div id="viewer" class="hidden">
+        <button onclick="closeViewer()" class="close-btn">X</button>
+        <iframe id="driveFrame" src=""></iframe>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURAZIONE GOOGLE (DA COMPILARE) ---
+        const API_KEY = 'INSERISCI_QUI_LA_TUA_API_KEY';
+        const CLIENT_ID = 'INSERISCI_QUI_IL_TUO_CLIENT_ID';
+        const APP_ID = 'INSERISCI_QUI_IL_PROGETTO_ID'; // Opzionale, migliora il picker
+
+        const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
+
+        let tokenClient;
+        let accessToken = null;
+        let pickerInited = false;
+        let gapiInited = false;
+
+        // --- 2. GESTIONE DATABASE (Metadati) ---
+        let db;
+        const request = indexedDB.open("SpartitiDriveDB", 1);
+        
+        request.onupgradeneeded = (e) => {
+            db = e.target.result;
+            const store = db.createObjectStore("songs", { keyPath: "id" }); // Usiamo ID di Drive come chiave
+            store.createIndex("category", "category", { unique: false });
+        };
+        request.onsuccess = (e) => { db = e.target.result; loadSongs(); };
+
+        // --- 3. INIZIALIZZAZIONE GOOGLE ---
+        function gapiLoaded() {
+            gapi.load('client:picker', initializePicker);
+        }
+        function gisLoaded() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: '', // Definito al momento del click
+            });
+            gapiLoaded();
+        }
+        
+        async function initializePicker() {
+            await gapi.client.init({ apiKey: API_KEY, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"], });
+            gapiInited = true;
+        }
+
+        function handleAuthClick() {
+            tokenClient.callback = async (resp) => {
+                if (resp.error !== undefined) throw (resp);
+                accessToken = resp.access_token;
+                document.getElementById('authorize_button').innerText = "Connesso a Drive";
+                document.getElementById('uploadCard').style.display = 'block';
+            };
+            if (accessToken === null) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            } else {
+                tokenClient.requestAccessToken({prompt: ''});
+            }
+        }
+
+        // --- 4. FUNZIONI DRIVE ---
+        function openDrivePicker() {
+            if (!accessToken) { alert("Effettua prima il login!"); return; }
+            
+            const view = new google.picker.View(google.picker.ViewId.DOCS);
+            view.setMimeTypes("application/pdf,image/png,image/jpeg,text/plain");
+            
+            const picker = new google.picker.PickerBuilder()
+                .enableFeature(google.picker.Feature.NAV_HIDDEN)
+                .setAppId(APP_ID)
+                .setOAuthToken(accessToken)
+                .addView(view)
+                .setCallback(pickerCallback)
+                .build();
+            picker.setVisible(true);
+        }
+
+        function pickerCallback(data) {
+            if (data.action === google.picker.Action.PICKED) {
+                const doc = data.docs[0];
+                const category = document.getElementById('categoryInput').value;
+                
+                const song = {
+                    id: doc.id,
+                    title: doc.name,
+                    category: category,
+                    embedUrl: doc.embedUrl || `https://drive.google.com/file/d/${doc.id}/preview`
+                };
+
+                // Salva metadati in IndexedDB
+                const transaction = db.transaction(["songs"], "readwrite");
+                transaction.objectStore("songs").put(song);
+                transaction.oncomplete = () => {
+                    loadSongs();
+                    alert("Collegamento salvato!");
+                };
+            }
+        }
+
+        // --- 5. VISUALIZZAZIONE E LOGICA ---
+        function loadSongs() {
+            const container = document.getElementById('songList');
+            container.innerHTML = "";
+            const transaction = db.transaction(["songs"], "readonly");
+            const store = transaction.objectStore("songs");
+
+            store.openCursor().onsuccess = function(e) {
+                const cursor = e.target.result;
+                if (cursor) {
+                    const song = cursor.value;
+                    const div = document.createElement('div');
+                    div.className = 'song-card';
+                    div.innerHTML = `
+                        <strong>${song.title}</strong>
+                        <span class="badge">${song.category}</span>
+                        <div class="actions">
+                            <button onclick="viewSong('${song.embedUrl}')">Visualizza</button>
+                            <button onclick="deleteSong('${song.id}')" class="btn-danger">Rimuovi</button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                    cursor.continue();
+                }
+            };
+        }
+
+        function viewSong(url) {
+            document.getElementById('viewer').classList.remove('hidden');
+            document.getElementById('driveFrame').src = url;
+        }
+
+        function closeViewer() {
+            document.getElementById('viewer').classList.add('hidden');
+            document.getElementById('driveFrame').src = "";
+        }
+
+        function deleteSong(id) {
+            if(confirm('Rimuovere collegamento? Il file rimarrà su Drive.')) {
+                db.transaction(["songs"], "readwrite").objectStore("songs").delete(id);
+                loadSongs();
+            }
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        // Init scripts
+        window.onload = () => {
+             // Innesca il caricamento delle librerie Google
+             gapiLoaded();
+             gisLoaded();
+        };
+    </script>
+</body>
+</html>
