@@ -124,11 +124,11 @@
                     <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
                         <input type="date" id="messaDate" class="form-control" style="width:auto; margin:0;" onchange="updateSuggestions()">
                         <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.85rem;">⬇️ Scarica Letture</button>
+                        <div style="flex:1; text-align:right;">
+                            <button onclick="saveSetlist()" class="btn-primary">Salva</button>
+                        </div>
                     </div>
-                    <div style="margin-top:10px; display:flex; justify-content:space-between;">
-                        <button onclick="saveSetlist()" class="btn-primary">Salva Tutto</button>
-                        <button onclick="startReadingMode()" class="btn-primary" style="background:#2e7d32;">▶ AVVIA LETTURA</button>
-                    </div>
+                    <button onclick="startReadingMode()" class="btn-primary" style="background:#2e7d32; width:100%; margin-top:10px;">▶ AVVIA LETTURA</button>
                 </div>
             </div>
 
@@ -166,17 +166,29 @@
             <div class="card">
                 <div class="card-header">Google Drive API</div>
                 <div class="card-body">
-                    <p style="font-size:0.85rem; color:#666;">Per scaricare i PDF e Backup.</p>
+                    <p style="font-size:0.85rem; color:#666;">Necessarie per scaricare i PDF e Backup.</p>
                     <input type="text" id="apiKey" class="form-control" placeholder="API Key">
                     <input type="text" id="clientId" class="form-control" placeholder="Client ID">
                     <button onclick="saveKeys()" class="btn-primary">Salva Chiavi</button>
                 </div>
             </div>
+            
+            <div class="card">
+                <div class="card-header">Sincronizzazione Cloud</div>
+                <div class="card-body" style="text-align:center;">
+                    <p style="font-size:0.9rem; color:#555;">Salva i tuoi dati su Google Drive.</p>
+                    <div style="display:flex; gap:10px; justify-content:center;">
+                        <button onclick="openSyncModal('upload')" class="btn-primary" style="background:#1976d2;">☁️ Carica (Backup)</button>
+                        <button onclick="openSyncModal('download')" class="btn-outline" style="border-color:#1976d2; color:#1976d2;">☁️ Scarica (Ripristina)</button>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header">Backup Locale</div>
                 <div class="card-body" style="display:flex; gap:10px;">
-                    <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica</button>
-                    <button onclick="document.getElementById('impFile').click()" class="btn-outline" style="flex:1;">Carica</button>
+                    <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica File</button>
+                    <button onclick="document.getElementById('impFile').click()" class="btn-outline" style="flex:1;">Carica File</button>
                     <input type="file" id="impFile" hidden onchange="importData(this)">
                 </div>
             </div>
@@ -531,14 +543,14 @@
         }
         function delSet(id) { if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderFullHistory(); }
 
-        // GOOGLE API & SYNC (FIXED!)
+        // GOOGLE API & SYNC (FIX TOKEN & INIT)
         let tokenClient; let gapiInited=false; let gisInited=false;
         function saveKeys(){localStorage.setItem('g_api',document.getElementById('apiKey').value);localStorage.setItem('g_client',document.getElementById('clientId').value);showToast("Keys OK");}
         
         async function initDrive(mode) {
             const k = document.getElementById('apiKey').value; 
             const c = document.getElementById('clientId').value;
-            if(!k||!c) return showToast("Inserisci API Key e Client ID!", "error");
+            if(!k||!c) return showToast("Inserisci API Key e Client ID in Opzioni", "error");
             
             // Hide Modals to prevent overlay issues
             document.getElementById('editModal').classList.remove('show');
@@ -558,8 +570,8 @@
             if(!gisInited) {
                 tokenClient = google.accounts.oauth2.initTokenClient({
                     client_id: c,
-                    // Scope completo per leggere e scrivere
-                    scope: 'https://www.googleapis.com/auth/drive.file',
+                    // Scope completo per leggere e scrivere (file creato dall'app)
+                    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
                     callback: '' // Defined dynamically
                 });
                 gisInited = true;
@@ -573,34 +585,37 @@
                     return;
                 }
                 
-                // IMPORTANTISSIMO: SETTA IL TOKEN IN GAPI
-                if (gapi.client) gapi.client.setToken(resp);
+                // --- FIX FONDAMENTALE: SALVA IL TOKEN IN GAPI ---
+                if (resp.access_token && gapi.client) {
+                    gapi.client.setToken(resp);
+                }
+                // ------------------------------------------------
 
                 if (mode === 'picker') createPicker(resp.access_token);
                 else {
-                    openSyncModal();
+                    openSyncModal(); // Riapri modale
                     if (mode === 'upload') performUpload();
                     if (mode === 'download') performDownload();
                 }
             };
 
-            // Richiedi token se non presente o scaduto
-            if (gapi.client.getToken() === null) {
-                tokenClient.requestAccessToken({prompt: ''});
-            } else {
-                // Token già presente, procedi diretto
-                tokenClient.callback({access_token: gapi.client.getToken().access_token});
-            }
+            // Richiedi sempre token fresco per sicurezza
+            tokenClient.requestAccessToken({prompt: ''});
         }
 
-        function openSyncModal() { document.getElementById('syncModal').classList.add('show'); }
+        function openSyncModal(action=null) { 
+            document.getElementById('syncModal').classList.add('show');
+            if(action) { 
+                if(action === 'upload') initDrive('upload');
+                else if(action === 'download') initDrive('download');
+            }
+        }
         
         function createPicker(t) {
             const k = document.getElementById('apiKey').value;
             const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
             new google.picker.PickerBuilder().setDeveloperKey(k).setOAuthToken(t).addView(view).setCallback(pickerCallback).build().setVisible(true);
         }
-        
         async function pickerCallback(d) {
             if(d.action === google.picker.Action.CANCEL) document.getElementById('editModal').classList.add('show');
             if(d.action === google.picker.Action.PICKED) {
@@ -631,10 +646,15 @@
             form.append('file', new Blob([fileContent], { type: 'application/json' }));
 
             try {
+                // Ensure gapi.client.drive is loaded
+                if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
+
                 const q = `name = '${SYNC_FILE_NAME}' and trashed = false`;
                 const search = await gapi.client.drive.files.list({q:q, fields:'files(id)'});
+                
                 if(search.result.files.length > 0) {
-                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${search.result.files[0].id}?uploadType=media`, {
+                    const fileId = search.result.files[0].id;
+                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`, {
                         method: 'PATCH',
                         headers: { 'Authorization': `Bearer ${gapi.client.getToken().access_token}`, 'Content-Type': 'application/json' },
                         body: fileContent
@@ -647,24 +667,43 @@
                     });
                 }
                 document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Backup OK!");
-            } catch(e) { document.getElementById('syncStatus').innerText = "Errore: "+e.message; showToast("Errore Sync", "error"); }
+            } catch(e) { 
+                document.getElementById('syncStatus').innerText = "Errore: "+e.message; 
+                showToast("Errore Sync", "error"); 
+                console.error(e);
+            }
         }
 
         async function performDownload() {
             document.getElementById('syncStatus').innerText = "Scaricamento...";
             try {
+                if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
+
                 const q = `name = '${SYNC_FILE_NAME}' and trashed = false`;
                 const search = await gapi.client.drive.files.list({q:q, fields:'files(id)'});
-                if(search.result.files.length === 0) { alert("Nessun backup."); return; }
-                const res = await gapi.client.drive.files.get({fileId: search.result.files[0].id, alt: 'media'});
+                if(search.result.files.length === 0) { alert("Nessun backup trovato."); return; }
+                
+                const fileId = search.result.files[0].id;
+                const res = await gapi.client.drive.files.get({fileId: fileId, alt: 'media'});
                 const data = res.result;
+
                 const tx = db.transaction(["songs","setlists"],"readwrite");
                 await new Promise(r=>tx.objectStore("songs").clear().onsuccess=r);
                 await new Promise(r=>tx.objectStore("setlists").clear().onsuccess=r);
+                
                 data.songs.forEach(s=>tx.objectStore("songs").put(s));
                 data.setlists.forEach(s=>tx.objectStore("setlists").put(s));
-                tx.oncomplete = () => { document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Ripristinato!"); location.reload(); };
-            } catch(e) { document.getElementById('syncStatus').innerText = "Errore: "+e.message; showToast("Errore Download", "error"); }
+                
+                tx.oncomplete = () => {
+                    document.getElementById('syncStatus').innerText = "Fatto! ✅";
+                    showToast("Ripristinato!");
+                    location.reload();
+                };
+            } catch(e) { 
+                document.getElementById('syncStatus').innerText = "Errore: "+e.message; 
+                showToast("Errore Download", "error");
+                console.error(e);
+            }
         }
 
         function showToast(m,type="info"){ 
@@ -675,11 +714,6 @@
             setTimeout(()=>t.classList.remove('show'),3000); 
         }
         function exportData(){} function importData(){} 
-        
-        // Funzione helper per aprire backup dal tasto in alto
-        function openSyncModal() {
-            initDrive('sync'); // Inizializza e apre il modal solo se auth ok
-        }
     </script>
 </body>
 </html>
