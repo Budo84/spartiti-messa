@@ -166,7 +166,7 @@
             <div class="card">
                 <div class="card-header">Google Drive API</div>
                 <div class="card-body">
-                    <p style="font-size:0.85rem; color:#666;">Necessarie per scaricare i PDF e Backup.</p>
+                    <p style="font-size:0.85rem; color:#666;">Per scaricare i PDF e Backup.</p>
                     <input type="text" id="apiKey" class="form-control" placeholder="API Key">
                     <input type="text" id="clientId" class="form-control" placeholder="Client ID">
                     <button onclick="saveKeys()" class="btn-primary">Salva Chiavi</button>
@@ -187,8 +187,8 @@
             <div class="card">
                 <div class="card-header">Backup Locale</div>
                 <div class="card-body" style="display:flex; gap:10px;">
-                    <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica File</button>
-                    <button onclick="document.getElementById('impFile').click()" class="btn-outline" style="flex:1;">Carica File</button>
+                    <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica</button>
+                    <button onclick="document.getElementById('impFile').click()" class="btn-outline" style="flex:1;">Carica</button>
                     <input type="file" id="impFile" hidden onchange="importData(this)">
                 </div>
             </div>
@@ -208,8 +208,9 @@
             <div class="card-header">
                 <span id="viewTitle">Titolo</span>
                 <div>
-                    <button onclick="editFromView()" class="btn-icon"><span class="material-icons-round">edit</span></button>
-                    <button onclick="document.getElementById('viewModal').classList.remove('show')" class="btn-icon" style="color:red;"><span class="material-icons-round">close</span></button>
+                    <button onclick="deleteCurrentSong()" class="btn-icon" style="color:red;" title="Elimina Canto"><span class="material-icons-round">delete</span></button>
+                    <button onclick="editFromView()" class="btn-icon" title="Modifica"><span class="material-icons-round">edit</span></button>
+                    <button onclick="document.getElementById('viewModal').classList.remove('show')" class="btn-icon"><span class="material-icons-round">close</span></button>
                 </div>
             </div>
             <div class="modal-scroll" id="viewBody" style="background:#eee; padding:0;"></div>
@@ -356,6 +357,20 @@
                 document.getElementById('viewModal').classList.add('show');
             }
         }
+        
+        // NUOVA FUNZIONE ELIMINA
+        function deleteCurrentSong() {
+            if(confirm("Sei sicuro di voler eliminare definitivamente questo canto?")) {
+                const tx = db.transaction("songs", "readwrite");
+                tx.objectStore("songs").delete(currentSongId).onsuccess = () => {
+                    document.getElementById('viewModal').classList.remove('show');
+                    renderLibrary();
+                    updateSuggestions();
+                    showToast("Canto eliminato!");
+                };
+            }
+        }
+
         function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(currentSongId); }
 
         function openEditModal(id=null) {
@@ -543,7 +558,7 @@
         }
         function delSet(id) { if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderFullHistory(); }
 
-        // GOOGLE API & SYNC (FIX TOKEN & INIT)
+        // GOOGLE API & SYNC (FIXED!)
         let tokenClient; let gapiInited=false; let gisInited=false;
         function saveKeys(){localStorage.setItem('g_api',document.getElementById('apiKey').value);localStorage.setItem('g_client',document.getElementById('clientId').value);showToast("Keys OK");}
         
@@ -603,19 +618,14 @@
             tokenClient.requestAccessToken({prompt: ''});
         }
 
-        function openSyncModal(action=null) { 
-            document.getElementById('syncModal').classList.add('show');
-            if(action) { 
-                if(action === 'upload') initDrive('upload');
-                else if(action === 'download') initDrive('download');
-            }
-        }
+        function openSyncModal() { document.getElementById('syncModal').classList.add('show'); }
         
         function createPicker(t) {
             const k = document.getElementById('apiKey').value;
             const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
             new google.picker.PickerBuilder().setDeveloperKey(k).setOAuthToken(t).addView(view).setCallback(pickerCallback).build().setVisible(true);
         }
+        
         async function pickerCallback(d) {
             if(d.action === google.picker.Action.CANCEL) document.getElementById('editModal').classList.add('show');
             if(d.action === google.picker.Action.PICKED) {
@@ -714,6 +724,11 @@
             setTimeout(()=>t.classList.remove('show'),3000); 
         }
         function exportData(){} function importData(){} 
+        
+        // Funzione helper per aprire backup dal tasto in alto
+        function openSyncModal() {
+            initDrive('sync'); // Inizializza e apre il modal solo se auth ok
+        }
     </script>
 </body>
 </html>
