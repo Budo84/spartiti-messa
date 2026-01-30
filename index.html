@@ -22,25 +22,25 @@
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* APP SHELL */
+        /* APP LAYOUT */
         .app-body { flex: 1; overflow-y: auto; position: relative; padding-bottom: 70px; }
         .view-section { display: none; padding: 15px; max-width: 1200px; margin: 0 auto; }
         .view-section.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* HEADER */
-        .top-bar { background: var(--white); padding: 10px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: space-between; z-index: 100; }
+        .top-bar { background: var(--white); padding: 10px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         
         /* CARDS & LISTS */
         .card { background: var(--white); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid var(--border); overflow: hidden; }
-        .card-header { background: #f8f9fa; padding: 12px 15px; font-weight: bold; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .card-header { background: #f9fafb; padding: 10px 15px; border-bottom: 1px solid var(--border); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .card-body { padding: 15px; }
 
         .song-item, .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; background: white; }
         .song-item:last-child, .history-item:last-child { border-bottom: none; }
         .song-item:active { background: #f0f0f0; }
 
-        /* CHIPS */
+        /* CHIPS (TAGS) */
         .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
         .chip-select { padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.85rem; cursor: pointer; user-select: none; }
         .chip-select.selected { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; box-shadow: 0 2px 5px rgba(103, 58, 183, 0.3); }
@@ -49,10 +49,10 @@
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
         textarea.form-control { resize: vertical; min-height: 100px; }
 
-        /* MODAL */
+        /* MODAL (OVERLAY) */
         .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .modal-wrap.show { display: flex; }
-        .modal-box { background: var(--white); width: 95%; max-width: 600px; height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
+        .modal-box { background: var(--white); width: 95%; max-width: 500px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
         .modal-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
         .modal-scroll { flex: 1; overflow-y: auto; padding: 20px; }
         .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; }
@@ -101,19 +101,19 @@
     <div class="app-body">
         
         <div id="view-library" class="view-section active">
-            <div style="background:white; padding:10px; border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,0.1); margin-bottom:15px;">
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <input type="text" id="searchInput" class="form-control" placeholder="🔍 Cerca titolo..." onkeyup="renderLibrary()" style="margin-bottom:10px;">
-                <div style="display:flex; overflow-x:auto; gap:5px; padding-bottom:5px;">
-                    <button onclick="filterLib('Tutti')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Tutti</button>
-                    <button onclick="filterLib('Ingresso')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Ingresso</button>
-                    <button onclick="filterLib('Salmo')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Salmo</button>
-                    <button onclick="filterLib('Offertorio')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Offertorio</button>
-                    <button onclick="filterLib('Comunione')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Comunione</button>
-                    <button onclick="filterLib('Finale')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Finale</button>
-                </div>
+                <button onclick="openEditModal()" class="btn-primary" style="white-space:nowrap;">+ Canto</button>
+            </div>
+            <div style="display:flex; overflow-x:auto; gap:5px; padding-bottom:10px; margin-bottom:10px;">
+                <button onclick="filterLib('Tutti')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Tutti</button>
+                <button onclick="filterLib('Ingresso')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Ingresso</button>
+                <button onclick="filterLib('Salmo')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Salmo</button>
+                <button onclick="filterLib('Offertorio')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Offertorio</button>
+                <button onclick="filterLib('Comunione')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Comunione</button>
+                <button onclick="filterLib('Finale')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Finale</button>
             </div>
             <div id="songList" class="card" style="border:none; background:transparent; box-shadow:none;"></div>
-            <button class="fab no-print" onclick="openEditModal()"><span class="material-icons-round">add</span></button>
         </div>
 
         <div id="view-scaletta" class="view-section">
@@ -165,14 +165,14 @@
             <div class="card">
                 <div class="card-header">Google Drive API</div>
                 <div class="card-body">
-                    <p style="font-size:0.85rem; color:#666;">Per scaricare i PDF dal tuo Drive.</p>
+                    <p style="font-size:0.85rem; color:#666;">Per scaricare i PDF e Backup.</p>
                     <input type="text" id="apiKey" class="form-control" placeholder="API Key">
                     <input type="text" id="clientId" class="form-control" placeholder="Client ID">
                     <button onclick="saveKeys()" class="btn-primary">Salva Chiavi</button>
                 </div>
             </div>
             <div class="card">
-                <div class="card-header">Backup</div>
+                <div class="card-header">Backup Locale</div>
                 <div class="card-body" style="display:flex; gap:10px;">
                     <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica</button>
                     <button onclick="document.getElementById('impFile').click()" class="btn-outline" style="flex:1;">Carica</button>
@@ -239,14 +239,14 @@
 
     <div id="syncModal" class="modal-wrap">
         <div class="modal-box" style="height:auto;">
-            <div class="card-header"><span>Cloud Backup</span><button onclick="document.getElementById('syncModal').classList.remove('show')" class="btn-icon">×</button></div>
+            <div class="card-header"><span>Backup Cloud</span><button onclick="document.getElementById('syncModal').classList.remove('show')" class="btn-icon">×</button></div>
             <div class="modal-scroll" style="text-align:center;">
                 <p>Salva tutti i tuoi dati su Google Drive per non perderli.</p>
                 <div style="display:grid; gap:10px;">
-                    <button onclick="performUpload()" class="btn-primary" style="background:#1976d2;">☁️ CARICA SU CLOUD (Backup)</button>
-                    <button onclick="performDownload()" class="btn-outline" style="border-color:#1976d2; color:#1976d2;">⬇️ SCARICA DA CLOUD (Ripristina)</button>
+                    <button onclick="performUpload()" class="btn-primary" style="background:#1976d2;">☁️ CARICA SU DRIVE (Backup)</button>
+                    <button onclick="performDownload()" class="btn-outline" style="border-color:#1976d2; color:#1976d2;">⬇️ SCARICA DA DRIVE (Ripristina)</button>
                 </div>
-                <p id="syncStatus" style="font-size:0.8rem; margin-top:15px; color:#666;"></p>
+                <p id="syncStatus" style="font-size:0.8rem; margin-top:15px; color:#666; font-weight:bold;"></p>
             </div>
         </div>
     </div>
@@ -405,7 +405,7 @@
             };
         }
 
-        // SCALETTA & SUGGESTIONS
+        // SCALETTA & SMART SUGGESTIONS
         function renderScalettaUI() {
             const c = document.getElementById('scalettaContainer'); c.innerHTML = "";
             CATS.forEach(cat => {
@@ -538,11 +538,13 @@
             if(!k||!c) return alert("Inserisci API Key e Client ID in Opzioni");
             document.getElementById('editModal').classList.remove('show');
             if(!gapiInited) await new Promise(r=>gapi.load('client:picker',async()=>{await gapi.client.init({apiKey:k,discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]});gapiInited=true;r()}));
-            if(!gisInited) await new Promise(r=>{tokenClient=google.accounts.oauth2.initTokenClient({client_id:c,scope:mode==='picker'?'https://www.googleapis.com/auth/drive.readonly':'https://www.googleapis.com/auth/drive.file',callback:''});gisInited=true;r()});
-            tokenClient.callback = (r) => {
+            if(!gisInited) await new Promise(r=>{tokenClient=google.accounts.oauth2.initTokenClient({client_id:c,scope:'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file',callback:''});gisInited=true;r()});
+            
+            tokenClient.callback = async (r) => {
                 if(r.error) { alert("Err Auth"); if(mode==='picker') document.getElementById('editModal').classList.add('show'); return; }
                 if(mode==='picker') createPicker(r.access_token);
-                else { openSyncModal(); if(mode==='upload') performUpload(); if(mode==='download') performDownload(); }
+                if(mode==='upload') performUpload();
+                if(mode==='download') performDownload();
             };
             tokenClient.requestAccessToken({prompt:''});
         }
@@ -567,17 +569,20 @@
                 } catch(e) { alert("Err Download"); document.getElementById('editModal').classList.add('show'); }
             }
         }
+        
         async function performUpload() {
             document.getElementById('syncStatus').innerText = "Caricamento...";
             const exp={songs:[],setlists:[]};
             const tx=db.transaction(["songs","setlists"],"readonly");
             exp.songs = await new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result));
             exp.setlists = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result));
+            
             const fileContent = JSON.stringify(exp);
             const metadata = { name: SYNC_FILE_NAME, mimeType: 'application/json' };
             const form = new FormData();
             form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
             form.append('file', new Blob([fileContent], { type: 'application/json' }));
+
             try {
                 const q = `name = '${SYNC_FILE_NAME}' and trashed = false`;
                 const search = await gapi.client.drive.files.list({q:q, fields:'files(id)'});
@@ -597,6 +602,7 @@
                 document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Backup OK!");
             } catch(e) { document.getElementById('syncStatus').innerText = "Errore ❌"; alert("Errore sync"); }
         }
+
         async function performDownload() {
             document.getElementById('syncStatus').innerText = "Scaricamento...";
             try {
