@@ -15,39 +15,41 @@
     <script src="https://accounts.google.com/gsi/client"></script>
     
     <style>
-        /* CSS Extra per Modalità Lettura e PDF */
-        .pdf-frame { width: 100%; height: 80vh; border: 1px solid #ddd; border-radius: 8px; background: #eee; }
-        .score-item { margin-bottom: 40px; padding-bottom: 20px; border-bottom: 3px solid var(--border); }
-        .score-header { display: flex; justify-content: space-between; align-items: center; background: var(--primary-light); color: white; padding: 10px; border-radius: 8px 8px 0 0; margin-bottom: 10px; }
-        .score-header h3 { margin: 0; font-size: 1.1rem; }
-        .score-header .part-badge { background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; text-transform: uppercase; font-weight: bold; }
+        /* Stili per la visualizzazione Spartiti in Scaletta */
+        .score-sequence-item { 
+            margin-bottom: 30px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            background: white;
+        }
+        .score-sequence-header { 
+            background: #f1f5f9; 
+            padding: 10px 15px; 
+            border-bottom: 1px solid #ddd;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        .score-sequence-header h3 { margin: 0; font-size: 1.1rem; color: var(--primary); }
+        .score-sequence-header .part-badge { 
+            background: var(--primary); color: white; 
+            padding: 3px 8px; border-radius: 12px; 
+            font-size: 0.75rem; text-transform: uppercase; 
+        }
+        .score-content { padding: 0; }
+        .score-content img { width: 100%; height: auto; display: block; }
+        .pdf-frame { width: 100%; height: 600px; border: none; }
         
-        /* Nasconde elementi in modalità lettura */
-        body.reading-mode .sticky-header, 
-        body.reading-mode .bottom-nav, 
-        body.reading-mode .fab-actions,
-        body.reading-mode .slot-container,
-        body.reading-mode .notes-area,
-        body.reading-mode h2, body.reading-mode p.messa-date { display: none !important; }
-        
-        body.reading-mode .container { max-width: 100%; padding: 0; margin: 0; }
-        body.reading-mode .view { padding: 0; }
-        body.reading-mode #scoresContainer { padding: 10px; margin-top: 0; }
-        
-        /* Pulsante esci da lettura */
-        #exitReadingMode { position: fixed; top: 20px; right: 20px; z-index: 999; background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: none; font-weight: bold; cursor: pointer; }
-        body.reading-mode #exitReadingMode { display: block; }
+        /* Nasconde i selettori quando si è in modalità lettura "pura" (opzionale) */
+        .reading-only .slot-container { display: none; }
     </style>
 </head>
 <body>
 
-    <button id="exitReadingMode" onclick="toggleReadingMode()">
-        <span class="material-icons-round" style="vertical-align:middle">close</span> ESCI LETTURA
-    </button>
-
     <nav class="bottom-nav no-print">
         <button onclick="switchTab('library')" class="nav-btn active" id="btn-library">
-            <span class="material-icons-round">library_music</span><span>Canti</span>
+            <span class="material-icons-round">library_music</span><span>Repertorio</span>
         </button>
         <button onclick="switchTab('scaletta')" class="nav-btn" id="btn-scaletta">
             <span class="material-icons-round">playlist_play</span><span>Messa</span>
@@ -63,7 +65,7 @@
             <header class="sticky-header no-print">
                 <div id="installContainer" class="hidden" style="margin-bottom:10px;">
                     <button id="btnInstall" class="btn-block-primary install-btn">
-                        <span class="material-icons-round" style="vertical-align:middle">download</span> INSTALLA APP
+                        <span class="material-icons-round">download</span> INSTALLA APP
                     </button>
                 </div>
                 <div id="iosInstallMessage" class="ios-prompt hidden">
@@ -75,7 +77,7 @@
 
                 <div class="search-bar-container">
                     <span class="material-icons-round search-icon">search</span>
-                    <input type="text" id="searchInput" placeholder="Cerca titolo o testo..." onkeyup="applyFilters()">
+                    <input type="text" id="searchInput" placeholder="Cerca canto..." onkeyup="applyFilters()">
                 </div>
                 
                 <div class="filters-row">
@@ -110,11 +112,8 @@
                 <div class="modal-body" id="viewSongBody"></div>
                 <div id="transposerControls" class="modal-footer hidden transposer-bar">
                     <button onclick="transpose(-1)" class="btn-outline compact">b -1</button>
-                    <span id="transposeValue" style="font-weight:bold; min-width:60px; text-align:center;">Originale</span>
+                    <span id="transposeValue" style="font-weight:bold;">Originale</span>
                     <button onclick="transpose(1)" class="btn-outline compact"># +1</button>
-                    <a id="viewYoutubeLink" href="#" target="_blank" class="btn-icon hidden" style="margin-left:auto; color:red; display:flex; align-items:center;">
-                        <span class="material-icons-round" style="font-size:28px;">play_circle</span>
-                    </a>
                 </div>
             </div>
         </div>
@@ -142,7 +141,7 @@
                     </div>
                     <div class="input-icon-wrapper">
                         <span class="material-icons-round">link</span>
-                        <input type="text" id="youtubeLink" class="input-std" placeholder="Link YouTube/Audio (Opzionale)">
+                        <input type="text" id="youtubeLink" class="input-std" placeholder="Link YouTube/Audio">
                     </div>
                     <div class="tabs">
                         <button class="tab-btn active" onclick="switchInputTab('file')">File / Foto</button>
@@ -185,37 +184,37 @@
                         <button onclick="switchTab('library')" class="btn-icon"><span class="material-icons-round">arrow_back</span></button>
                         <h1>Messa</h1>
                     </div>
-                    <button onclick="toggleHistory()" class="btn-text-icon">
-                        <span class="material-icons-round">history</span> Storico
-                    </button>
-                </div>
-                <div class="row-inputs" style="margin-top:10px;">
-                    <button onclick="renderScores(true)" class="btn-primary compact" style="flex:1; background:#673ab7;">
-                        <span class="material-icons-round v-mid">visibility</span> Aggiorna Vista
-                    </button>
-                    <button onclick="toggleReadingMode()" class="btn-outline compact" style="flex:1; border-color:#ff4081; color:#ff4081;">
-                        <span class="material-icons-round v-mid">chrome_reader_mode</span> Modalità Lettura
-                    </button>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="toggleHistory()" class="btn-text-icon">
+                            <span class="material-icons-round">history</span> Storico
+                        </button>
+                        <button onclick="saveSetlist()" class="btn-icon" style="color:var(--primary)">
+                            <span class="material-icons-round">save</span>
+                        </button>
+                    </div>
                 </div>
             </header>
 
             <div id="printSheet" class="paper-sheet">
                 <h2 contenteditable="true" id="messaTitle" class="messa-title">Santa Messa</h2>
                 <p contenteditable="true" id="messaDate" class="messa-date">Data: ________________</p>
+                
                 <div class="scaletta-grid"></div>
+                
                 <div class="notes-area">
                     <span class="notes-label">Note:</span>
                     <div contenteditable="true" class="note-line"></div>
                 </div>
             </div>
             
+            <div style="text-align:center; margin:15px 0;">
+                <button onclick="renderScores()" class="btn-primary compact no-print">
+                    <span class="material-icons-round v-mid">visibility</span> VISUALIZZA SPARTITI
+                </button>
+            </div>
+
             <div id="scoresContainer" class="scores-print-area"></div>
             
-            <div class="fab-actions no-print">
-                <button onclick="saveSetlist()" class="btn-action secondary"><span class="material-icons-round">save</span></button>
-                <button onclick="prepareAndPrint()" class="btn-action primary"><span class="material-icons-round">print</span></button>
-                <button onclick="resetScaletta()" class="btn-action danger"><span class="material-icons-round">restart_alt</span></button>
-            </div>
             <div id="historyPanel" class="side-panel hidden no-print">
                 <div class="panel-header"><h3>Storico</h3><button onclick="toggleHistory()" class="btn-icon"><span class="material-icons-round">close</span></button></div>
                 <div id="historyList" class="history-list"></div>
@@ -251,7 +250,7 @@
                 <div class="setting-card">
                     <h3><span class="material-icons-round">category</span> Categorie Extra</h3>
                     <div class="input-group-row">
-                        <input type="text" id="newCatInput" class="input-std" placeholder="Es. Adorazione">
+                        <input type="text" id="newCatInput" class="input-std" placeholder="Nuova Categoria">
                         <button onclick="addCustomCategory()" class="btn-primary compact" style="width:auto; padding:0 15px;">Agg.</button>
                     </div>
                     <div id="customCatList" class="tags-container"></div>
@@ -269,7 +268,6 @@
     </div>
 
     <script>
-        // CONFIGURAZIONE
         let db; let tempDriveFile = null; let activeInputMode = 'file'; let currentCategoryFilter = 'Tutti'; let currentViewingId = null; let isEditingFromView = false;
         let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
         const DEFAULT_PARTS = ['Ingresso', 'Gloria', 'Salmo', 'Alleluia', 'Offertorio', 'Santo', 'Comunione', 'Finale'];
@@ -315,7 +313,7 @@
             } else performSave(null, 'text/plain');
         }
 
-        // --- GOOGLE DRIVE & DOWNLOAD ---
+        // --- GOOGLE DRIVE (SCOPES AGGIORNATI PER FIX 404) ---
         let tokenClient; let gapiInited=false; let gisInited=false;
         function getKeys() { return { k:localStorage.getItem('g_api')||document.getElementById('gApiKey').value, c:localStorage.getItem('g_client')||document.getElementById('gClientId').value }; }
         function saveGoogleKeys(){ const {k,c}=getKeys(); if(k&&c){ localStorage.setItem('g_api',k); localStorage.setItem('g_client',c); alert("Salvate!"); } else alert("Inserisci tutto."); }
@@ -325,7 +323,11 @@
             let oldText=""; if(btn){ oldText=btn.innerHTML; btn.innerText="Connessione..."; btn.disabled=true; }
             try {
                 if(!gapiInited){ await new Promise((r,j)=>{ gapi.load('client:picker', async()=>{ try{ await gapi.client.init({apiKey:k, discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]}); gapiInited=true; r(); }catch(e){j(e);} }); }); }
-                if(!gisInited){ await new Promise((r,j)=>{ try{ tokenClient=google.accounts.oauth2.initTokenClient({client_id:c, scope:'https://www.googleapis.com/auth/drive.file', callback:''}); gisInited=true; r(); }catch(e){j(e);} }); }
+                if(!gisInited){ await new Promise((r,j)=>{ try{ 
+                    // SCOPE AMPLIATO: drive.readonly per scaricare PDF + drive.file per il backup
+                    tokenClient=google.accounts.oauth2.initTokenClient({client_id:c, scope:'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file', callback:''}); 
+                    gisInited=true; r(); 
+                }catch(e){j(e);} }); }
                 return true;
             } catch(e){ alert("Errore Google: "+e); return false; } finally { if(btn){ btn.innerHTML=oldText; btn.disabled=false; } }
         }
@@ -360,7 +362,7 @@
                     if(!resp.ok) throw new Error("Errore download: " + resp.status);
                     const blob = await resp.blob();
                     
-                    if(blob.size > 10 * 1024 * 1024) alert("Attenzione: File grande (>10MB). Potrebbe rallentare.");
+                    if(blob.size > 10 * 1024 * 1024) alert("Attenzione: File grande (>10MB).");
 
                     const fr = new FileReader();
                     fr.onload = (e) => { 
@@ -380,62 +382,28 @@
             }
         }
 
-        // --- VIEW & RENDER (CORE LOGIC) ---
-        function renderContent(data, type) {
-            if (!data) return "<p>Nessun contenuto.</p>";
-            if (type === 'application/pdf') {
-                // PDF Viewer Integrato
-                return `<iframe src="${data}" class="pdf-frame"></iframe>
-                        <a href="${data}" target="_blank" class="download-link no-print">Apri PDF Esterno</a>`;
-            } else if (type.startsWith('image')) {
-                return `<img src="${data}" style="max-width:100%; height:auto;">`;
-            }
-            return "<p>Formato non supportato.</p>";
-        }
-
-        function toggleReadingMode() {
-            document.body.classList.toggle('reading-mode');
-            if(document.body.classList.contains('reading-mode')) renderScores(false); // Force render
-        }
-
-        // QUESTA È LA FUNZIONE CHE GENERA LA VISTA SEQUENZIALE
-        function renderScores(forceScroll = false) {
-            const container = document.getElementById('scoresContainer'); 
-            container.innerHTML = "";
+        // --- VISUALIZZAZIONE SCALETTA (CONSULTAZIONE) ---
+        function renderScores(){
+            const c = document.getElementById('scoresContainer'); c.innerHTML = "";
             let hasContent = false;
-
             document.querySelectorAll('.song-selector').forEach(sel => {
                 if(!sel.value) return;
                 const part = sel.closest('.slot-container').dataset.part;
                 hasContent = true;
-
                 db.transaction(["songs"]).objectStore("songs").get(Number(sel.value)).onsuccess = (e) => {
                     const s = e.target.result; if(!s) return;
-                    
-                    const div = document.createElement('div'); 
-                    div.className = 'score-item';
+                    const div = document.createElement('div'); div.className = 'score-sequence-item';
                     
                     let contentHtml = "";
-                    if(s.lyrics) contentHtml = `<div class="lyrics-box"><pre>${s.lyrics}</pre></div>`;
-                    else contentHtml = renderContent(s.fileData, s.type || 'text/plain');
-
-                    div.innerHTML = `
-                        <div class="score-header">
-                            <h3>${s.title}</h3>
-                            <span class="part-badge">${part}</span>
-                        </div>
-                        <div class="score-content">${contentHtml}</div>
-                    `;
-                    container.appendChild(div);
+                    if(s.lyrics) contentHtml = `<div class="lyrics-box" style="border:none; max-height:none;"><pre>${s.lyrics}</pre></div>`;
+                    else if(s.type === 'application/pdf') contentHtml = `<iframe src="${s.fileData}" class="pdf-frame"></iframe><div style="text-align:center;padding:5px;"><a href="${s.fileData}" target="_blank">Apri Fullscreen</a></div>`;
+                    else if(s.fileData) contentHtml = `<img src="${s.fileData}">`;
+                    
+                    div.innerHTML = `<div class="score-sequence-header"><h3>${s.title}</h3><span class="part-badge">${part}</span></div><div class="score-content">${contentHtml}</div>`;
+                    c.appendChild(div);
                 }
             });
-
-            // Se ci sono spartiti, scrolla giù
-            if(forceScroll && hasContent) {
-                setTimeout(() => {
-                    container.scrollIntoView({ behavior: 'smooth' });
-                }, 500);
-            }
+            if(hasContent) setTimeout(() => c.scrollIntoView({ behavior: 'smooth' }), 300);
         }
 
         // --- ALTRE FUNZIONI ---
@@ -467,7 +435,8 @@
                 document.getElementById('viewSongTitle').innerText = s.title; const body = document.getElementById('viewSongBody'); const controls = document.getElementById('transposerControls'); const ytBtn = document.getElementById('viewYoutubeLink');
                 if(s.youtubeUrl) { ytBtn.href=s.youtubeUrl; ytBtn.classList.remove('hidden'); } else ytBtn.classList.add('hidden');
                 if(s.lyrics) { currentSongText = s.lyrics; body.innerHTML = `<div class="lyrics-box"><pre>${s.lyrics}</pre></div>`; controls.classList.remove('hidden'); }
-                else { body.innerHTML = renderContent(s.fileData, s.type || 'text/plain'); controls.classList.add('hidden'); }
+                else if(s.type === 'application/pdf') { body.innerHTML = `<iframe src="${s.fileData}" class="pdf-frame"></iframe>`; controls.classList.add('hidden'); }
+                else { body.innerHTML = `<img src="${s.fileData}" style="max-width:100%">`; controls.classList.add('hidden'); }
                 document.getElementById('viewSongModal').classList.remove('hidden');
             };
         }
@@ -522,17 +491,15 @@
 
         function buildScalettaUI() { const g = document.querySelector('.scaletta-grid'); if(g.children.length === 0) DEFAULT_PARTS.forEach(p => { const d = document.createElement('div'); d.className = 'slot-container'; d.dataset.part = p; d.innerHTML = `<div class="slot-header"><span>${p}</span><button class="btn-add-slot no-print" onclick="addSelector('${p}')">+</button></div><div class="selectors-list" id="list-${p}"></div>`; g.appendChild(d); addSelector(p); }); }
         function addSelector(p, id=null){ const c = document.getElementById(`list-${p}`); const r = document.createElement('div'); r.className = 'selector-row'; r.innerHTML = `<select class="song-selector no-print" onchange="updatePrintText(this)"><option value="">Seleziona...</option></select><span class="print-text"></span><button class="btn-del-slot no-print" onclick="removeSelector(this)">×</button>`; c.appendChild(r); populateSingleSelect(r.querySelector('select'), id); }
-        function removeSelector(b){ const r = b.parentElement; if(r.parentElement.children.length > 1) r.remove(); else { const s = r.querySelector('select'); s.value = ""; updatePrintText(s); } renderScores(); }
+        function removeSelector(b){ const r = b.parentElement; if(r.parentElement.children.length > 1) r.remove(); else { const s = r.querySelector('select'); s.value = ""; updatePrintText(s); } }
         function populateSingleSelect(s, id){ const cur = id || s.value; s.innerHTML = '<option value="">Seleziona...</option>'; db.transaction(["songs"],"readonly").objectStore("songs").openCursor().onsuccess = (e) => { const c = e.target.result; if(c) { const o = document.createElement('option'); o.value = c.key; o.text = c.value.title; if(c.key == cur) { o.selected = true; updatePrintText(s); } s.appendChild(o); c.continue(); } } }
         function populateAllSelectors(){ document.querySelectorAll('.song-selector').forEach(s => populateSingleSelect(s)); }
-        function updatePrintText(s){ s.nextElementSibling.innerText = s.value ? s.options[s.selectedIndex].text : ""; renderScores(); }
-        function toggleScoresMode(){ const c = document.getElementById('scoresContainer'); if(document.getElementById('printScoresCheck').checked) { c.classList.remove('hidden'); renderScores(); } else { c.classList.add('hidden'); } }
-        function prepareAndPrint(){ window.print(); }
+        function updatePrintText(s){ s.nextElementSibling.innerText = s.value ? s.options[s.selectedIndex].text : ""; }
         function saveSetlist(){ const t = document.getElementById('messaTitle').innerText; const d = document.getElementById('messaDate').innerText; const sel = {}; document.querySelectorAll('.slot-container').forEach(sl => { const p = sl.dataset.part; const ids = []; sl.querySelectorAll('select').forEach(s => { if(s.value) ids.push(s.value) }); sel[p] = ids; }); db.transaction(["setlists"],"readwrite").objectStore("setlists").add({title:t, dateStr:d, selections:sel}).oncomplete = () => alert("Salvata!"); }
         function toggleHistory(){ const p = document.getElementById('historyPanel'); const l = document.getElementById('historyList'); if(p.classList.contains('hidden')){ p.classList.remove('hidden'); l.innerHTML = ""; const tx=db.transaction(["setlists"],"readonly").objectStore("setlists"); tx.openCursor(null,'prev').onsuccess = (e) => { const c = e.target.result; if(c) { const x = c.value; const d = document.createElement('div'); d.className = 'history-item'; d.innerHTML = `<div><strong>${x.title}</strong><br><small>${x.dateStr}</small></div><div><button onclick="loadSetlist(${x.id})">Carica</button> <button onclick="deleteSetlist(${x.id})" style="color:red">×</button></div>`; l.appendChild(d); c.continue(); } }; } else p.classList.add('hidden'); }
-        function loadSetlist(id){ db.transaction(["setlists"]).objectStore("setlists").get(id).onsuccess = (e) => { const r = e.target.result; document.getElementById('messaTitle').innerText = r.title; document.getElementById('messaDate').innerText = r.dateStr; document.querySelectorAll('.selectors-list').forEach(l => l.innerHTML = ""); for(const[p,ids] of Object.entries(r.selections)){ if(!ids.length) addSelector(p); else ids.forEach(i => addSelector(p,i)); } toggleHistory(); setTimeout(()=>renderScores(true), 500); } }
+        function loadSetlist(id){ db.transaction(["setlists"]).objectStore("setlists").get(id).onsuccess = (e) => { const r = e.target.result; document.getElementById('messaTitle').innerText = r.title; document.getElementById('messaDate').innerText = r.dateStr; document.querySelectorAll('.selectors-list').forEach(l => l.innerHTML = ""); for(const[p,ids] of Object.entries(r.selections)){ if(!ids.length) addSelector(p); else ids.forEach(i => addSelector(p,i)); } toggleHistory(); setTimeout(renderScores, 500); } }
         function deleteSetlist(id){ if(confirm("Eliminare?")) { db.transaction(["setlists"],"readwrite").objectStore("setlists").delete(id); toggleHistory(); setTimeout(toggleHistory,50); } }
-        function resetScaletta(){ document.querySelectorAll('.selectors-list').forEach(l => { l.innerHTML = ""; addSelector(l.parentElement.dataset.part) }); document.getElementById('messaTitle').innerText = "Santa Messa"; renderScores(); }
+        function resetScaletta(){ document.querySelectorAll('.selectors-list').forEach(l => { l.innerHTML = ""; addSelector(l.parentElement.dataset.part) }); document.getElementById('messaTitle').innerText = "Santa Messa"; document.getElementById('scoresContainer').innerHTML=""; }
 
         function toggleDarkMode(){ const isDark = document.getElementById('darkModeCheck').checked; document.body.classList.toggle('dark-mode', isDark); localStorage.setItem('darkMode', isDark); }
         function loadDarkMode(){ const isDark = localStorage.getItem('darkMode') === 'true'; document.body.classList.toggle('dark-mode', isDark); if(document.getElementById('darkModeCheck')) document.getElementById('darkModeCheck').checked = isDark; }
