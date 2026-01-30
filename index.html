@@ -39,19 +39,16 @@
         .song-item, .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; background: white; }
         .song-item:active { background: #f0f0f0; }
 
-        /* MULTI-SELECT CHIPS (NUOVO) */
+        /* CHIPS (TAGS) */
         .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
-        .chip-select { 
-            padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; 
-            background: white; color: #555; font-size: 0.85rem; cursor: pointer; user-select: none; transition: 0.2s;
-        }
+        .chip-select { padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.85rem; cursor: pointer; user-select: none; }
         .chip-select.selected { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; box-shadow: 0 2px 5px rgba(103, 58, 183, 0.3); }
 
         /* INPUTS */
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
         textarea.form-control { resize: vertical; min-height: 100px; }
 
-        /* MODAL */
+        /* MODAL (OVERLAY) */
         .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .modal-wrap.show { display: flex; }
         .modal-box { background: var(--white); width: 95%; max-width: 600px; height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
@@ -59,7 +56,7 @@
         .modal-scroll { flex: 1; overflow-y: auto; padding: 20px; }
         .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; }
 
-        /* FULLSCREEN READING */
+        /* READING MODE */
         #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
         #readingContainer.active { display: flex; }
         .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
@@ -95,9 +92,11 @@
 
     <div id="toast">Messaggio</div>
 
-    <div class="top-bar">
+    <div class="top-bar no-print">
         <h1 style="font-size:1.2rem; font-weight:800; color:var(--primary); margin:0;">Spartiti Messa</h1>
-        <button id="topActionBtn" class="btn-icon" style="display:none;"></button>
+        <div style="display:flex; gap:10px;">
+            <button onclick="openSyncModal()" class="btn-icon" style="color:#2e7d32;" title="Backup Cloud"><span class="material-icons-round">cloud_sync</span></button>
+        </div>
     </div>
 
     <div class="app-body">
@@ -114,10 +113,8 @@
                     <button onclick="filterLib('Finale')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Finale</button>
                 </div>
             </div>
-            
             <div id="songList" class="card" style="border:none; background:transparent; box-shadow:none;"></div>
-            
-            <button class="fab" onclick="openEditModal()"><span class="material-icons-round">add</span></button>
+            <button class="fab no-print" onclick="openEditModal()"><span class="material-icons-round">add</span></button>
         </div>
 
         <div id="view-scaletta" class="view-section">
@@ -169,17 +166,17 @@
             <div class="card">
                 <div class="card-header">Google Drive API</div>
                 <div class="card-body">
-                    <p style="font-size:0.85rem; color:#666;">Per scaricare i PDF dal tuo Drive.</p>
+                    <p style="font-size:0.85rem; color:#666;">Necessarie per Backup e PDF.</p>
                     <input type="text" id="apiKey" class="form-control" placeholder="API Key">
                     <input type="text" id="clientId" class="form-control" placeholder="Client ID">
                     <button onclick="saveKeys()" class="btn-primary">Salva Chiavi</button>
                 </div>
             </div>
             <div class="card">
-                <div class="card-header">Backup</div>
+                <div class="card-header">Backup Locale</div>
                 <div class="card-body" style="display:flex; gap:10px;">
-                    <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica</button>
-                    <button onclick="document.getElementById('impFile').click()" class="btn-outline" style="flex:1;">Carica</button>
+                    <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica File</button>
+                    <button onclick="document.getElementById('impFile').click()" class="btn-outline" style="flex:1;">Carica File</button>
                     <input type="file" id="impFile" hidden onchange="importData(this)">
                 </div>
             </div>
@@ -187,7 +184,7 @@
 
     </div>
 
-    <div class="nav-bar">
+    <div class="nav-bar no-print">
         <button class="nav-btn active" onclick="go('library', this)"><span class="material-icons-round">library_music</span>Canti</button>
         <button class="nav-btn" onclick="go('scaletta', this)"><span class="material-icons-round">playlist_play</span>Messa</button>
         <button class="nav-btn" onclick="go('history', this)"><span class="material-icons-round">history</span>Messe</button>
@@ -226,7 +223,7 @@
                 <div style="background:#f0f2f5; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;">
                     <p id="fileStatus" style="font-weight:bold; color:var(--primary); margin-top:0;">Nessun file</p>
                     <div style="display:flex; gap:10px; justify-content:center;">
-                        <button onclick="initDrive()" class="btn-outline" style="background:white;">Google Drive</button>
+                        <button onclick="initDrive('picker')" class="btn-outline" style="background:white;">Google Drive</button>
                         <button onclick="document.getElementById('localFile').click()" class="btn-outline" style="background:white;">Locale</button>
                     </div>
                     <input type="file" id="localFile" hidden onchange="handleFile(this)">
@@ -237,6 +234,20 @@
             </div>
             <div class="modal-footer">
                 <button onclick="saveSong()" class="btn-primary" style="width:100%;">SALVA</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="syncModal" class="modal-wrap">
+        <div class="modal-box" style="height:auto;">
+            <div class="card-header"><span>Cloud Backup</span><button onclick="document.getElementById('syncModal').classList.remove('show')" class="btn-icon">×</button></div>
+            <div class="modal-scroll" style="text-align:center;">
+                <p>Salva tutti i tuoi dati su Google Drive per non perderli o sincronizzarli tra dispositivi.</p>
+                <div style="display:grid; gap:10px;">
+                    <button onclick="performUpload()" class="btn-primary" style="background:#1976d2;">☁️ CARICA SU CLOUD (Backup)</button>
+                    <button onclick="performDownload()" class="btn-outline" style="border-color:#1976d2; color:#1976d2;">⬇️ SCARICA DA CLOUD (Ripristina)</button>
+                </div>
+                <p id="syncStatus" style="font-size:0.8rem; margin-top:15px; color:#666;"></p>
             </div>
         </div>
     </div>
@@ -261,6 +272,7 @@
         let db; let tempFile = null; let currentSongId = null;
         const CATS = ["Ingresso", "Gloria", "Salmo", "Alleluia", "Offertorio", "Santo", "Comunione", "Finale", "Altro"];
         const SEASONS = ["Ordinario", "Avvento", "Natale", "Quaresima", "Pasqua"];
+        const SYNC_FILE_NAME = "spartiti_db_master.json";
         let filterCatVar = 'Tutti';
 
         window.onload = () => {
@@ -268,15 +280,13 @@
             document.getElementById('apiKey').value = localStorage.getItem('g_api')||"";
             document.getElementById('clientId').value = localStorage.getItem('g_client')||"";
 
-            const r = indexedDB.open("SpartitiDB_V4", 1); // Bump version for schema change
+            const r = indexedDB.open("SpartitiDB_V4", 1);
             r.onupgradeneeded = (e) => {
                 db = e.target.result;
                 if(!db.objectStoreNames.contains("songs")) db.createObjectStore("songs", {keyPath:"id", autoIncrement:true});
                 if(!db.objectStoreNames.contains("setlists")) db.createObjectStore("setlists", {keyPath:"id", autoIncrement:true});
             };
             r.onsuccess = (e) => { db=e.target.result; renderLibrary(); renderScalettaUI(); renderFullHistory(); };
-            
-            // Render Chips in Modal
             renderModalChips();
         };
 
@@ -296,7 +306,7 @@
             if(id==='history') renderFullHistory();
         }
 
-        // --- LIBRARY LOGIC (UPDATED FOR ARRAYS) ---
+        // LIBRARY
         function filterLib(cat) { filterCatVar=cat; renderLibrary(); }
         function renderLibrary() {
             const list = document.getElementById('songList'); list.innerHTML="";
@@ -306,13 +316,10 @@
                 const c = e.target.result;
                 if(c) {
                     const s = c.value;
-                    // Compatibility: Ensure categories is array
                     const cats = Array.isArray(s.categories) ? s.categories : [s.category];
-                    
                     let ok = true;
                     if(filterCatVar!=='Tutti' && !cats.includes(filterCatVar)) ok=false;
                     if(txt && !s.title.toLowerCase().includes(txt)) ok=false;
-                    
                     if(ok) {
                         const icon = s.type && s.type.includes('pdf') ? 'picture_as_pdf' : 'description';
                         list.innerHTML += `<div class="song-item" onclick="openViewModal(${s.id})"><div><div style="font-weight:bold;">${s.title}</div><small style="color:#666;">${cats.join(', ')}</small></div><span class="material-icons-round" style="color:#ccc;">${icon}</span></div>`;
@@ -358,7 +365,6 @@
                     document.getElementById('songLyrics').value = s.lyrics || "";
                     if(s.fileData) { tempFile = {data:s.fileData, type:s.type}; document.getElementById('fileStatus').innerText = "File Presente ✅"; }
                     
-                    // Set Chips
                     const cats = Array.isArray(s.categories) ? s.categories : [s.category];
                     const seas = Array.isArray(s.seasons) ? s.seasons : [s.season];
                     
@@ -379,19 +385,14 @@
             const t = document.getElementById('songTitle').value;
             if(!t) return alert("Titolo mancante");
             
-            // Collect Chips
             const cats = Array.from(document.querySelectorAll('#catChips .selected')).map(c => c.dataset.val);
             const seas = Array.from(document.querySelectorAll('#seasonChips .selected')).map(c => c.dataset.val);
             if(cats.length === 0) cats.push("Altro");
             if(seas.length === 0) seas.push("Ordinario");
 
             const s = {
-                title: t, 
-                categories: cats, // Array!
-                seasons: seas,    // Array!
-                lyrics: document.getElementById('songLyrics').value,
-                fileData: tempFile ? tempFile.data : null,
-                type: tempFile ? tempFile.type : null
+                title: t, categories: cats, seasons: seas, lyrics: document.getElementById('songLyrics').value,
+                fileData: tempFile ? tempFile.data : null, type: tempFile ? tempFile.type : null
             };
             const id = document.getElementById('songId').value;
             if(id) s.id = Number(id);
@@ -400,12 +401,12 @@
             tx.objectStore("songs").put(s).onsuccess = () => {
                 document.getElementById('editModal').classList.remove('show');
                 renderLibrary();
-                updateSuggestions(); // Refresh scaletta dropdowns
+                updateSuggestions();
                 showToast("Salvato!");
             };
         }
 
-        // --- SCALETTA & SMART SUGGESTIONS ---
+        // SCALETTA & SMART SUGGESTIONS
         function renderScalettaUI() {
             const c = document.getElementById('scalettaContainer'); c.innerHTML = "";
             CATS.forEach(cat => {
@@ -424,46 +425,32 @@
 
         function updateSuggestions() {
             const d = new Date(document.getElementById('messaDate').value);
-            const month = d.getMonth() + 1;
-            const day = d.getDate();
-            
-            // Determine Season (Simple Logic)
+            const month = d.getMonth() + 1; const day = d.getDate();
             let season = "Ordinario";
             if (month === 11 && day >= 27 || month === 12 && day <= 24) season = "Avvento";
             else if (month === 12 && day >= 25 || month === 1) season = "Natale";
-            else if (month >= 2 && month <= 4) season = "Quaresima"; // Approx
-            else if (month === 4 || month === 5) season = "Pasqua"; // Approx
+            else if (month >= 2 && month <= 4) season = "Quaresima";
+            else if (month === 4 || month === 5) season = "Pasqua";
 
             db.transaction("songs").objectStore("songs").getAll().onsuccess = (e) => {
                 const songs = e.target.result.sort((a,b)=>a.title.localeCompare(b.title));
-                
                 document.querySelectorAll('.song-select').forEach(sel => {
                     const part = sel.parentElement.parentElement.dataset.part;
                     const oldVal = sel.value;
-                    
-                    let suggested = "";
-                    let others = "";
-                    
+                    let suggested = "", others = "";
                     songs.forEach(s => {
                         const cats = Array.isArray(s.categories) ? s.categories : [s.category];
                         const seas = Array.isArray(s.seasons) ? s.seasons : [s.season];
-                        
-                        if(cats.includes(part) && (seas.includes(season) || seas.includes("Tutti"))) {
-                            suggested += `<option value="${s.id}">★ ${s.title}</option>`;
-                        } else {
-                            others += `<option value="${s.id}">${s.title}</option>`;
-                        }
+                        if(cats.includes(part) && (seas.includes(season) || seas.includes("Tutti"))) suggested += `<option value="${s.id}">★ ${s.title}</option>`;
+                        else others += `<option value="${s.id}">${s.title}</option>`;
                     });
-
-                    sel.innerHTML = `<option value="">Seleziona...</option>
-                                     <optgroup label="Suggeriti (${season})">${suggested}</optgroup>
-                                     <optgroup label="Altri">${others}</optgroup>`;
+                    sel.innerHTML = `<option value="">Seleziona...</option><optgroup label="Suggeriti (${season})">${suggested}</optgroup><optgroup label="Altri">${others}</optgroup>`;
                     sel.value = oldVal;
                 });
             }
         }
 
-        // --- READINGS FETCH ---
+        // LETTURE
         async function autoFetchReadings() {
             const dStr = document.getElementById('messaDate').value;
             if(!dStr) return alert("Inserisci la data!");
@@ -499,39 +486,18 @@
             document.getElementById('readingContainer').classList.add('active');
             const mc = document.getElementById('readMusicArea'); mc.innerHTML = "";
             const wc = document.getElementById('readWordArea'); wc.innerHTML = "";
-            
             document.querySelectorAll('.song-select').forEach(sel => {
-                if(sel.value) {
-                    db.transaction("songs").objectStore("songs").get(Number(sel.value)).onsuccess = (e) => {
-                        const s = e.target.result;
-                        let h = "";
-                        if(s.lyrics) h = `<pre style="white-space:pre-wrap; font-size:1.1rem; font-family:inherit;">${s.lyrics}</pre>`;
-                        else if(s.type.includes('pdf')) h = `<iframe src="${s.fileData}" class="pdf-frame"></iframe>`;
-                        else h = `<img src="${s.fileData}" style="width:100%;">`;
-                        mc.innerHTML += `<div class="score-seq-item"><h3 style="color:var(--primary); margin:0 0 10px 0; border-bottom:1px solid #eee; padding-bottom:5px;">${s.title}</h3>${h}</div>`;
-                    };
-                }
+                if(sel.value) db.transaction("songs").objectStore("songs").get(Number(sel.value)).onsuccess = (e) => {
+                    const s = e.target.result;
+                    let h = s.lyrics ? `<pre style="white-space:pre-wrap; font-size:1.1rem; font-family:inherit;">${s.lyrics}</pre>` : (s.type.includes('pdf') ? `<iframe src="${s.fileData}" class="pdf-frame"></iframe>` : `<img src="${s.fileData}" style="width:100%">`);
+                    mc.innerHTML += `<div class="score-seq-item"><h3 style="color:var(--primary); margin:0 0 10px 0; border-bottom:1px solid #eee; padding-bottom:5px;">${s.title}</h3>${h}</div>`;
+                };
             });
-
-            const reads = [
-                {t:"Prima Lettura", v:document.getElementById('r1').value},
-                {t:"Salmo", v:document.getElementById('rps').value},
-                {t:"Seconda Lettura", v:document.getElementById('r2').value},
-                {t:"Vangelo", v:document.getElementById('rg').value}
-            ];
-            reads.forEach(r => {
-                if(r.v) wc.innerHTML += `<div style="margin-bottom:30px;"><h3 style="color:#d32f2f; border-bottom:1px solid #ddd;">${r.t}</h3><p style="white-space:pre-wrap;">${r.v}</p></div>`;
-            });
+            const reads = [{t:"Prima Lettura", v:document.getElementById('r1').value},{t:"Salmo", v:document.getElementById('rps').value},{t:"Seconda Lettura", v:document.getElementById('r2').value},{t:"Vangelo", v:document.getElementById('rg').value}];
+            reads.forEach(r => { if(r.v) wc.innerHTML += `<div style="margin-bottom:30px;"><h3 style="color:#d32f2f; border-bottom:1px solid #ddd;">${r.t}</h3><p style="white-space:pre-wrap;">${r.v}</p></div>`; });
         }
         function stopReadingMode() { document.getElementById('readingContainer').classList.remove('active'); }
-        function setReadTab(t) {
-            document.getElementById('readMusicArea').classList.toggle('d-none', t!=='music');
-            document.getElementById('readWordArea').classList.toggle('d-none', t!=='word');
-            document.getElementById('rtab-music').style.background = t==='music'?'var(--primary)':'transparent';
-            document.getElementById('rtab-music').style.color = t==='music'?'white':'#555';
-            document.getElementById('rtab-word').style.background = t==='word'?'var(--primary)':'transparent';
-            document.getElementById('rtab-word').style.color = t==='word'?'white':'#555';
-        }
+        function setReadTab(t) { document.getElementById('readMusicArea').className=t==='music'?'':'d-none'; document.getElementById('readWordArea').className=t==='word'?'':'d-none'; document.getElementById('rtab-music').style.background=t==='music'?'var(--primary)':'white'; document.getElementById('rtab-music').style.color=t==='music'?'white':'#555'; document.getElementById('rtab-word').style.background=t==='word'?'var(--primary)':'white'; document.getElementById('rtab-word').style.color=t==='word'?'white':'#555'; }
 
         // SAVE & HISTORY
         function saveSetlist() {
@@ -540,17 +506,15 @@
             const sel = {};
             document.querySelectorAll('.song-select').forEach(s => { if(s.value) sel[s.parentElement.parentElement.dataset.part] = s.value; });
             const r = { r1:document.getElementById('r1').value, rps:document.getElementById('rps').value, r2:document.getElementById('r2').value, rg:document.getElementById('rg').value };
-            
             db.transaction("setlists","readwrite").objectStore("setlists").add({title:t, date:d, songs:sel, readings:r}).onsuccess = () => { showToast("Messa Salvata!"); renderFullHistory(); };
         }
-        
         function renderFullHistory() {
             const list = document.getElementById('fullHistoryList'); list.innerHTML = "";
             db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess = (e) => {
                 const c = e.target.result;
                 if(c) {
                     const s = c.value;
-                    list.innerHTML += `<div class="history-item"><div onclick="loadSet(${s.id})" style="flex:1;"><b>${s.title}</b><br><small style="color:#666;">${s.date}</small></div><button onclick="delSet(${s.id})" class="btn-icon" style="color:red; font-size:1.2rem;">delete</button></div>`;
+                    list.innerHTML += `<div class="history-item"><div onclick="loadSet(${s.id})" style="flex:1;"><b>${s.title}</b><br><small style="color:#666;">${s.date}</small></div><button onclick="delSet(${s.id})" class="btn-icon" style="color:red;">delete</button></div>`;
                     c.continue();
                 }
             }
@@ -558,39 +522,36 @@
         function loadSet(id) {
             db.transaction("setlists").objectStore("setlists").get(id).onsuccess = (e) => {
                 const s = e.target.result;
-                document.getElementById('messaTitle').value = s.title;
-                document.getElementById('messaDate').value = s.date;
-                if(s.readings) {
-                    document.getElementById('r1').value = s.readings.r1||"";
-                    document.getElementById('rps').value = s.readings.rps||"";
-                    document.getElementById('r2').value = s.readings.r2||"";
-                    document.getElementById('rg').value = s.readings.rg||"";
-                }
+                document.getElementById('messaTitle').value = s.title; document.getElementById('messaDate').value = s.date;
+                if(s.readings) { document.getElementById('r1').value=s.readings.r1||""; document.getElementById('rps').value=s.readings.rps||""; document.getElementById('r2').value=s.readings.r2||""; document.getElementById('rg').value=s.readings.rg||""; }
                 document.querySelectorAll('.song-select').forEach(sel => sel.value = "");
-                for(let [k,v] of Object.entries(s.songs)) {
-                    const el = document.querySelector(`div[data-part="${k}"] select`);
-                    if(el) el.value = v;
-                }
+                for(let [k,v] of Object.entries(s.songs)) { const el = document.querySelector(`div[data-part="${k}"] select`); if(el) el.value = v; }
                 go('scaletta');
             }
         }
         function delSet(id) { if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderFullHistory(); }
 
-        // DRIVE (HIDE MODAL)
+        // GOOGLE API & SYNC
         let tokenClient; let gapiInited=false; let gisInited=false;
         function saveKeys(){localStorage.setItem('g_api',document.getElementById('apiKey').value);localStorage.setItem('g_client',document.getElementById('clientId').value);showToast("Keys OK");}
-        async function initDrive() {
+        async function initDrive(mode) {
             const k = document.getElementById('apiKey').value; const c = document.getElementById('clientId').value;
             if(!k||!c) return alert("Inserisci API Key e Client ID in Opzioni");
             document.getElementById('editModal').classList.remove('show');
             if(!gapiInited) await new Promise(r=>gapi.load('client:picker',async()=>{await gapi.client.init({apiKey:k,discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]});gapiInited=true;r()}));
-            if(!gisInited) await new Promise(r=>{tokenClient=google.accounts.oauth2.initTokenClient({client_id:c,scope:'https://www.googleapis.com/auth/drive.readonly',callback:''});gisInited=true;r()});
+            if(!gisInited) await new Promise(r=>{tokenClient=google.accounts.oauth2.initTokenClient({client_id:c,scope:mode==='picker'?'https://www.googleapis.com/auth/drive.readonly':'https://www.googleapis.com/auth/drive.file',callback:''});gisInited=true;r()});
             tokenClient.callback = (r) => {
-                if(r.error) { alert("Err Auth"); document.getElementById('editModal').classList.add('show'); return; }
-                const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
-                new google.picker.PickerBuilder().setDeveloperKey(k).setOAuthToken(r.access_token).addView(view).setCallback(pickerCallback).build().setVisible(true);
+                if(r.error) { alert("Err Auth"); if(mode==='picker') document.getElementById('editModal').classList.add('show'); return; }
+                if(mode==='picker') createPicker(r.access_token);
+                else { if(mode==='upload') performUpload(); if(mode==='download') performDownload(); }
             };
             tokenClient.requestAccessToken({prompt:''});
+        }
+        function openSyncModal() { document.getElementById('syncModal').classList.add('show'); }
+        function createPicker(t) {
+            const k = document.getElementById('apiKey').value;
+            const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
+            new google.picker.PickerBuilder().setDeveloperKey(k).setOAuthToken(t).addView(view).setCallback(pickerCallback).build().setVisible(true);
         }
         async function pickerCallback(d) {
             if(d.action === google.picker.Action.CANCEL) document.getElementById('editModal').classList.add('show');
@@ -606,6 +567,52 @@
                     fr.readAsDataURL(b);
                 } catch(e) { alert("Err Download"); document.getElementById('editModal').classList.add('show'); }
             }
+        }
+        async function performUpload() {
+            document.getElementById('syncStatus').innerText = "Caricamento...";
+            const exp={songs:[],setlists:[]};
+            const tx=db.transaction(["songs","setlists"],"readonly");
+            exp.songs = await new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result));
+            exp.setlists = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result));
+            const fileContent = JSON.stringify(exp);
+            const metadata = { name: SYNC_FILE_NAME, mimeType: 'application/json' };
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            form.append('file', new Blob([fileContent], { type: 'application/json' }));
+            try {
+                const q = `name = '${SYNC_FILE_NAME}' and trashed = false`;
+                const search = await gapi.client.drive.files.list({q:q, fields:'files(id)'});
+                if(search.result.files.length > 0) {
+                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${search.result.files[0].id}?uploadType=media`, {
+                        method: 'PATCH',
+                        headers: { 'Authorization': `Bearer ${gapi.client.getToken().access_token}`, 'Content-Type': 'application/json' },
+                        body: fileContent
+                    });
+                } else {
+                    await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${gapi.client.getToken().access_token}` },
+                        body: form
+                    });
+                }
+                document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Backup OK!");
+            } catch(e) { document.getElementById('syncStatus').innerText = "Errore ❌"; alert("Errore sync"); }
+        }
+        async function performDownload() {
+            document.getElementById('syncStatus').innerText = "Scaricamento...";
+            try {
+                const q = `name = '${SYNC_FILE_NAME}' and trashed = false`;
+                const search = await gapi.client.drive.files.list({q:q, fields:'files(id)'});
+                if(search.result.files.length === 0) { alert("Nessun backup."); return; }
+                const res = await gapi.client.drive.files.get({fileId: search.result.files[0].id, alt: 'media'});
+                const data = res.result;
+                const tx = db.transaction(["songs","setlists"],"readwrite");
+                await new Promise(r=>tx.objectStore("songs").clear().onsuccess=r);
+                await new Promise(r=>tx.objectStore("setlists").clear().onsuccess=r);
+                data.songs.forEach(s=>tx.objectStore("songs").put(s));
+                data.setlists.forEach(s=>tx.objectStore("setlists").put(s));
+                tx.oncomplete = () => { document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Ripristinato!"); location.reload(); };
+            } catch(e) { document.getElementById('syncStatus').innerText = "Errore ❌"; alert("Errore download"); }
         }
 
         function showToast(m,time=3000){ const t=document.getElementById('toast');t.innerText=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),time); }
