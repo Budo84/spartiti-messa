@@ -17,28 +17,28 @@
     <script src="https://accounts.google.com/gsi/client"></script>
     
     <style>
-        /* --- CSS BASE --- */
+        /* --- CORE CSS --- */
         :root { --primary: #673ab7; --bg: #f5f5f5; --white: #ffffff; --text: #333; --border: #ddd; }
         * { box-sizing: border-box; }
-        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
         /* APP SHELL */
         .app-body { flex: 1; overflow-y: auto; position: relative; padding-bottom: 70px; }
-        .view-section { display: none; padding: 15px; max-width: 1000px; margin: 0 auto; }
-        .view-section.active { display: block; }
+        .view-section { display: none; padding: 15px; max-width: 1300px; margin: 0 auto; }
+        .view-section.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* HEADER */
         .top-bar { background: var(--white); padding: 10px 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .title-text { font-size: 1.2rem; font-weight: 800; color: var(--primary); margin: 0; }
-
+        
         /* CARDS & LISTS */
         .card { background: var(--white); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid var(--border); overflow: hidden; }
         .card-header { background: #f8f9fa; padding: 12px 15px; font-weight: bold; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .card-body { padding: 15px; }
 
-        .song-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; }
-        .song-item:last-child { border-bottom: none; }
-        .song-item:active { background: #f0f0f0; }
+        .song-item, .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; background: white; }
+        .song-item:last-child, .history-item:last-child { border-bottom: none; }
+        .song-item:active, .history-item:active { background: #f0f0f0; }
 
         /* INPUTS */
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
@@ -60,7 +60,7 @@
         .score-seq-item { margin-bottom: 40px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .pdf-frame { width: 100%; height: 80vh; border: none; background: #eee; }
 
-        /* NAV BAR */
+        /* NAV BAR IN BASSO */
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--white); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 500; }
         .nav-btn { background: none; border: none; color: #999; font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; width: 100%; cursor: pointer; }
         .nav-btn.active { color: var(--primary); }
@@ -72,6 +72,12 @@
         .btn-outline { background: transparent; border: 1px solid #ccc; color: #555; }
         .btn-icon { background: none; border: none; font-size: 1.4rem; padding: 5px; cursor: pointer; color: #555; }
         .fab { position: fixed; bottom: 85px; right: 20px; width: 56px; height: 56px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 200; }
+
+        /* GRID SYSTEM (MESSA + LETTURE) */
+        .workspace { display: grid; gap: 20px; grid-template-columns: 1fr; }
+        @media(min-width: 900px) { 
+            .workspace { grid-template-columns: 1fr 1fr; } /* Affiancati su PC */
+        }
 
         /* TOAST */
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; }
@@ -85,7 +91,7 @@
     <div id="toast">Messaggio</div>
 
     <div class="top-bar">
-        <h1 class="title-text">Spartiti Messa</h1>
+        <h1 style="font-size:1.2rem; font-weight:800; color:var(--primary); margin:0;">Spartiti Messa</h1>
         <button id="topActionBtn" class="btn-icon" style="display:none;"></button>
     </div>
 
@@ -103,9 +109,7 @@
                     <button onclick="filterLib('Finale')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Finale</button>
                 </div>
             </div>
-            
             <div id="songList" class="card" style="border:none; background:transparent; box-shadow:none;"></div>
-            
             <button class="fab" onclick="openEditModal()"><span class="material-icons-round">add</span></button>
         </div>
 
@@ -126,10 +130,7 @@
 
             <div class="workspace">
                 <div class="card">
-                    <div class="card-header">
-                        <span>🎵 Scaletta Canti</span>
-                        <button onclick="openHistory()" class="btn-outline" style="padding:4px 8px; font-size:0.8rem;">Storico</button>
-                    </div>
+                    <div class="card-header"><span>🎵 Scaletta Canti</span></div>
                     <div class="card-body" id="scalettaContainer"></div>
                 </div>
 
@@ -150,6 +151,12 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div id="view-history" class="view-section">
+            <h2 style="margin-top:0; color:var(--primary);">Le mie Messe</h2>
+            <div id="fullHistoryList" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:15px;">
+                </div>
         </div>
 
         <div id="view-settings" class="view-section">
@@ -177,6 +184,7 @@
     <div class="nav-bar">
         <button class="nav-btn active" onclick="go('library', this)"><span class="material-icons-round">library_music</span>Canti</button>
         <button class="nav-btn" onclick="go('scaletta', this)"><span class="material-icons-round">playlist_play</span>Messa</button>
+        <button class="nav-btn" onclick="go('history', this)"><span class="material-icons-round">history</span>Messe</button>
         <button class="nav-btn" onclick="go('settings', this)"><span class="material-icons-round">settings</span>Opzioni</button>
     </div>
 
@@ -225,13 +233,6 @@
         </div>
     </div>
 
-    <div id="historyModal" class="modal-wrap">
-        <div class="modal-box" style="height:60vh;">
-            <div class="modal-header"><span>Storico Messe</span><button onclick="document.getElementById('historyModal').classList.remove('show')" class="btn-icon">×</button></div>
-            <div class="modal-scroll" id="historyList"></div>
-        </div>
-    </div>
-
     <div id="readingContainer">
         <div class="reading-nav">
             <button onclick="stopReadingMode()" class="btn-icon" style="color:red; font-weight:bold;">← ESCI</button>
@@ -267,7 +268,7 @@
                 if(!db.objectStoreNames.contains("songs")) db.createObjectStore("songs", {keyPath:"id", autoIncrement:true});
                 if(!db.objectStoreNames.contains("setlists")) db.createObjectStore("setlists", {keyPath:"id", autoIncrement:true});
             };
-            r.onsuccess = (e) => { db=e.target.result; renderLibrary(); renderScalettaUI(); };
+            r.onsuccess = (e) => { db=e.target.result; renderLibrary(); renderScalettaUI(); renderHistoryList(); };
         };
 
         // NAV
@@ -277,6 +278,7 @@
             document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
             if(btn) btn.classList.add('active');
             if(id==='library') renderLibrary();
+            if(id==='history') renderHistoryList();
         }
 
         // LIBRARY
@@ -418,35 +420,25 @@
                 const json = await res.json();
                 if(!json.contents) throw new Error("Empty");
                 
-                // Pulisce HTML
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(json.contents, "text/html");
+                const text = doc.body.innerText.replace(/\s+/g, ' '); 
                 
-                // Cerca testo in modo "furbo"
-                const text = doc.body.innerText.replace(/\s+/g, ' '); // Normalizza spazi
-                
-                // Funzione estrazione con tolleranza
                 const findText = (startWords, endWords) => {
                     let startIdx = -1;
-                    // Cerca uno dei marcatori di inizio
                     for (let w of startWords) {
-                        // Regex case insensitive
                         const regex = new RegExp(w, "i");
                         const match = text.match(regex);
                         if(match) { startIdx = match.index + match[0].length; break; }
                     }
                     if(startIdx === -1) return "";
-
                     let endIdx = -1;
-                    // Cerca uno dei marcatori di fine DOPO l'inizio
                     for (let w of endWords) {
                         const regex = new RegExp(w, "i");
-                        // Cerca nella sottostringa dopo startIdx
                         const sub = text.substring(startIdx);
                         const match = sub.match(regex);
                         if(match) { endIdx = startIdx + match.index; break; }
                     }
-                    
                     return endIdx === -1 ? "" : text.substring(startIdx, endIdx).trim();
                 };
 
@@ -515,44 +507,44 @@
             document.querySelectorAll('.song-select').forEach(s => { if(s.value) sel[s.parentElement.parentElement.dataset.part] = s.value; });
             const r = { r1:document.getElementById('r1').value, rps:document.getElementById('rps').value, r2:document.getElementById('r2').value, rg:document.getElementById('rg').value };
             
-            db.transaction("setlists","readwrite").objectStore("setlists").add({title:t, date:d, songs:sel, readings:r}).onsuccess = () => showToast("Messa Salvata!");
+            db.transaction("setlists","readwrite").objectStore("setlists").add({title:t, date:d, songs:sel, readings:r}).onsuccess = () => { showToast("Messa Salvata!"); renderHistoryList(); };
         }
         
-        function openHistory() {
-            document.getElementById('historyModal').classList.add('show');
-            const l = document.getElementById('historyList'); l.innerHTML = "";
+        function renderHistoryList() {
+            const list = document.getElementById('fullHistoryList'); list.innerHTML = "";
             db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess = (e) => {
                 const c = e.target.result;
                 if(c) {
                     const s = c.value;
-                    l.innerHTML += `<div style="padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; align-items:center;">
-                        <div onclick="loadSet(${s.id})" style="cursor:pointer; flex:1;"><b>${s.title}</b><br><small>${s.date}</small></div>
+                    list.innerHTML += `
+                    <div class="history-item">
+                        <div onclick="loadSet(${s.id})" style="flex:1;"><b>${s.title}</b><br><small style="color:#666;">${s.date}</small></div>
                         <button onclick="delSet(${s.id})" class="btn-icon" style="color:red; font-size:1.2rem;">delete</button>
                     </div>`;
                     c.continue();
                 }
             }
         }
+
         function loadSet(id) {
             db.transaction("setlists").objectStore("setlists").get(id).onsuccess = (e) => {
                 const s = e.target.result;
                 document.getElementById('messaTitle').value = s.title;
                 document.getElementById('messaDate').value = s.date;
-                if(s.readings) {
-                    document.getElementById('r1').value = s.readings.r1||"";
-                    document.getElementById('rps').value = s.readings.rps||"";
-                    document.getElementById('r2').value = s.readings.r2||"";
-                    document.getElementById('rg').value = s.readings.rg||"";
-                }
+                document.getElementById('r1').value = s.readings.r1||"";
+                document.getElementById('rps').value = s.readings.rps||"";
+                document.getElementById('r2').value = s.readings.r2||"";
+                document.getElementById('rg').value = s.readings.rg||"";
+                
                 document.querySelectorAll('.song-select').forEach(sel => sel.value = "");
                 for(let [k,v] of Object.entries(s.songs)) {
                     const el = document.querySelector(`div[data-part="${k}"] select`);
                     if(el) el.value = v;
                 }
-                document.getElementById('historyModal').classList.remove('show');
+                go('scaletta'); // Switch tab
             }
         }
-        function delSet(id) { if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => openHistory(); }
+        function delSet(id) { if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderHistoryList(); }
 
         // DRIVE (HIDE MODAL)
         let tokenClient; let gapiInited=false; let gisInited=false;
