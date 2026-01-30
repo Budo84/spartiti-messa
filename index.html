@@ -123,11 +123,11 @@
                     <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
                         <input type="date" id="messaDate" class="form-control" style="width:auto; margin:0;" onchange="updateSuggestions()">
                         <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.85rem;">⬇️ Scarica Letture</button>
+                        <div style="flex:1; text-align:right;">
+                            <button onclick="saveSetlist()" class="btn-primary">Salva</button>
+                        </div>
                     </div>
-                    <div style="margin-top:10px; display:flex; justify-content:space-between;">
-                        <button onclick="saveSetlist()" class="btn-primary">Salva Tutto</button>
-                        <button onclick="startReadingMode()" class="btn-primary" style="background:#2e7d32;">▶ AVVIA LETTURA</button>
-                    </div>
+                    <button onclick="startReadingMode()" class="btn-primary" style="background:#2e7d32; width:100%; margin-top:10px;">▶ AVVIA LETTURA</button>
                 </div>
             </div>
 
@@ -530,7 +530,7 @@
         }
         function delSet(id) { if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderFullHistory(); }
 
-        // GOOGLE API & SYNC
+        // GOOGLE API & SYNC (FIX TOKEN)
         let tokenClient; let gapiInited=false; let gisInited=false;
         function saveKeys(){localStorage.setItem('g_api',document.getElementById('apiKey').value);localStorage.setItem('g_client',document.getElementById('clientId').value);showToast("Keys OK");}
         async function initDrive(mode) {
@@ -538,13 +538,17 @@
             if(!k||!c) return alert("Inserisci API Key e Client ID in Opzioni");
             document.getElementById('editModal').classList.remove('show');
             if(!gapiInited) await new Promise(r=>gapi.load('client:picker',async()=>{await gapi.client.init({apiKey:k,discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]});gapiInited=true;r()}));
-            if(!gisInited) await new Promise(r=>{tokenClient=google.accounts.oauth2.initTokenClient({client_id:c,scope:'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file',callback:''});gisInited=true;r()});
+            if(!gisInited) await new Promise(r=>{tokenClient=google.accounts.oauth2.initTokenClient({client_id:c,scope:mode==='picker'?'https://www.googleapis.com/auth/drive.readonly':'https://www.googleapis.com/auth/drive.file',callback:''});gisInited=true;r()});
             
             tokenClient.callback = async (r) => {
-                if(r.error) { alert("Err Auth"); if(mode==='picker') document.getElementById('editModal').classList.add('show'); return; }
+                if(r.error) { alert("Err Auth: "+r.error); if(mode==='picker') document.getElementById('editModal').classList.add('show'); return; }
+                
+                // --- FIX FONDAMENTALE: SALVA IL TOKEN IN GAPI ---
+                if (r.access_token) gapi.client.setToken(r);
+                // ------------------------------------------------
+
                 if(mode==='picker') createPicker(r.access_token);
-                if(mode==='upload') performUpload();
-                if(mode==='download') performDownload();
+                else { openSyncModal(); if(mode==='upload') performUpload(); if(mode==='download') performDownload(); }
             };
             tokenClient.requestAccessToken({prompt:''});
         }
@@ -600,7 +604,7 @@
                     });
                 }
                 document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Backup OK!");
-            } catch(e) { document.getElementById('syncStatus').innerText = "Errore ❌"; alert("Errore sync"); }
+            } catch(e) { document.getElementById('syncStatus').innerText = "Errore ❌"; alert("Errore sync: " + e.message); }
         }
 
         async function performDownload() {
@@ -617,7 +621,7 @@
                 data.songs.forEach(s=>tx.objectStore("songs").put(s));
                 data.setlists.forEach(s=>tx.objectStore("setlists").put(s));
                 tx.oncomplete = () => { document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Ripristinato!"); location.reload(); };
-            } catch(e) { document.getElementById('syncStatus').innerText = "Errore ❌"; alert("Errore download"); }
+            } catch(e) { document.getElementById('syncStatus').innerText = "Errore ❌"; alert("Errore download: " + e.message); }
         }
 
         function showToast(m,time=3000){ const t=document.getElementById('toast');t.innerText=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),time); }
