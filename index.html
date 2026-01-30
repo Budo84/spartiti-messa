@@ -85,6 +85,7 @@
         /* TOAST */
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; }
         #toast.show { opacity: 1; bottom: 90px; }
+        #toast.error { background: #ef4444; }
 
         .d-none { display: none !important; }
     </style>
@@ -123,11 +124,11 @@
                     <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
                         <input type="date" id="messaDate" class="form-control" style="width:auto; margin:0;" onchange="updateSuggestions()">
                         <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.85rem;">⬇️ Scarica Letture</button>
-                        <div style="flex:1; text-align:right;">
-                            <button onclick="saveSetlist()" class="btn-primary">Salva</button>
-                        </div>
                     </div>
-                    <button onclick="startReadingMode()" class="btn-primary" style="background:#2e7d32; width:100%; margin-top:10px;">▶ AVVIA LETTURA</button>
+                    <div style="margin-top:10px; display:flex; justify-content:space-between;">
+                        <button onclick="saveSetlist()" class="btn-primary">Salva Tutto</button>
+                        <button onclick="startReadingMode()" class="btn-primary" style="background:#2e7d32;">▶ AVVIA LETTURA</button>
+                    </div>
                 </div>
             </div>
 
@@ -530,34 +531,76 @@
         }
         function delSet(id) { if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderFullHistory(); }
 
-        // GOOGLE API & SYNC (FIX TOKEN)
+        // GOOGLE API & SYNC (FIXED!)
         let tokenClient; let gapiInited=false; let gisInited=false;
         function saveKeys(){localStorage.setItem('g_api',document.getElementById('apiKey').value);localStorage.setItem('g_client',document.getElementById('clientId').value);showToast("Keys OK");}
+        
         async function initDrive(mode) {
-            const k = document.getElementById('apiKey').value; const c = document.getElementById('clientId').value;
-            if(!k||!c) return alert("Inserisci API Key e Client ID in Opzioni");
-            document.getElementById('editModal').classList.remove('show');
-            if(!gapiInited) await new Promise(r=>gapi.load('client:picker',async()=>{await gapi.client.init({apiKey:k,discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]});gapiInited=true;r()}));
-            if(!gisInited) await new Promise(r=>{tokenClient=google.accounts.oauth2.initTokenClient({client_id:c,scope:mode==='picker'?'https://www.googleapis.com/auth/drive.readonly':'https://www.googleapis.com/auth/drive.file',callback:''});gisInited=true;r()});
+            const k = document.getElementById('apiKey').value; 
+            const c = document.getElementById('clientId').value;
+            if(!k||!c) return showToast("Inserisci API Key e Client ID!", "error");
             
-            tokenClient.callback = async (r) => {
-                if(r.error) { alert("Err Auth: "+r.error); if(mode==='picker') document.getElementById('editModal').classList.add('show'); return; }
-                
-                // --- FIX FONDAMENTALE: SALVA IL TOKEN IN GAPI ---
-                if (r.access_token) gapi.client.setToken(r);
-                // ------------------------------------------------
+            // Hide Modals to prevent overlay issues
+            document.getElementById('editModal').classList.remove('show');
+            document.getElementById('syncModal').classList.remove('show');
 
-                if(mode==='picker') createPicker(r.access_token);
-                else { openSyncModal(); if(mode==='upload') performUpload(); if(mode==='download') performDownload(); }
+            if(!gapiInited) {
+                await new Promise(r => gapi.load('client:picker', async () => {
+                    await gapi.client.init({
+                        apiKey: k,
+                        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]
+                    });
+                    gapiInited = true;
+                    r();
+                }));
+            }
+            
+            if(!gisInited) {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: c,
+                    // Scope completo per leggere e scrivere
+                    scope: 'https://www.googleapis.com/auth/drive.file',
+                    callback: '' // Defined dynamically
+                });
+                gisInited = true;
+            }
+
+            tokenClient.callback = async (resp) => {
+                if (resp.error) {
+                    showToast("Errore Auth: " + resp.error, "error");
+                    // Re-open modal if picker failed
+                    if(mode === 'picker') document.getElementById('editModal').classList.add('show');
+                    return;
+                }
+                
+                // IMPORTANTISSIMO: SETTA IL TOKEN IN GAPI
+                if (gapi.client) gapi.client.setToken(resp);
+
+                if (mode === 'picker') createPicker(resp.access_token);
+                else {
+                    openSyncModal();
+                    if (mode === 'upload') performUpload();
+                    if (mode === 'download') performDownload();
+                }
             };
-            tokenClient.requestAccessToken({prompt:''});
+
+            // Richiedi token se non presente o scaduto
+            if (gapi.client.getToken() === null) {
+                tokenClient.requestAccessToken({prompt: ''});
+            } else {
+                // Token già presente, procedi diretto
+                tokenClient.callback({access_token: gapi.client.getToken().access_token});
+            }
         }
+
         function openSyncModal() { document.getElementById('syncModal').classList.add('show'); }
+        
         function createPicker(t) {
             const k = document.getElementById('apiKey').value;
             const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
             new google.picker.PickerBuilder().setDeveloperKey(k).setOAuthToken(t).addView(view).setCallback(pickerCallback).build().setVisible(true);
         }
+        
         async function pickerCallback(d) {
             if(d.action === google.picker.Action.CANCEL) document.getElementById('editModal').classList.add('show');
             if(d.action === google.picker.Action.PICKED) {
@@ -570,7 +613,7 @@
                     const fr = new FileReader();
                     fr.onload = (e) => { tempFile={data:e.target.result, type:doc.mimeType}; document.getElementById('fileStatus').innerText="Drive OK ✅"; document.getElementById('editModal').classList.add('show'); };
                     fr.readAsDataURL(b);
-                } catch(e) { alert("Err Download"); document.getElementById('editModal').classList.add('show'); }
+                } catch(e) { showToast("Err Download: "+e, "error"); document.getElementById('editModal').classList.add('show'); }
             }
         }
         
@@ -604,7 +647,7 @@
                     });
                 }
                 document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Backup OK!");
-            } catch(e) { document.getElementById('syncStatus').innerText = "Errore ❌"; alert("Errore sync: " + e.message); }
+            } catch(e) { document.getElementById('syncStatus').innerText = "Errore: "+e.message; showToast("Errore Sync", "error"); }
         }
 
         async function performDownload() {
@@ -621,11 +664,22 @@
                 data.songs.forEach(s=>tx.objectStore("songs").put(s));
                 data.setlists.forEach(s=>tx.objectStore("setlists").put(s));
                 tx.oncomplete = () => { document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Ripristinato!"); location.reload(); };
-            } catch(e) { document.getElementById('syncStatus').innerText = "Errore ❌"; alert("Errore download: " + e.message); }
+            } catch(e) { document.getElementById('syncStatus').innerText = "Errore: "+e.message; showToast("Errore Download", "error"); }
         }
 
-        function showToast(m,time=3000){ const t=document.getElementById('toast');t.innerText=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),time); }
+        function showToast(m,type="info"){ 
+            const t=document.getElementById('toast');
+            t.innerText=m;
+            t.style.background = type==='error' ? '#ef4444' : '#333';
+            t.classList.add('show');
+            setTimeout(()=>t.classList.remove('show'),3000); 
+        }
         function exportData(){} function importData(){} 
+        
+        // Funzione helper per aprire backup dal tasto in alto
+        function openSyncModal() {
+            initDrive('sync'); // Inizializza e apre il modal solo se auth ok
+        }
     </script>
 </body>
 </html>
