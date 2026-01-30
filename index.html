@@ -37,9 +37,10 @@
         .card-body { padding: 15px; }
 
         .song-item, .history-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; background: white; }
+        .song-item:last-child, .history-item:last-child { border-bottom: none; }
         .song-item:active { background: #f0f0f0; }
 
-        /* CHIPS (TAGS) */
+        /* CHIPS */
         .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
         .chip-select { padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.85rem; cursor: pointer; user-select: none; }
         .chip-select.selected { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; box-shadow: 0 2px 5px rgba(103, 58, 183, 0.3); }
@@ -48,7 +49,7 @@
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
         textarea.form-control { resize: vertical; min-height: 100px; }
 
-        /* MODAL (OVERLAY) */
+        /* MODAL */
         .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .modal-wrap.show { display: flex; }
         .modal-box { background: var(--white); width: 95%; max-width: 600px; height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
@@ -93,10 +94,8 @@
     <div id="toast">Messaggio</div>
 
     <div class="top-bar no-print">
-        <h1 style="font-size:1.2rem; font-weight:800; color:var(--primary); margin:0;">Spartiti Messa</h1>
-        <div style="display:flex; gap:10px;">
-            <button onclick="openSyncModal()" class="btn-icon" style="color:#2e7d32;" title="Backup Cloud"><span class="material-icons-round">cloud_sync</span></button>
-        </div>
+        <h3 style="font-size:1.2rem; font-weight:800; color:var(--primary); margin:0;">Spartiti Messa</h3>
+        <button onclick="openSyncModal()" class="btn-icon" style="color:#2e7d32;" title="Cloud Backup"><span class="material-icons-round">cloud_sync</span></button>
     </div>
 
     <div class="app-body">
@@ -166,17 +165,17 @@
             <div class="card">
                 <div class="card-header">Google Drive API</div>
                 <div class="card-body">
-                    <p style="font-size:0.85rem; color:#666;">Necessarie per Backup e PDF.</p>
+                    <p style="font-size:0.85rem; color:#666;">Per scaricare i PDF dal tuo Drive.</p>
                     <input type="text" id="apiKey" class="form-control" placeholder="API Key">
                     <input type="text" id="clientId" class="form-control" placeholder="Client ID">
                     <button onclick="saveKeys()" class="btn-primary">Salva Chiavi</button>
                 </div>
             </div>
             <div class="card">
-                <div class="card-header">Backup Locale</div>
+                <div class="card-header">Backup</div>
                 <div class="card-body" style="display:flex; gap:10px;">
-                    <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica File</button>
-                    <button onclick="document.getElementById('impFile').click()" class="btn-outline" style="flex:1;">Carica File</button>
+                    <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica</button>
+                    <button onclick="document.getElementById('impFile').click()" class="btn-outline" style="flex:1;">Carica</button>
                     <input type="file" id="impFile" hidden onchange="importData(this)">
                 </div>
             </div>
@@ -214,7 +213,7 @@
                 <input type="hidden" id="songId">
                 <label>Titolo</label><input type="text" id="songTitle" class="form-control">
                 
-                <label>Parti della Messa (Seleziona più opzioni)</label>
+                <label>Parti della Messa</label>
                 <div class="chips-container" id="catChips"></div>
                 
                 <label>Tempo Liturgico</label>
@@ -242,7 +241,7 @@
         <div class="modal-box" style="height:auto;">
             <div class="card-header"><span>Cloud Backup</span><button onclick="document.getElementById('syncModal').classList.remove('show')" class="btn-icon">×</button></div>
             <div class="modal-scroll" style="text-align:center;">
-                <p>Salva tutti i tuoi dati su Google Drive per non perderli o sincronizzarli tra dispositivi.</p>
+                <p>Salva tutti i tuoi dati su Google Drive per non perderli.</p>
                 <div style="display:grid; gap:10px;">
                     <button onclick="performUpload()" class="btn-primary" style="background:#1976d2;">☁️ CARICA SU CLOUD (Backup)</button>
                     <button onclick="performDownload()" class="btn-outline" style="border-color:#1976d2; color:#1976d2;">⬇️ SCARICA DA CLOUD (Ripristina)</button>
@@ -406,7 +405,7 @@
             };
         }
 
-        // SCALETTA & SMART SUGGESTIONS
+        // SCALETTA & SUGGESTIONS
         function renderScalettaUI() {
             const c = document.getElementById('scalettaContainer'); c.innerHTML = "";
             CATS.forEach(cat => {
@@ -543,7 +542,7 @@
             tokenClient.callback = (r) => {
                 if(r.error) { alert("Err Auth"); if(mode==='picker') document.getElementById('editModal').classList.add('show'); return; }
                 if(mode==='picker') createPicker(r.access_token);
-                else { if(mode==='upload') performUpload(); if(mode==='download') performDownload(); }
+                else { openSyncModal(); if(mode==='upload') performUpload(); if(mode==='download') performDownload(); }
             };
             tokenClient.requestAccessToken({prompt:''});
         }
