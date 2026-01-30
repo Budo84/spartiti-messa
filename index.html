@@ -13,6 +13,13 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://accounts.google.com/gsi/client"></script>
+    
+    <style>
+        /* CSS Extra per i PDF */
+        .pdf-viewer { width: 100%; height: 70vh; border: 1px solid #ccc; border-radius: 8px; }
+        .print-pdf { width: 100%; height: 950px; border: none; } /* Altezza per pagina A4 circa */
+        .download-link { display:block; margin-top:10px; text-align:center; color:var(--primary); text-decoration:none; font-weight:bold; }
+    </style>
 </head>
 <body>
 
@@ -37,16 +44,10 @@
                         <span class="material-icons-round" style="vertical-align:middle">download</span> INSTALLA APP
                     </button>
                 </div>
-                <div id="iosInstallMessage" class="ios-prompt hidden">
-                    <div class="ios-content">
-                        <button onclick="closeIosPrompt()" style="float:right;border:none;background:none;"><span class="material-icons-round">close</span></button>
-                        <p><strong>Installa su iPhone:</strong> Premi Condividi <span class="material-icons-round" style="font-size:16px">ios_share</span> > Aggiungi alla Home <span class="material-icons-round" style="font-size:16px">add_box</span></p>
-                    </div>
-                </div>
-
+                
                 <div class="search-bar-container">
                     <span class="material-icons-round search-icon">search</span>
-                    <input type="text" id="searchInput" placeholder="Cerca titolo o testo..." onkeyup="applyFilters()">
+                    <input type="text" id="searchInput" placeholder="Cerca titolo..." onkeyup="applyFilters()">
                 </div>
                 
                 <div class="filters-row">
@@ -64,7 +65,6 @@
             </header>
 
             <div id="songList" class="song-list-container"></div>
-            
             <button class="fab no-print" onclick="openAddMenu()"><span class="material-icons-round">add</span></button>
         </section>
 
@@ -80,15 +80,12 @@
                         <button onclick="closeViewModal()" class="btn-icon" style="color:#ef4444"><span class="material-icons-round">close</span></button>
                     </div>
                 </div>
-                
-                <div class="modal-body" id="viewSongBody">
-                    </div>
-                
+                <div class="modal-body" id="viewSongBody"></div>
                 <div id="transposerControls" class="modal-footer hidden transposer-bar">
                     <button onclick="transpose(-1)" class="btn-outline compact">b -1</button>
-                    <span id="transposeValue" style="font-weight:bold; min-width:60px; text-align:center;">Originale</span>
+                    <span id="transposeValue" style="font-weight:bold;">Originale</span>
                     <button onclick="transpose(1)" class="btn-outline compact"># +1</button>
-                    <a id="viewYoutubeLink" href="#" target="_blank" class="btn-icon hidden" style="margin-left:auto; color:red; display:flex; align-items:center;">
+                    <a id="viewYoutubeLink" href="#" target="_blank" class="btn-icon hidden" style="margin-left:auto; color:red;">
                         <span class="material-icons-round" style="font-size:28px;">play_circle</span>
                     </a>
                 </div>
@@ -99,17 +96,13 @@
             <div class="modal-card">
                 <div class="modal-header">
                     <div style="display:flex; align-items:center; gap:5px;">
-                        <button id="btnBackFromEdit" onclick="goBackFromAdd()" class="btn-icon hidden">
-                            <span class="material-icons-round">arrow_back</span>
-                        </button>
+                        <button id="btnBackFromEdit" onclick="goBackFromAdd()" class="btn-icon hidden"><span class="material-icons-round">arrow_back</span></button>
                         <h3 id="modalTitle" style="margin:0;">Gestione Canto</h3>
                     </div>
                     <button onclick="closeAddMenu()" class="btn-icon" style="color:#ef4444"><span class="material-icons-round">close</span></button>
                 </div>
-                
                 <div class="modal-body">
                     <input type="text" id="manualTitle" class="input-lg" placeholder="Titolo del Canto">
-                    
                     <div class="row-inputs">
                         <select id="newSongCategory" class="input-std"></select>
                         <select id="newSongSeason" class="input-std">
@@ -120,17 +113,14 @@
                             <option value="Pasqua">Pasqua</option>
                         </select>
                     </div>
-                    
                     <div class="input-icon-wrapper">
                         <span class="material-icons-round">link</span>
-                        <input type="text" id="youtubeLink" class="input-std" placeholder="Link YouTube/Audio (Opzionale)">
+                        <input type="text" id="youtubeLink" class="input-std" placeholder="Link YouTube/Audio">
                     </div>
-
                     <div class="tabs">
                         <button class="tab-btn active" onclick="switchInputTab('file')">File / Foto</button>
                         <button class="tab-btn" onclick="switchInputTab('text')">Testo e Accordi</button>
                     </div>
-
                     <div id="tab-file" class="tab-content">
                         <div class="file-upload-area">
                             <div id="previewContainer" class="preview-box hidden">
@@ -138,7 +128,6 @@
                                 <button class="remove-preview" onclick="clearFileSelection()">×</button>
                             </div>
                             <div id="driveStatus" class="status-msg hidden"></div>
-                            
                             <div class="upload-buttons">
                                 <button id="btnDriveImport" onclick="initGoogleDriveImport()" class="btn-outline">
                                     <span class="material-icons-round">add_to_drive</span> Drive
@@ -150,14 +139,11 @@
                             </div>
                         </div>
                     </div>
-
                     <div id="tab-text" class="tab-content hidden">
                         <textarea id="textContent" class="lyrics-input" placeholder="Incolla qui testo e accordi..."></textarea>
                     </div>
-
                     <input type="hidden" id="editId">
                 </div>
-                
                 <div class="modal-footer">
                     <button onclick="saveSongData()" class="btn-block-primary">SALVA</button>
                 </div>
@@ -167,11 +153,9 @@
         <section id="scaletta" class="view hidden">
             <header class="sticky-header no-print">
                 <div class="header-row">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <button onclick="switchTab('library')" class="btn-icon"><span class="material-icons-round">arrow_back</span></button>
-                        <h1>Messa</h1>
-                    </div>
-                    <button onclick="toggleHistory()" class="btn-text-icon">
+                    <button onclick="switchTab('library')" class="btn-icon no-print"><span class="material-icons-round">arrow_back</span></button>
+                    <h1>Messa</h1>
+                    <button onclick="toggleHistory()" class="btn-text-icon" style="margin-left:auto;">
                         <span class="material-icons-round">history</span> Storico
                     </button>
                 </div>
@@ -218,7 +202,6 @@
                 </div>
                 <div class="setting-card">
                     <h3><span class="material-icons-round">key</span> Chiavi Google</h3>
-                    <p style="font-size:0.85rem; color:#666; margin-top:0;">Necessarie per Drive e Sync.</p>
                     <input type="text" id="gApiKey" class="input-std" placeholder="API Key">
                     <input type="text" id="gClientId" class="input-std" placeholder="Client ID">
                     <button onclick="saveGoogleKeys()" class="btn-outline">Salva Chiavi</button>
@@ -234,7 +217,7 @@
                 <div class="setting-card">
                     <h3><span class="material-icons-round">category</span> Categorie Extra</h3>
                     <div class="input-group-row">
-                        <input type="text" id="newCatInput" class="input-std" placeholder="Es. Adorazione">
+                        <input type="text" id="newCatInput" class="input-std" placeholder="Nuova Categoria">
                         <button onclick="addCustomCategory()" class="btn-primary compact" style="width:auto; padding:0 15px;">Agg.</button>
                     </div>
                     <div id="customCatList" class="tags-container"></div>
@@ -253,29 +236,21 @@
 
     <script>
         // --- 1. CONFIGURAZIONE ---
-        let db; 
-        let tempDriveFile = null; 
-        let activeInputMode = 'file'; 
-        let currentCategoryFilter = 'Tutti'; 
-        let currentViewingId = null;
+        let db; let tempDriveFile = null; let activeInputMode = 'file'; let currentCategoryFilter = 'Tutti'; let currentViewingId = null;
         let isEditingFromView = false;
         let customCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
         const DEFAULT_PARTS = ['Ingresso', 'Gloria', 'Salmo', 'Alleluia', 'Offertorio', 'Santo', 'Comunione', 'Finale'];
         let ALL_CATEGORIES = [...new Set([...DEFAULT_PARTS, ...customCategories, 'Altro'])];
         const SYNC_FILENAME = "spartiti_messa_db_sync.json";
 
-        // Init Database
         const request = indexedDB.open("SpartitiMessaPro", 5);
         request.onupgradeneeded = (e) => {
             db = e.target.result;
-            if(!db.objectStoreNames.contains("songs")) { 
-                const s = db.createObjectStore("songs", {keyPath:"id", autoIncrement:true}); 
-                s.createIndex("category", "category", {unique:false}); 
-            }
+            if(!db.objectStoreNames.contains("songs")) { const s = db.createObjectStore("songs", {keyPath:"id", autoIncrement:true}); s.createIndex("category", "category", {unique:false}); }
             if(!db.objectStoreNames.contains("setlists")) db.createObjectStore("setlists", {keyPath:"id", autoIncrement:true});
         };
         request.onsuccess = (e) => { db = e.target.result; initApp(); };
-        request.onerror = (e) => { alert("Errore Apertura DB: " + e.target.error); };
+        request.onerror = (e) => { alert("Errore DB: " + e.target.error); };
 
         function initApp(){
             loadDarkMode(); renderCategoryChips(); loadLibrary(); buildScalettaUI(); renderCustomCategoriesSettings(); updateCategoryDropdowns();
@@ -283,7 +258,7 @@
             document.getElementById('gClientId').value = localStorage.getItem('g_client') || "";
         }
 
-        // --- 2. SALVATAGGIO (CORRETTO E ROBUSTO) ---
+        // --- 2. SALVATAGGIO ---
         function saveSongData() {
             const id = document.getElementById('editId').value;
             const title = document.getElementById('manualTitle').value.trim();
@@ -293,136 +268,147 @@
             const lyrics = document.getElementById('textContent').value;
             const inp = document.getElementById('fileInput');
 
-            if(!db) return alert("Errore: Il database non è ancora pronto. Ricarica la pagina.");
-            if(!title) return alert("Attenzione: Devi inserire un Titolo.");
+            if(!db) return alert("Errore DB. Ricarica.");
+            if(!title) return alert("Inserisci il Titolo.");
 
             const performSave = (filePayload, fileType) => {
-                const songData = {
-                    title: title, category: cat, season: season, youtubeUrl: yt, date: new Date(),
+                const s = { title, category: cat, season, youtubeUrl: yt, date: new Date(),
                     lyrics: (activeInputMode === 'text') ? lyrics : null,
                     fileData: (activeInputMode === 'file') ? filePayload : null,
                     type: (activeInputMode === 'file') ? fileType : 'text/plain'
                 };
-                if(id) songData.id = Number(id);
-
+                if(id) s.id = Number(id);
                 const tx = db.transaction(["songs"], "readwrite");
-                const store = tx.objectStore("songs");
-                
-                tx.onabort = (e) => { alert("Errore Salvataggio: " + (e.target.error ? e.target.error.message : "Transazione annullata. Probabile file troppo grande (>15MB).")); };
-                tx.onerror = (e) => { alert("Errore Database: " + e.target.error); };
-
-                const req = store.put(songData);
-                req.onsuccess = () => {
-                    closeAddMenu();
-                    loadLibrary();
-                    if(isEditingFromView && id) openViewModal(Number(id));
-                };
+                tx.onabort = (e) => alert("Errore: File troppo grande (>15MB) o errore DB.");
+                tx.objectStore("songs").put(s).onsuccess = () => { closeAddMenu(); loadLibrary(); if(isEditingFromView && id) openViewModal(Number(id)); };
             };
 
             if(activeInputMode === 'file') {
-                if(tempDriveFile) { performSave(tempDriveFile.data, tempDriveFile.type); } 
+                if(tempDriveFile) performSave(tempDriveFile.data, tempDriveFile.type);
                 else if(inp.files.length > 0) {
-                    const file = inp.files[0];
-                    if(file.size > 15000000) return alert("File troppo grande! Il limite è circa 15MB.");
+                    const f = inp.files[0];
+                    if(f.size > 15000000) return alert("File > 15MB. Riduci dimensioni.");
                     const r = new FileReader();
-                    r.onload = (e) => performSave(e.target.result, file.type);
-                    r.onerror = () => alert("Errore lettura file locale.");
-                    r.readAsDataURL(file);
-                } 
-                else if(id) {
-                    const tx = db.transaction(["songs"], "readonly");
-                    tx.objectStore("songs").get(Number(id)).onsuccess = (e) => {
-                        const oldSong = e.target.result;
-                        if(oldSong && oldSong.fileData) performSave(oldSong.fileData, oldSong.type);
-                        else performSave(null, 'text/plain');
+                    r.onload = (e) => performSave(e.target.result, f.type);
+                    r.readAsDataURL(f);
+                } else if(id) {
+                    db.transaction(["songs"]).objectStore("songs").get(Number(id)).onsuccess = (e) => {
+                        const old = e.target.result;
+                        if(old && old.fileData) performSave(old.fileData, old.type); else performSave(null,'text/plain');
                     };
-                } 
-                else { performSave(null, 'text/plain'); }
-            } else { performSave(null, 'text/plain'); }
+                } else performSave(null, 'text/plain');
+            } else performSave(null, 'text/plain');
         }
 
-        // --- 3. GOOGLE DRIVE (NAVIGAZIONE CARTELLE) ---
+        // --- 3. GOOGLE DRIVE ---
         let tokenClient; let gapiInited = false; let gisInited = false;
+        function getKeys() { return { k: localStorage.getItem('g_api')||document.getElementById('gApiKey').value, c: localStorage.getItem('g_client')||document.getElementById('gClientId').value }; }
+        function saveGoogleKeys(){ const {k,c}=getKeys(); if(k&&c){ localStorage.setItem('g_api',k); localStorage.setItem('g_client',c); alert("Salvate!"); } else alert("Inserisci tutto."); }
 
-        function getKeys() {
-            const k = localStorage.getItem('g_api') || document.getElementById('gApiKey').value;
-            const c = localStorage.getItem('g_client') || document.getElementById('gClientId').value;
-            return { k, c };
-        }
-        function saveGoogleKeys(){
-            const k = document.getElementById('gApiKey').value.trim();
-            const c = document.getElementById('gClientId').value.trim();
-            if(k && c) { localStorage.setItem('g_api', k); localStorage.setItem('g_client', c); alert("Chiavi salvate!"); } 
-            else alert("Inserisci entrambe le chiavi.");
-        }
-
-        async function ensureGoogleReady(btnElement = null) {
-            const { k, c } = getKeys();
-            if(!k || !c) { alert("Chiavi Google mancanti! Vai in 'Opzioni'."); switchTab('settings'); return false; }
-            let originalText = "";
-            if(btnElement) { originalText = btnElement.innerHTML; btnElement.innerText = "Connessione..."; btnElement.disabled = true; }
-
+        async function ensureGoogleReady(btn=null) {
+            const {k,c}=getKeys(); if(!k||!c){ alert("Mancano chiavi API."); switchTab('settings'); return false; }
+            let oldText=""; if(btn){ oldText=btn.innerHTML; btn.innerText="Connessione..."; btn.disabled=true; }
             try {
-                if(!gapiInited) { await new Promise((r, j) => { gapi.load('client:picker', async () => { try{await gapi.client.init({apiKey:k, discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]}); gapiInited=true; r();}catch(e){j(e);} }); }); }
-                if(!gisInited) { await new Promise((r, j) => { try{tokenClient = google.accounts.oauth2.initTokenClient({client_id:c, scope:'https://www.googleapis.com/auth/drive.file', callback:''}); gisInited=true; r();}catch(e){j(e);} }); }
+                if(!gapiInited){ await new Promise((r,j)=>{ gapi.load('client:picker', async()=>{ try{ await gapi.client.init({apiKey:k, discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]}); gapiInited=true; r(); }catch(e){j(e);} }); }); }
+                if(!gisInited){ await new Promise((r,j)=>{ try{ tokenClient=google.accounts.oauth2.initTokenClient({client_id:c, scope:'https://www.googleapis.com/auth/drive.file', callback:''}); gisInited=true; r(); }catch(e){j(e);} }); }
                 return true;
-            } catch (err) { alert("Errore Google: "+err); return false; } 
-            finally { if(btnElement) { btnElement.innerHTML = originalText; btnElement.disabled = false; } }
+            } catch(e){ alert("Errore Google: "+e); return false; } finally { if(btn){ btn.innerHTML=oldText; btn.disabled=false; } }
         }
 
         function initGoogleDriveImport() {
             const btn = document.getElementById('btnDriveImport');
             ensureGoogleReady(btn).then(ready => {
                 if(ready) {
-                    tokenClient.callback = (resp) => { if (resp.error) return alert("Errore: "+resp.error); createPicker(resp.access_token); };
+                    tokenClient.callback = (r) => { if(r.error) alert("Err: "+r.error); else createPicker(r.access_token); };
                     tokenClient.requestAccessToken({prompt: ''});
                 }
             });
         }
-
         function createPicker(token) {
             try {
-                const { k } = getKeys();
-                const view = new google.picker.DocsView(google.picker.ViewId.DOCS)
-                    .setIncludeFolders(true) 
-                    .setMimeTypes("image/png,image/jpeg,application/pdf,application/vnd.google-apps.folder");
-
-                const picker = new google.picker.PickerBuilder()
-                    .setDeveloperKey(k)
-                    .setOAuthToken(token)
-                    .addView(view)
-                    .setCallback(pickerCallback)
-                    .setTitle("Seleziona Spartito")
-                    .build();
-                picker.setVisible(true);
-            } catch (e) { alert("Errore Picker: " + e.message); }
+                const {k}=getKeys();
+                const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("image/png,image/jpeg,application/pdf,application/vnd.google-apps.folder");
+                new google.picker.PickerBuilder().setDeveloperKey(k).setOAuthToken(token).addView(view).setCallback(pickerCallback).setTitle("Seleziona File").build().setVisible(true);
+            } catch(e){ alert(e); }
         }
-
         async function pickerCallback(d) {
             if (d.action === google.picker.Action.PICKED) {
                 const doc = d.docs[0];
-                if(doc.mimeType === 'application/vnd.google-apps.folder') return; 
-
+                if(doc.mimeType === 'application/vnd.google-apps.folder') return;
                 let n = doc.name; if(n.includes('.')) n = n.substring(0, n.lastIndexOf('.'));
                 document.getElementById('manualTitle').value = n;
-                const st = document.getElementById('driveStatus'); st.classList.remove('hidden'); st.innerText = "Scaricamento...";
-                
-                if(doc.mimeType.startsWith('image')) {
-                    try {
-                        const r = await gapi.client.drive.files.get({fileId: doc.id, alt: 'media'});
-                        const b = new Blob([r.body], {type: doc.mimeType});
-                        showPreview(URL.createObjectURL(b));
-                        const fr = new FileReader(); fr.onload = (e) => { tempDriveFile = {data: e.target.result, type: doc.mimeType}; st.innerText = "Immagine Pronta ✅"; }; fr.readAsDataURL(b);
-                    } catch(e) { tempDriveFile = {data: null, type: 'text'}; st.innerText = "Solo Link"; hidePreview(); }
-                } else { tempDriveFile = {data: null, type: doc.mimeType}; st.innerText = "PDF Collegato ✅"; hidePreview(); }
+                const st = document.getElementById('driveStatus'); st.classList.remove('hidden'); st.innerText = "Download...";
+                try {
+                    const r = await gapi.client.drive.files.get({fileId: doc.id, alt: 'media'});
+                    const b = new Blob([r.body], {type: doc.mimeType});
+                    const fr = new FileReader();
+                    fr.onload = (e) => { tempDriveFile = {data: e.target.result, type: doc.mimeType}; st.innerText = (doc.mimeType.includes('pdf')?"PDF":"Img") + " Pronto ✅"; };
+                    fr.readAsDataURL(b);
+                } catch(e) { st.innerText = "Errore download"; alert("Impossibile scaricare: "+e); }
             }
         }
 
-        // --- 4. FUNZIONI UI & ALTRO ---
+        // --- 4. VIEW & PRINT (PDF FIX) ---
+        function renderContent(data, type) {
+            if (!data) return "<p>Nessun contenuto.</p>";
+            if (type === 'application/pdf') {
+                return `<embed src="${data}" type="application/pdf" class="pdf-viewer">
+                        <a href="${data}" target="_blank" class="download-link no-print">Apri PDF a schermo intero</a>`;
+            } else if (type.startsWith('image')) {
+                return `<img src="${data}" style="max-width:100%; height:auto;">`;
+            }
+            return "<p>Formato non supportato.</p>";
+        }
+
+        function openViewModal(id) {
+            currentViewingId = id; document.getElementById('transposeValue').innerText = "Originale";
+            db.transaction(["songs"]).objectStore("songs").get(id).onsuccess = (e) => {
+                const s = e.target.result; if(!s) return;
+                document.getElementById('viewSongTitle').innerText = s.title;
+                const body = document.getElementById('viewSongBody');
+                const controls = document.getElementById('transposerControls');
+                const ytBtn = document.getElementById('viewYoutubeLink');
+                
+                if(s.youtubeUrl) { ytBtn.href=s.youtubeUrl; ytBtn.classList.remove('hidden'); } else ytBtn.classList.add('hidden');
+
+                if(s.lyrics) {
+                    currentSongText = s.lyrics; body.innerHTML = `<div class="lyrics-box"><pre>${s.lyrics}</pre></div>`;
+                    controls.classList.remove('hidden');
+                } else {
+                    body.innerHTML = renderContent(s.fileData, s.type || 'text/plain');
+                    controls.classList.add('hidden');
+                }
+                document.getElementById('viewSongModal').classList.remove('hidden');
+            };
+        }
+
+        function renderScores(){
+            const c = document.getElementById('scoresContainer'); c.innerHTML = "";
+            document.querySelectorAll('.song-selector').forEach(sel => {
+                if(!sel.value) return;
+                const part = sel.closest('.slot-container').dataset.part;
+                db.transaction(["songs"]).objectStore("songs").get(Number(sel.value)).onsuccess = (e) => {
+                    const s = e.target.result; if(!s) return;
+                    const p = document.createElement('div'); p.className = 'score-page';
+                    let cnt = "";
+                    if(s.lyrics) cnt = `<div class="lyrics-box"><pre>${s.lyrics}</pre></div>`;
+                    else if(s.type === 'application/pdf') cnt = `<embed src="${s.fileData}" type="application/pdf" class="print-pdf">`;
+                    else if(s.fileData) cnt = `<img src="${s.fileData}" style="max-width:100%">`;
+                    p.innerHTML = `<h3>${part}: ${s.title}</h3>${cnt}`;
+                    c.appendChild(p);
+                }
+            });
+        }
+
+        // --- ALTRE FUNZIONI ---
         function switchTab(id){ document.querySelectorAll('.view').forEach(v=>v.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); document.getElementById('btn-'+id).classList.add('active'); if(id==='library')loadLibrary(); }
         function switchInputTab(mode){ activeInputMode=mode; document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); event.target.classList.add('active'); document.getElementById('tab-file').className = mode==='file'?'tab-content':'tab-content hidden'; document.getElementById('tab-text').className = mode==='text'?'tab-content':'tab-content hidden'; }
-        function handleLocalFile(i){if(i.files[0]){const f=i.files[0];showPreview(URL.createObjectURL(f));const n=f.name;document.getElementById('manualTitle').value=n.substring(0,n.lastIndexOf('.'))||n;tempDriveFile=null;document.getElementById('driveStatus').classList.add('hidden');}}
-        function showPreview(u){document.getElementById('previewImg').src=u;document.getElementById('previewContainer').classList.remove('hidden');}
+        function handleLocalFile(i){if(i.files[0]){const f=i.files[0];const r=new FileReader(); r.onload=e=>{ showPreview(e.target.result, f.type); }; r.readAsDataURL(f); const n=f.name;document.getElementById('manualTitle').value=n.substring(0,n.lastIndexOf('.'))||n;tempDriveFile=null;document.getElementById('driveStatus').classList.add('hidden');}}
+        function showPreview(u, type){ 
+            const prev = document.getElementById('previewImg'); 
+            if(type && type.includes('pdf')) { prev.src=""; prev.alt="PDF Selezionato"; } else { prev.src=u; }
+            document.getElementById('previewContainer').classList.remove('hidden'); 
+        }
         function clearFileSelection(){document.getElementById('previewContainer').classList.add('hidden');document.getElementById('fileInput').value="";tempDriveFile=null;document.getElementById('driveStatus').classList.add('hidden');}
         
         function openAddMenu(editId = null) { 
@@ -431,7 +417,6 @@
             document.getElementById('modalTitle').innerText = editId ? "Modifica Canto" : "Nuovo Canto";
             const btnBack = document.getElementById('btnBackFromEdit');
             if(isEditingFromView && editId) btnBack.classList.remove('hidden'); else btnBack.classList.add('hidden');
-
             if(editId){
                 db.transaction(["songs"]).objectStore("songs").get(editId).onsuccess = (e) => { 
                     const s = e.target.result;
@@ -440,38 +425,24 @@
                     document.getElementById('newSongSeason').value = s.season || "Ordinario";
                     document.getElementById('youtubeLink').value = s.youtubeUrl || "";
                     if(s.lyrics){ switchInputTab('text'); document.getElementById('textContent').value = s.lyrics; } 
-                    else { switchInputTab('file'); if(s.fileData && s.type.startsWith('image')) showPreview(s.fileData); }
+                    else { switchInputTab('file'); if(s.fileData && s.type && s.type.startsWith('image')) document.getElementById('previewImg').src = s.fileData; document.getElementById('previewContainer').classList.remove('hidden'); }
                 };
             } else { document.getElementById('manualTitle').value = ""; document.getElementById('textContent').value = ""; document.getElementById('youtubeLink').value = ""; clearFileSelection(); switchInputTab('file'); }
         }
         function closeAddMenu(){ document.getElementById('addMenu').classList.add('hidden'); isEditingFromView = false; }
         function goBackFromAdd() { closeAddMenu(); if(currentViewingId) openViewModal(currentViewingId); }
-
-        function editCurrentSong(){ isEditingFromView = true; closeViewModal(); openAddMenu(currentViewingId); }
-        function openViewModal(id) {
-            currentViewingId = id; document.getElementById('transposeValue').innerText = "Originale";
-            db.transaction(["songs"]).objectStore("songs").get(id).onsuccess = (e) => {
-                const s = e.target.result; if(!s) return;
-                document.getElementById('viewSongTitle').innerText = s.title; const body = document.getElementById('viewSongBody'); const controls = document.getElementById('transposerControls'); const ytBtn = document.getElementById('viewYoutubeLink');
-                if(s.youtubeUrl) { ytBtn.href = s.youtubeUrl; ytBtn.classList.remove('hidden'); } else ytBtn.classList.add('hidden');
-                if(s.lyrics) { currentSongText = s.lyrics; body.innerHTML = `<div class="lyrics-box"><pre>${s.lyrics}</pre></div>`; controls.classList.remove('hidden'); }
-                else if (s.fileData) { body.innerHTML = `<img src="${s.fileData}" style="max-width:100%; height:auto;">`; controls.classList.add('hidden'); }
-                else { body.innerHTML = "<p>Nessun contenuto.</p>"; controls.classList.add('hidden'); }
-                document.getElementById('viewSongModal').classList.remove('hidden');
-            };
-        }
         function closeViewModal(){ document.getElementById('viewSongModal').classList.add('hidden'); }
+        function editCurrentSong(){ isEditingFromView = true; closeViewModal(); openAddMenu(currentViewingId); }
 
-        // Logic Standard
         function filterCategory(c) { currentCategoryFilter = c; document.querySelectorAll('.chip').forEach(el => el.classList.remove('active')); const chip = document.querySelector(`.chip[data-cat="${c}"]`); if(chip) chip.classList.add('active'); applyFilters(); }
         function applyFilters() {
             const seas = document.getElementById('filterSeason').value; const search = document.getElementById('searchInput').value.toLowerCase(); const list = document.getElementById('songList'); list.innerHTML = "";
-            db.transaction(["songs"],"readonly").objectStore("songs").openCursor().onsuccess = (e) => {
+            db.transaction(["songs"]).objectStore("songs").openCursor().onsuccess = (e) => {
                 const c = e.target.result;
                 if(c) { const s = c.value;
                     if((currentCategoryFilter === 'Tutti' || s.category === currentCategoryFilter) && (seas === 'Tutti' || s.season === seas) && s.title.toLowerCase().includes(search)) {
                         const d = document.createElement('div'); d.className = 'song-card';
-                        const ico = s.lyrics ? 'text_fields' : (s.fileData ? 'image' : 'link');
+                        const ico = s.lyrics ? 'text_fields' : (s.type === 'application/pdf' ? 'picture_as_pdf' : 'image');
                         d.innerHTML = `<div class="card-left" onclick="openViewModal(${s.id})"><div class="card-icon"><span class="material-icons-round">${ico}</span></div><div><div class="card-title">${s.title}</div><div class="card-meta">${s.category} • ${s.season || 'Ord.'}</div></div></div><button onclick="deleteSong(${s.id})" class="btn-icon-del"><span class="material-icons-round">delete</span></button>`;
                         list.appendChild(d);
                     } c.continue();
@@ -497,52 +468,26 @@
             });
         }
 
-        async function syncToCloud() {
-            const btn = document.getElementById('btnSyncUp'); const ready = await ensureGoogleReady(btn); if(!ready) return;
-            tokenClient.callback = async (resp) => { if (resp.error) return alert("Errore Auth"); await performUpload(); };
-            tokenClient.requestAccessToken({prompt: ''});
-        }
+        async function syncToCloud() { const btn = document.getElementById('btnSyncUp'); const ready = await ensureGoogleReady(btn); if(!ready) return; tokenClient.callback = async (resp) => { if (resp.error) return alert("Errore Auth"); await performUpload(); }; tokenClient.requestAccessToken({prompt: ''}); }
         async function performUpload() {
-            updateSyncStatus("Preparazione...", false);
-            const exp={songs:[],setlists:[],customCategories:customCategories};
-            const tx=db.transaction(["songs","setlists"],"readonly");
-            exp.songs = await new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result));
-            exp.setlists = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result));
+            updateSyncStatus("Preparazione...", false); const exp={songs:[],setlists:[],customCategories:customCategories}; const tx=db.transaction(["songs","setlists"],"readonly");
+            exp.songs = await new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)); exp.setlists = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result));
             const fileContent = JSON.stringify(exp); const metadata = {'name': SYNC_FILENAME, 'mimeType': 'application/json'};
             try {
-                updateSyncStatus("Connessione Drive...", false);
-                const q = `name = '${SYNC_FILENAME}' and trashed = false`;
-                const search = await gapi.client.drive.files.list({q:q, fields:'files(id)'});
-                const files = search.result.files;
-                if(files && files.length > 0) {
-                    await fetch('https://www.googleapis.com/upload/drive/v3/files/'+files[0].id+'?uploadType=media', {method:'PATCH', headers:{Authorization:'Bearer '+gapi.client.getToken().access_token, 'Content-Type':'application/json'}, body:fileContent});
-                } else {
-                    const form = new FormData(); form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'})); form.append('file', new Blob([fileContent], {type:'application/json'}));
-                    await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {method:'POST', headers:{Authorization:'Bearer '+gapi.client.getToken().access_token}, body:form});
-                }
-                updateSyncStatus("Sync Completato! ✅", true);
+                updateSyncStatus("Connessione...", false); const q = `name = '${SYNC_FILENAME}' and trashed = false`; const search = await gapi.client.drive.files.list({q:q, fields:'files(id)'}); const files = search.result.files;
+                if(files && files.length > 0) { await fetch('https://www.googleapis.com/upload/drive/v3/files/'+files[0].id+'?uploadType=media', {method:'PATCH', headers:{Authorization:'Bearer '+gapi.client.getToken().access_token, 'Content-Type':'application/json'}, body:fileContent}); } 
+                else { const form = new FormData(); form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'})); form.append('file', new Blob([fileContent], {type:'application/json'})); await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {method:'POST', headers:{Authorization:'Bearer '+gapi.client.getToken().access_token}, body:form}); }
+                updateSyncStatus("Sync OK! ✅", true);
             } catch(e){ updateSyncStatus("Errore: "+e.message, true); }
         }
-        async function syncFromCloud() {
-            if(!confirm("Sovrascrivere dati locali?")) return;
-            const btn = document.getElementById('btnSyncDown'); const ready = await ensureGoogleReady(btn); if(!ready) return;
-            tokenClient.callback = async (resp) => { if (resp.error) return alert("Errore Auth"); await performDownload(); };
-            tokenClient.requestAccessToken({prompt: ''});
-        }
+        async function syncFromCloud() { if(!confirm("Sovrascrivere dati locali?")) return; const btn = document.getElementById('btnSyncDown'); const ready = await ensureGoogleReady(btn); if(!ready) return; tokenClient.callback = async (resp) => { if (resp.error) return alert("Errore Auth"); await performDownload(); }; tokenClient.requestAccessToken({prompt: ''}); }
         async function performDownload(){
             try {
-                updateSyncStatus("Ricerca...", false);
-                const q = `name = '${SYNC_FILENAME}' and trashed = false`;
-                const search = await gapi.client.drive.files.list({q:q, fields:'files(id)'});
-                if(!search.result.files.length) return updateSyncStatus("Nessun backup trovato.", true);
-                updateSyncStatus("Download...", false);
-                const res = await gapi.client.drive.files.get({fileId:search.result.files[0].id, alt:'media'});
-                const data = res.result;
-                const tx = db.transaction(["songs","setlists"],"readwrite");
-                await new Promise(r=>tx.objectStore("songs").clear().onsuccess=r);
-                await new Promise(r=>tx.objectStore("setlists").clear().onsuccess=r);
-                if(data.songs) data.songs.forEach(s=>tx.objectStore("songs").put(s));
-                if(data.setlists) data.setlists.forEach(s=>tx.objectStore("setlists").put(s));
+                updateSyncStatus("Ricerca...", false); const q = `name = '${SYNC_FILENAME}' and trashed = false`; const search = await gapi.client.drive.files.list({q:q, fields:'files(id)'});
+                if(!search.result.files.length) return updateSyncStatus("Nessun backup.", true);
+                updateSyncStatus("Download...", false); const res = await gapi.client.drive.files.get({fileId:search.result.files[0].id, alt:'media'}); const data = res.result;
+                const tx = db.transaction(["songs","setlists"],"readwrite"); await new Promise(r=>tx.objectStore("songs").clear().onsuccess=r); await new Promise(r=>tx.objectStore("setlists").clear().onsuccess=r);
+                if(data.songs) data.songs.forEach(s=>tx.objectStore("songs").put(s)); if(data.setlists) data.setlists.forEach(s=>tx.objectStore("setlists").put(s));
                 if(data.customCategories) { localStorage.setItem('customCategories', JSON.stringify(data.customCategories)); customCategories = data.customCategories; ALL_CATEGORIES = [...new Set([...DEFAULT_PARTS, ...customCategories, 'Altro'])]; renderCategoryChips(); updateCategoryDropdowns(); renderCustomCategoriesSettings(); }
                 tx.oncomplete = () => { updateSyncStatus("Ripristinato! ✅", true); loadLibrary(); };
             } catch(e){ updateSyncStatus("Errore: "+e.message, true); }
@@ -556,7 +501,6 @@
         function populateAllSelectors(){ document.querySelectorAll('.song-selector').forEach(s => populateSingleSelect(s)); }
         function updatePrintText(s){ s.nextElementSibling.innerText = s.value ? s.options[s.selectedIndex].text : ""; if(document.getElementById('printScoresCheck').checked) renderScores(); }
         function toggleScoresMode(){ const c = document.getElementById('scoresContainer'); if(document.getElementById('printScoresCheck').checked) { c.classList.remove('hidden'); renderScores(); } else { c.classList.add('hidden'); } }
-        function renderScores(){ const c = document.getElementById('scoresContainer'); c.innerHTML = ""; document.querySelectorAll('.song-selector').forEach(sel => { if(!sel.value) return; const part = sel.closest('.slot-container').dataset.part; db.transaction(["songs"],"readonly").objectStore("songs").get(Number(sel.value)).onsuccess = (e) => { const s = e.target.result; if(!s) return; const p = document.createElement('div'); p.className = 'score-page'; let cnt = ""; if(s.lyrics) cnt = `<div class="lyrics-box"><pre>${s.lyrics}</pre></div>`; else if(s.fileData) cnt = `<img src="${s.fileData}">`; else cnt = `<p class="no-print">Nessun contenuto.</p>`; p.innerHTML = `<h3>${part}: ${s.title}</h3>${cnt}`; c.appendChild(p); } }); }
         function prepareAndPrint(){ if(document.getElementById('printScoresCheck').checked) { renderScores(); setTimeout(()=>window.print(), 500); } else window.print(); }
         function saveSetlist(){ const t = document.getElementById('messaTitle').innerText; const d = document.getElementById('messaDate').innerText; const sel = {}; document.querySelectorAll('.slot-container').forEach(sl => { const p = sl.dataset.part; const ids = []; sl.querySelectorAll('select').forEach(s => { if(s.value) ids.push(s.value) }); sel[p] = ids; }); db.transaction(["setlists"],"readwrite").objectStore("setlists").add({title:t, dateStr:d, selections:sel}).oncomplete = () => alert("Salvata!"); }
         function toggleHistory(){ const p = document.getElementById('historyPanel'); const l = document.getElementById('historyList'); if(p.classList.contains('hidden')){ p.classList.remove('hidden'); l.innerHTML = ""; const tx=db.transaction(["setlists"],"readonly").objectStore("setlists"); tx.openCursor(null,'prev').onsuccess = (e) => { const c = e.target.result; if(c) { const x = c.value; const d = document.createElement('div'); d.className = 'history-item'; d.innerHTML = `<div><strong>${x.title}</strong><br><small>${x.dateStr}</small></div><div><button onclick="loadSetlist(${x.id})">Carica</button> <button onclick="deleteSetlist(${x.id})" style="color:red">×</button></div>`; l.appendChild(d); c.continue(); } }; } else p.classList.add('hidden'); }
