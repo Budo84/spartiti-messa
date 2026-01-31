@@ -12,8 +12,8 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="https://apis.google.com/js/api.js" async defer onload="this.onload=function(){};gapiLoaded()"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer onload="this.onload=function(){};gisLoaded()"></script>
     
     <style>
         /* --- CORE CSS --- */
@@ -27,11 +27,11 @@
         .view-section.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* HEADER & NAV */
+        /* TOP BAR */
         .top-bar { background: var(--white); padding: 10px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 100; height: 60px; }
-        .hamburger-icon { display: none; font-size: 28px; cursor: pointer; color: var(--primary); margin-right: 15px; }
+        .hamburger { display: none; font-size: 28px; cursor: pointer; color: var(--primary); margin-right: 15px; }
 
-        /* SIDEBAR (MOBILE ONLY) */
+        /* SIDEBAR (Mobile) */
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: none; opacity: 0; transition: 0.3s; }
         .sidebar-overlay.active { display: block; opacity: 1; }
         .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100%; background: white; z-index: 2001; transform: translateX(-100%); transition: 0.3s; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.2); }
@@ -47,13 +47,12 @@
         .nav-btn.active { color: var(--primary); }
         .nav-btn span { font-size: 26px; margin-bottom: 2px; }
 
-        /* CARDS & LISTS */
+        /* CARDS */
         .card { background: var(--white); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid var(--border); overflow: hidden; }
         .card-header { background: #f9fafb; padding: 10px 15px; border-bottom: 1px solid var(--border); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .card-body { padding: 15px; }
 
         .song-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; background: white; }
-        .song-item:last-child { border-bottom: none; }
         .song-item:active { background: #f0f0f0; }
 
         /* UI ELEMENTS */
@@ -67,16 +66,26 @@
         
         .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
         textarea.form-control { resize: vertical; min-height: 100px; }
-
         .btn { padding: 10px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; justify-content: center; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: transparent; border: 1px solid #ccc; color: #555; }
         .btn-icon { background: none; border: none; font-size: 1.4rem; padding: 5px; cursor: pointer; color: #555; }
 
+        /* RESPONSIVE GRID */
         .workspace { display: grid; gap: 20px; grid-template-columns: 1fr; }
         @media(min-width: 900px) { .workspace { grid-template-columns: 1fr 1fr; } }
 
-        /* MODAL (PC: Largo | Mobile: Full) */
+        /* RESPONSIVE SWITCH (MOBILE VS PC) */
+        @media (max-width: 899px) {
+            .nav-bar { display: none !important; }
+            .hamburger { display: block !important; }
+            .modal-box { width: 100% !important; height: 100% !important; border-radius: 0 !important; max-height: 100% !important; }
+        }
+        @media (min-width: 900px) {
+            .sidebar, .hamburger { display: none !important; }
+        }
+
+        /* MODAL */
         .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .modal-wrap.show { display: flex; }
         .modal-box { background: var(--white); width: 95%; max-width: 800px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
@@ -84,7 +93,7 @@
         .modal-scroll { flex: 1; overflow-y: auto; padding: 20px; }
         .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; display: flex; justify-content: flex-end; gap: 10px; }
 
-        /* READING MODE */
+        /* READING MODE & PRINT */
         #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
         #readingContainer.active { display: flex; }
         .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
@@ -92,29 +101,15 @@
         .score-seq-item { margin-bottom: 40px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); page-break-inside: avoid; }
         .pdf-frame { width: 100%; height: 80vh; border: none; background: #eee; }
 
-        /* --- MOBILE SPECIFIC FIXES --- */
-        @media (max-width: 768px) {
-            .nav-bar { display: none !important; } /* Nascondi barra in basso su mobile */
-            .hamburger-icon { display: block !important; } /* Mostra panino su mobile */
-            .app-body { padding-bottom: 20px; }
-            .modal-box { width: 100%; height: 100%; border-radius: 0; max-height: 100%; } /* Finestre full screen su mobile */
-        }
-        @media (min-width: 769px) {
-            .hamburger-icon { display: none !important; } /* Nascondi panino su PC */
-            .sidebar { display: none !important; } /* Nascondi sidebar su PC */
-        }
-
-        /* TOAST */
+        .d-none { display: none !important; }
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; }
         #toast.show { opacity: 1; bottom: 90px; }
-        #toast.error { background: #ef4444; }
+        #toast.error { background: #d32f2f; }
 
-        .d-none { display: none !important; }
         @media print {
             .no-print, .nav-bar, .top-bar { display: none !important; }
             #readingContainer { position: static; display: block; height: auto; }
             .reading-content { overflow: visible; padding: 0; }
-            /* Filtri dinamici */
             body.print-text-only .score-seq-item img, body.print-text-only .score-seq-item iframe { display: none; }
             body.print-music-only #readWordArea { display: none; }
             body.print-readings-only #readMusicArea { display: none; }
@@ -143,14 +138,13 @@
 
     <div class="top-bar no-print">
         <div style="display:flex; align-items:center;">
-            <span class="material-icons-round hamburger-icon" onclick="toggleSidebar()">menu</span>
+            <span class="material-icons-round hamburger" onclick="toggleSidebar()">menu</span>
             <h3 style="margin:0; font-size:1.2rem;">Spartiti Messa Pro</h3>
         </div>
         <button onclick="driveAction('sync')" class="btn-icon" style="color:#2e7d32;" title="Cloud"><span class="material-icons-round">cloud_sync</span></button>
     </div>
 
     <div class="app-body">
-        
         <div id="view-library" class="view-section active">
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <input type="text" id="searchInput" class="form-control" placeholder="Cerca..." onkeyup="renderLibrary()" style="margin:0;">
@@ -159,8 +153,11 @@
             <div class="chips-scroll">
                 <div class="chip selected" onclick="filterLib('Tutti', this)">Tutti</div>
                 <div class="chip" onclick="filterLib('Ingresso', this)">Ingresso</div>
+                <div class="chip" onclick="filterLib('Gloria', this)">Gloria</div>
                 <div class="chip" onclick="filterLib('Salmo', this)">Salmo</div>
+                <div class="chip" onclick="filterLib('Alleluia', this)">Alleluia</div>
                 <div class="chip" onclick="filterLib('Offertorio', this)">Offertorio</div>
+                <div class="chip" onclick="filterLib('Santo', this)">Santo</div>
                 <div class="chip" onclick="filterLib('Comunione', this)">Comunione</div>
                 <div class="chip" onclick="filterLib('Finale', this)">Finale</div>
             </div>
@@ -181,7 +178,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="workspace">
                 <div class="card">
                     <div class="card-header">
@@ -206,7 +202,6 @@
         </div>
 
         <div id="view-history" class="view-section">
-            <h2 style="color:var(--primary);">Le mie Messe</h2>
             <div id="fullHistoryList" class="card" style="border:none; background:transparent; box-shadow:none;"></div>
         </div>
 
@@ -222,7 +217,7 @@
             <div class="card">
                 <div class="card-header">Backup & Ripristino</div>
                 <div class="card-body" style="text-align:center;">
-                    <div style="display:flex; gap:10px; justify-content:center;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                         <button onclick="driveAction('upload')" class="btn-primary">Carica Drive</button>
                         <button onclick="driveAction('download')" class="btn-outline">Scarica Drive</button>
                     </div>
@@ -344,7 +339,6 @@
     </div>
 
     <script>
-        // GLOBAL CONFIG
         let db; let tempFilesList=[]; let currentSongId=null; let driveTempMeta=null;
         let tokenClient; let gapiInited=false; let gisInited=false;
         const CATS = ["Ingresso", "Gloria", "Salmo", "Alleluia", "Offertorio", "Santo", "Comunione", "Finale", "Altro"];
@@ -352,7 +346,6 @@
         const SYNC_FILE_NAME = "spartiti_db_master.json";
         let filterCatVar = 'Tutti';
 
-        // GOOGLE INIT
         function gapiLoaded() {
             gapi.load('client:picker', async () => {
                 const k = localStorage.getItem('g_api');
@@ -373,8 +366,7 @@
 
         window.onload = () => {
             document.getElementById('messaDate').valueAsDate = new Date();
-            const k = localStorage.getItem('g_api');
-            const c = localStorage.getItem('g_client');
+            const k = localStorage.getItem('g_api'); const c = localStorage.getItem('g_client');
             if(k) document.getElementById('apiKey').value = k;
             if(c) document.getElementById('clientId').value = c;
             
@@ -388,15 +380,10 @@
             };
             r.onsuccess = (e) => { 
                 db=e.target.result; renderLibrary(); renderScalettaUI(); renderFullHistory(); renderModalChips();
-                // Load Google immediately if keys present
-                if(k && c) {
-                     if(window.gapi) gapiLoaded();
-                     if(window.google) gisLoaded();
-                }
+                if(k && c) { if(window.gapi) gapiLoaded(); if(window.google) gisLoaded(); }
             };
         };
 
-        // UI & NAVIGATION
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
             document.querySelector('.sidebar-overlay').classList.toggle('active');
@@ -414,8 +401,6 @@
             document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip" onclick="this.classList.toggle('selected')" data-val="${c}">${c}</div>`).join('');
             document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip" onclick="this.classList.toggle('selected')" data-val="${s}">${s}</div>`).join('');
         }
-
-        // LIBRARY
         function filterLib(cat, el) { 
             filterCatVar=cat; 
             document.querySelectorAll('.chips-scroll .chip').forEach(c=>c.classList.remove('selected'));
@@ -455,7 +440,6 @@
             }
         }
 
-        // VIEWER
         function openViewModal(id) {
             currentSongId = id;
             db.transaction("songs", "readwrite").objectStore("songs").get(id).onsuccess = (e) => {
@@ -467,8 +451,8 @@
                     b.innerHTML = s.type.includes('pdf') ? `<iframe src="${s.fileData}" style="width:100%; height:100%; border:none;"></iframe>` : `<img src="${s.fileData}" style="max-width:100%; max-height:100%;">`;
                     f.innerHTML = s.driveId ? `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="color:orange; border-color:orange;">🗑️ Rimuovi</button>` : '';
                 } else if (s.driveId) {
-                    b.innerHTML = `<div style="text-align:center; padding:50px;"><p>File solo Online</p><button onclick="toggleDownload(${s.id}, true)" class="btn-primary">⬇️ SCARICA</button></div>`;
-                    f.innerHTML = '';
+                    b.innerHTML = `<div style="text-align:center; padding:50px;"><span class="material-icons-round" style="font-size:48px; color:#ccc;">cloud</span><p>File disponibile Online</p></div>`;
+                    f.innerHTML = `<button onclick="toggleDownload(${s.id}, true)" class="btn-primary">⬇️ SCARICA</button>`;
                 } else {
                     b.innerHTML = `<pre style="padding:20px; white-space:pre-wrap; font-family:inherit;">${s.lyrics || ''}</pre>`;
                     f.innerHTML = '';
@@ -478,7 +462,6 @@
             }
         }
 
-        // DRIVE
         function saveKeys(){
             localStorage.setItem('g_api',document.getElementById('apiKey').value);
             localStorage.setItem('g_client',document.getElementById('clientId').value);
@@ -486,11 +469,7 @@
         }
         async function driveAction(action, id=null) {
             if(!gapiInited || !gisInited) { 
-                showToast("Errore: Google non pronto. Ricarica.", "error"); 
-                // Retry init
-                const k=localStorage.getItem('g_api'); const c=localStorage.getItem('g_client');
-                if(k && c) { gapiLoaded(); gisLoaded(); }
-                return; 
+                showToast("Errore: Google non pronto. Ricarica.", "error"); return; 
             }
             document.querySelectorAll('.modal-wrap').forEach(m => m.classList.remove('show'));
             if(action === 'sync') {
@@ -544,8 +523,37 @@
                 if(tempFilesList.length===1){ document.getElementById('songTitle').value=tempFilesList[0].name; driveTempMeta=tempFilesList[0]; }
             } else document.getElementById('editModal').classList.add('show');
         }
-        async function performUpload() { /* ... */ } 
-        async function performDownload() { /* ... */ }
+        async function performUpload() {
+            document.getElementById('syncStatus').innerText = "Caricamento in corso...";
+            const tx = db.transaction(["songs","setlists"],"readonly");
+            const s = await new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result));
+            const l = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result));
+            const fileContent = JSON.stringify({songs:s, setlists:l});
+            const meta = { name: SYNC_FILE_NAME, mimeType: 'application/json' };
+            const form = new FormData(); form.append('metadata', new Blob([JSON.stringify(meta)],{type:'application/json'})); form.append('file', new Blob([fileContent],{type:'application/json'}));
+            try {
+                const q = `name = '${SYNC_FILE_NAME}' and trashed = false`;
+                const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'});
+                if(list.result.files.length > 0) await fetch(`https://www.googleapis.com/upload/drive/v3/files/${list.result.files[0].id}?uploadType=media`,{method:'PATCH',headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`,'Content-Type':'application/json'},body:fileContent});
+                else await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {method:'POST',headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`},body:form});
+                document.getElementById('syncStatus').innerText = "Backup Completato ✅";
+            } catch(e) { document.getElementById('syncStatus').innerText = "Errore Upload"; }
+        }
+        async function performDownload() {
+            document.getElementById('syncStatus').innerText = "Download in corso...";
+            try {
+                const q = `name = '${SYNC_FILE_NAME}' and trashed = false`;
+                const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'});
+                if(list.result.files.length===0) return document.getElementById('syncStatus').innerText = "Nessun backup trovato";
+                const res = await gapi.client.drive.files.get({fileId: list.result.files[0].id, alt: 'media'});
+                const data = res.result;
+                const tx = db.transaction(["songs","setlists"],"readwrite");
+                tx.objectStore("songs").clear(); tx.objectStore("setlists").clear();
+                data.songs.forEach(s=>tx.objectStore("songs").put(s));
+                data.setlists.forEach(s=>tx.objectStore("setlists").put(s));
+                tx.oncomplete = () => { document.getElementById('syncStatus').innerText = "Ripristino Completato ✅"; setTimeout(()=>location.reload(), 1500); };
+            } catch(e) { document.getElementById('syncStatus').innerText = "Errore Download"; }
+        }
         async function downloadSingleSong(id) {
             const tx = db.transaction("songs", "readwrite");
             tx.objectStore("songs").get(id).onsuccess = async (e) => {
@@ -565,24 +573,17 @@
             };
         }
 
-        // PDF & SHARE LOGIC (FIXED)
         function generatePDF() {
             document.body.className = "";
             if(!document.getElementById('chkSongs').checked) document.body.classList.add('print-text-only');
             if(!document.getElementById('chkReads').checked) document.body.classList.add('print-music-only');
-            
             const ph = document.getElementById('printHeader');
             if(document.getElementById('chkHeader').checked) {
                 ph.style.display = 'block';
                 document.getElementById('phTitle').innerText = document.getElementById('messaTitle').value;
                 document.getElementById('phDate').innerText = document.getElementById('messaDate').value;
             } else { ph.style.display = 'none'; }
-
-            // MUST WAIT FOR RENDER
-            startReadingMode().then(() => {
-                 // Small delay to ensure images/iframes are rendered
-                setTimeout(() => { window.print(); }, 1500); 
-            });
+            startReadingMode().then(() => { setTimeout(() => { window.print(); }, 1500); });
         }
 
         function startReadingMode() {
@@ -590,8 +591,6 @@
                 document.getElementById('readingContainer').classList.add('active'); 
                 const mc=document.getElementById('readMusicArea'); mc.innerHTML=""; 
                 const wc=document.getElementById('readWordArea'); wc.innerHTML="";
-                
-                // Load Songs (Promise based)
                 const promises = [];
                 document.querySelectorAll('.song-select').forEach(s=>{ 
                     if(s.value){ 
@@ -609,37 +608,32 @@
                         promises.push(p);
                     }
                 });
-
-                // Load Readings
                 const r=[{t:"I Lettura",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II Lettura",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}];
                 r.forEach(x=>{if(x.v)wc.innerHTML+=`<div style="margin-bottom:40px;"><h3 style="color:var(--primary);">${x.t}</h3><p style="font-size:1.3rem; line-height:1.6;">${x.v}</p></div>`;});
-
                 Promise.all(promises).then(resolve);
             });
         }
 
-        // OTHER UTILS
-        function openEditModal(id=null) { document.getElementById('editModal').classList.add('show'); /* ... reset fields ... */ } 
-        function handleFile(input){ /* ... same ... */ }
-        function saveSong(){ /* ... same ... */ }
+        function openEditModal(id=null) { document.getElementById('editModal').classList.add('show'); document.getElementById('songId').value=""; document.getElementById('songTitle').value=""; document.getElementById('songLyrics').value=""; tempFilesList=[]; driveTempMeta=null; document.getElementById('fileStatus').innerText="Nessun file"; document.getElementById('driveOptions').classList.add('d-none'); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected')); document.getElementById('editModalTitle').innerText=id?"Modifica":"Nuovo"; if(id){ document.getElementById('songId').value=id; db.transaction("songs").objectStore("songs").get(id).onsuccess=e=>{const s=e.target.result; document.getElementById('songTitle').value=s.title; document.getElementById('songLyrics').value=s.lyrics||""; if(s.fileData){tempFilesList=[{data:s.fileData,type:s.type,name:s.title}];document.getElementById('fileStatus').innerText="File Presente";} else if(s.driveId)document.getElementById('fileStatus').innerText="File Drive";}} } 
+        function handleFile(input){ const f=input.files; if(!f.length)return; tempFilesList=[]; const rd=(file)=>new Promise(r=>{const fr=new FileReader();fr.onload=e=>r({name:file.name.replace(/\.[^/.]+$/,""),type:file.type,data:e.target.result});fr.readAsDataURL(file);}); Promise.all(Array.from(f).map(rd)).then(res=>{tempFilesList=res; if(res.length===1)document.getElementById('songTitle').value=res[0].name; document.getElementById('fileStatus').innerText=`${res.length} File Locali`;}); }
+        function saveSong(){ if(tempFilesList.length===0 && !driveTempMeta && !document.getElementById('songLyrics').value) return alert("Dati mancanti"); const cats=Array.from(document.querySelectorAll('#catChips .selected')).map(c=>c.dataset.val); if(!cats.length)cats.push("Altro"); const seas=Array.from(document.querySelectorAll('#seasonChips .selected')).map(c=>c.dataset.val); if(!seas.length)seas.push("Ordinario"); const lyrics=document.getElementById('songLyrics').value; const editId=document.getElementById('songId').value; const tx=db.transaction("songs","readwrite"); const store=tx.objectStore("songs"); if(driveTempMeta){ const mode=document.querySelector('input[name="storeMode"]:checked').value; const s={title:document.getElementById('songTitle').value,categories:cats,seasons:seas,lyrics:lyrics,driveId:driveTempMeta.id,type:driveTempMeta.mimeType,fileData:mode==='full'?driveTempMeta.data:null}; if(editId)s.id=Number(editId); store.put(s); } else if(tempFilesList.length>0){ if(tempFilesList.length===1 && editId){ store.put({id:Number(editId),title:document.getElementById('songTitle').value,categories:cats,seasons:seas,lyrics:lyrics,fileData:tempFilesList[0].data,type:tempFilesList[0].type}); } else { tempFilesList.forEach(f=>{ store.add({title:f.name,categories:cats,seasons:seas,lyrics:"",fileData:f.data,type:f.type}); }); } } else if(editId){ store.get(Number(editId)).onsuccess=e=>{const old=e.target.result; store.put({...old,title:document.getElementById('songTitle').value,lyrics:lyrics,categories:cats,seasons:seas});}; } else { store.add({title:document.getElementById('songTitle').value,categories:cats,seasons:seas,lyrics:lyrics,fileData:null,type:null}); } tx.oncomplete=()=>{document.getElementById('editModal').classList.remove('show');renderLibrary();updateSuggestions();}; }
         function deleteCurrentSong() { if(confirm("Eliminare?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); }; }
         function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(currentSongId); }
         async function toggleDownload(id, dl) { if(dl) driveAction('downloadOne', id); else { const tx=db.transaction("songs","readwrite"); tx.objectStore("songs").get(id).onsuccess=e=>{ const s=e.target.result; s.fileData=null; tx.objectStore("songs").put(s).onsuccess=()=>{showToast("Rimosso"); openViewModal(id); renderLibrary();}; }; } }
-        async function autoFetchReadings() { /* ... same ... */ }
-        function renderScalettaUI() { /* ... same ... */ }
-        function updateSuggestions() { /* ... same ... */ }
-        function saveSetlist() { /* ... same ... */ }
-        function openHistoryModal() { document.getElementById('historyModal').classList.add('show'); renderFullHistory(); }
-        function renderFullHistory() { /* ... */ }
-        function loadSet(id) { /* ... */ }
-        function delSet(id) { /* ... */ }
-        function clearReadings(){ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value=""); }
-        function showToast(m, t="info") { const el=document.getElementById('toast'); el.innerText=m; el.classList.add('show'); if(t=='error')el.classList.add('error'); setTimeout(()=>el.className='', 3000); }
-        function exportData() { /* ... */ }
-        function importData(input) { /* ... */ }
-        function optimizeStorage() { /* ... */ }
+        async function autoFetchReadings() { const dStr=document.getElementById('messaDate').value; if(!dStr)return alert("Data?"); const url=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.lachiesa.it/calendario/Detailed/${new Date(dStr).getFullYear()}${String(new Date(dStr).getMonth()+1).padStart(2,'0')}${String(new Date(dStr).getDate()).padStart(2,'0')}.shtml`)}`; showToast("Ricerca..."); try{ const r=await fetch(url); const j=await r.json(); const t=new DOMParser().parseFromString(j.contents,"text/html").body.innerText.replace(/\s+/g,' '); const find=(a,b)=>{let s=-1;for(let w of a){let i=t.toLowerCase().indexOf(w.toLowerCase());if(i>-1){s=i+w.length;break;}}if(s<0)return"";let e=-1;for(let w of b){let i=t.toLowerCase().indexOf(w.toLowerCase(),s);if(i>-1){e=i;break;}}return e<0?"":t.substring(s,e).trim();}; document.getElementById('r1').value=find(["Prima Lettura","Dagli Atti","1a Lettura"],["Salmo"]); document.getElementById('rps').value=find(["Salmo","Salmo Responsoriale"],["Seconda","Vangelo","2a Lettura"]); document.getElementById('r2').value=find(["Seconda Lettura","2a Lettura"],["Vangelo","Canto al Vangelo"]); document.getElementById('rg').value=find(["Vangelo","Dal Vangelo"],["PREGHIERA"]); showToast("Fatto!"); }catch(e){alert("Errore letture");} }
+        function renderFullHistory() { const l=document.getElementById('fullHistoryList');l.innerHTML=""; db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess=e=>{const c=e.target.result;if(c){const s=c.value;l.innerHTML+=`<div class="song-item"><div onclick="loadSet(${s.id})" style="flex:1;"><b>${s.title}</b><br><small>${s.date}</small></div><span class="material-icons-round" onclick="delSet(${s.id})" style="color:red; cursor:pointer;">delete</span></div>`;c.continue();}} }
+        function loadSet(id) { db.transaction("setlists").objectStore("setlists").get(id).onsuccess=e=>{ const s=e.target.result;document.getElementById('messaTitle').value=s.title;document.getElementById('messaDate').value=s.date; if(s.readings){document.getElementById('r1').value=s.readings.r1||"";document.getElementById('rps').value=s.readings.rps||"";document.getElementById('r2').value=s.readings.r2||"";document.getElementById('rg').value=s.readings.rg||"";} document.querySelectorAll('.song-select').forEach(sel=>sel.value=""); for(let[k,v]of Object.entries(s.songs)){const el=document.querySelector(`div[data-part="${k}"] select`);if(el)el.value=v;} go('scaletta'); if(window.innerWidth<=768) toggleSidebar(); } }
+        function delSet(id) { if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderFullHistory(); }
+        function openShareModal(){ document.getElementById('shareModal').classList.add('show'); }
+        function shareText(mode) { const t=document.getElementById('messaTitle').value; let txt=`📅 *${t}*\n\n`; if(mode!=='read') document.querySelectorAll('.song-select').forEach(s=>{if(s.selectedIndex>0)txt+=`🎵 ${s.options[s.selectedIndex].text}\n`}); if(mode!=='list') txt+=`\n📖 Vangelo: ${document.getElementById('rg').value.substring(0,100)}...`; window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
+        function printMode(mode){ document.body.className=""; if(mode==='music')document.body.classList.add('print-music-only');if(mode==='read')document.body.classList.add('print-readings-only'); startReadingMode(); setTimeout(()=>window.print(),2000); }
+        function exportData(){ const tx=db.transaction(["songs","setlists"],"readonly"); Promise.all([new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)),new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result))]).then(([s,l])=>{const b=new Blob([JSON.stringify({songs:s,setlists:l})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup.json";a.click();}); }
+        function importData(inp){ const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");tx.objectStore("songs").clear();tx.objectStore("setlists").clear();d.songs.forEach(s=>tx.objectStore("songs").put(s));d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{showToast("Fatto!");setTimeout(()=>location.reload(),1000);}}catch(x){alert("Errore file");}};r.readAsText(f); }
+        function optimizeStorage(){ if(confirm("Rimuovere download inutili?")) showToast("Ottimizzato"); }
         function stopReadingMode(){document.getElementById('readingContainer').classList.remove('active');}
         function setReadTab(t){document.getElementById('readMusicArea').className=t==='music'?'':'d-none';document.getElementById('readWordArea').className=t==='word'?'':'d-none';}
+        function showToast(m, t="info") { const el=document.getElementById('toast'); el.innerText=m; el.classList.add('show'); if(t=='error')el.classList.add('error'); setTimeout(()=>el.className='', 3000); }
+        function clearReadings(){ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value=""); }
     </script>
 </body>
 </html>
