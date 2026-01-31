@@ -29,33 +29,27 @@
 
         /* HEADER */
         .top-bar { background: var(--white); padding: 10px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 100; height: 60px; }
-        .hamburger-btn { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--primary); }
-        .logo-text { font-size: 1.2rem; font-weight: 800; color: var(--primary); margin: 0; }
+        .hamburger-icon { display: none; font-size: 28px; cursor: pointer; color: var(--primary); margin-right: 15px; }
 
-        /* SIDEBAR (MOBILE ONLY) */
-        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; opacity: 0; pointer-events: none; transition: 0.3s; }
-        .sidebar-overlay.active { opacity: 1; pointer-events: auto; }
-        .sidebar { position: fixed; top: 0; left: 0; height: 100%; width: 260px; background: white; z-index: 2001; transform: translateX(-100%); transition: 0.3s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        /* SIDEBAR (Solo Mobile) */
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: none; opacity: 0; transition: 0.3s; }
+        .sidebar-overlay.active { display: block; opacity: 1; }
+        .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100%; background: white; z-index: 2001; transform: translateX(-100%); transition: 0.3s; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.2); }
         .sidebar.active { transform: translateX(0); }
-        .sidebar-header { height: 150px; background: var(--primary); color: white; padding: 20px; display: flex; flex-direction: column; justify-content: flex-end; }
-        .sidebar-menu { padding: 10px 0; flex: 1; overflow-y: auto; }
-        .menu-item { padding: 15px 20px; display: flex; align-items: center; gap: 15px; color: #444; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+        .sidebar-header { background: var(--primary); color: white; padding: 20px; height: 150px; display: flex; align-items: flex-end; font-weight: bold; font-size: 1.2rem; }
+        .sidebar-menu { flex: 1; overflow-y: auto; padding-top: 10px; }
+        .menu-item { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; cursor: pointer; color: #444; }
         .menu-item:active { background: #f0f0f0; }
-        .menu-item.active { background: #ede7f6; color: var(--primary); font-weight: 500; }
-        
+
         /* CARDS & LISTS */
         .card { background: var(--white); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid var(--border); overflow: hidden; }
         .card-header { background: #f9fafb; padding: 10px 15px; border-bottom: 1px solid var(--border); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .card-body { padding: 15px; }
 
         .song-item, .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; background: white; }
-        .song-item:last-child, .history-item:last-child { border-bottom: none; }
         .song-item:active { background: #f0f0f0; }
 
-        /* STATUS ICONS & CHIPS */
-        .status-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; margin-right: 5px; }
-        .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-        .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+        /* CHIPS */
         .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
         .chip-select { padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.85rem; cursor: pointer; user-select: none; }
         .chip-select.selected { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; box-shadow: 0 2px 5px rgba(103, 58, 183, 0.3); }
@@ -64,15 +58,23 @@
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
         textarea.form-control { resize: vertical; min-height: 100px; }
 
-        /* MODAL */
+        /* MODAL (Originale PC Style) */
         .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .modal-wrap.show { display: flex; }
-        .modal-box { background: var(--white); width: 95%; max-width: 700px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
+        .modal-box { background: var(--white); width: 95%; max-width: 800px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
         .modal-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
         .modal-scroll { flex: 1; overflow-y: auto; padding: 20px; }
-        .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; }
 
-        /* NAV BAR (Desktop/PC) */
+        /* READING MODE */
+        #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
+        #readingContainer.active { display: flex; }
+        .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
+        .reading-content { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
+        .score-seq-item { margin-bottom: 40px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); page-break-inside: avoid; }
+        .pdf-frame { width: 100%; height: 80vh; border: none; background: #eee; }
+
+        /* NAV BAR (Bottom) */
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--white); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 500; }
         .nav-btn { background: none; border: none; color: #999; font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; width: 100%; cursor: pointer; }
         .nav-btn.active { color: var(--primary); }
@@ -84,74 +86,59 @@
         .btn-outline { background: transparent; border: 1px solid #ccc; color: #555; }
         .btn-icon { background: none; border: none; font-size: 1.4rem; padding: 5px; cursor: pointer; color: #555; }
         
-        /* GRID SYSTEM & RESPONSIVE */
-        .workspace { display: grid; gap: 20px; grid-template-columns: 1fr; }
-        
-        /* MEDIA QUERIES PER SMARTPHONE */
-        @media (max-width: 800px) {
-            .nav-bar { display: none !important; } /* Nascondi barra in basso su mobile */
-            .hamburger-btn { display: block; } /* Mostra pulsante menu */
-            .app-body { padding-bottom: 20px; }
-            .workspace { grid-template-columns: 1fr; }
-        }
-        @media (min-width: 801px) {
-            .hamburger-btn { display: none; } /* Nascondi pulsante menu su PC */
-            .sidebar { display: none; } /* Nascondi sidebar su PC */
-            .workspace { grid-template-columns: 1fr 1fr; }
-        }
-
-        /* READING MODE */
-        #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
-        #readingContainer.active { display: flex; }
-        .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
-        .reading-content { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
-        .score-seq-item { margin-bottom: 40px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .pdf-frame { width: 100%; height: 80vh; border: none; background: #eee; }
-
         /* SHARE GRID */
         .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .btn-share-opt { padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: white; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; transition: 0.2s; }
-        
+
+        /* GRID SYSTEM */
+        .workspace { display: grid; gap: 20px; grid-template-columns: 1fr; }
+        @media(min-width: 900px) { .workspace { grid-template-columns: 1fr 1fr; } }
+
+        /* --- MOBILE SPECIFIC FIXES --- */
+        @media (max-width: 768px) {
+            .nav-bar { display: none !important; } /* Nasconde barra in basso su mobile */
+            .hamburger-icon { display: block !important; } /* Mostra menu a panino */
+            .app-body { padding-bottom: 20px; } /* Rimuove spazio extra footer */
+            .modal-box { width: 100%; height: 100%; border-radius: 0; max-height: 100vh; } /* Modale tutto schermo su mobile */
+        }
+        @media (min-width: 769px) {
+            .hamburger-icon { display: none !important; } /* Nasconde panino su PC */
+            .sidebar { display: none !important; } /* Niente sidebar su PC */
+        }
+
         /* TOAST */
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; }
         #toast.show { opacity: 1; bottom: 90px; }
         #toast.error { background: #ef4444; }
-
         .d-none { display: none !important; }
-        @media print {
-            .no-print, .nav-bar, .top-bar { display: none !important; }
-            #readingContainer { position: static; display: block; height: auto; }
-            .reading-content { overflow: visible; height: auto; padding: 0; }
-            body.print-text-only .score-seq-item img, body.print-text-only .score-seq-item iframe { display: none; }
-            body.print-music-only #readWordArea { display: none; }
-            body.print-readings-only #readMusicArea { display: none; }
-        }
+        @media print { .no-print, .nav-bar, .top-bar { display: none !important; } #readingContainer { position: static; display: block; } }
     </style>
 </head>
 <body>
 
     <div id="toast">Messaggio</div>
 
-    <div class="sidebar-overlay" onclick="toggleMenu()"></div>
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2 style="margin:0;">Spartiti Messa</h2>
-            <small>Menu Principale</small>
+            <span>Spartiti Messa Pro</span>
         </div>
         <div class="sidebar-menu">
-            <div class="menu-item active" onclick="go('library', this)"><span class="material-icons-round">library_music</span> Repertorio</div>
-            <div class="menu-item" onclick="go('scaletta', this)"><span class="material-icons-round">playlist_play</span> Scaletta Messa</div>
-            <div class="menu-item" onclick="go('history', this)"><span class="material-icons-round">history</span> Storico Messe</div>
+            <div class="menu-item" onclick="go('library', this)"><span class="material-icons-round">library_music</span> Repertorio</div>
+            <div class="menu-item" onclick="go('scaletta', this)"><span class="material-icons-round">playlist_play</span> Messa</div>
+            <div class="menu-item" onclick="go('history', this)"><span class="material-icons-round">history</span> Storico</div>
             <div class="menu-item" onclick="go('settings', this)"><span class="material-icons-round">settings</span> Opzioni</div>
-            <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-            <div class="menu-item" onclick="toggleMenu(); driveAction('sync')"><span class="material-icons-round">cloud_sync</span> Backup Drive</div>
+            <hr style="border:0; border-top:1px solid #eee;">
+            <div class="menu-item" onclick="driveAction('sync'); toggleSidebar()"><span class="material-icons-round">cloud_sync</span> Backup Drive</div>
         </div>
     </div>
 
     <div class="top-bar no-print">
-        <button class="hamburger-btn" onclick="toggleMenu()"><span class="material-icons-round">menu</span></button>
-        <h3 class="logo-text">Spartiti Messa Pro</h3>
-        <button onclick="openEditModal()" class="btn-icon" style="color:var(--primary);"><span class="material-icons-round" style="color:inherit; background:white; border-radius:50%;">add_circle</span></button>
+        <div style="display:flex; align-items:center;">
+            <span class="material-icons-round hamburger-icon" onclick="toggleSidebar()">menu</span>
+            <h3 style="font-size:1.2rem; font-weight:800; color:var(--primary); margin:0;">Spartiti Messa</h3>
+        </div>
+        <button onclick="driveAction('sync')" class="btn-icon" style="color:#2e7d32;" title="Cloud Backup"><span class="material-icons-round">cloud_sync</span></button>
     </div>
 
     <div class="app-body">
@@ -159,6 +146,7 @@
         <div id="view-library" class="view-section active">
             <div style="display:flex; gap:10px; margin-bottom:15px;">
                 <input type="text" id="searchInput" class="form-control" placeholder="🔍 Cerca titolo..." onkeyup="renderLibrary()" style="margin-bottom:10px;">
+                <button onclick="openEditModal()" class="btn-primary" style="white-space:nowrap;">+ Canto</button>
             </div>
             <div style="display:flex; overflow-x:auto; gap:5px; padding-bottom:10px; margin-bottom:10px;">
                 <button onclick="filterLib('Tutti')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Tutti</button>
@@ -177,7 +165,7 @@
                     <input type="text" id="messaTitle" class="form-control" value="Santa Messa" style="font-weight:bold; font-size:1.2rem; border:none; padding:0; margin:0;">
                     <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
                         <input type="date" id="messaDate" class="form-control" style="width:auto; margin:0;" onchange="updateSuggestions()">
-                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.85rem;">⬇️ Letture</button>
+                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.85rem;">⬇️ Scarica Letture</button>
                         <div style="flex:1; text-align:right;">
                             <button onclick="saveSetlist()" class="btn-primary">Salva</button>
                         </div>
@@ -222,10 +210,9 @@
             <div class="card">
                 <div class="card-header">Google Drive API</div>
                 <div class="card-body">
-                    <p style="font-size:0.85rem; color:#666;">Per scaricare i PDF e Backup.</p>
                     <input type="text" id="apiKey" class="form-control" placeholder="API Key">
                     <input type="text" id="clientId" class="form-control" placeholder="Client ID">
-                    <button onclick="saveKeys()" class="btn-primary" style="width:100%;">Salva Chiavi</button>
+                    <button onclick="saveKeys()" class="btn-primary">Salva Chiavi</button>
                 </div>
             </div>
             
@@ -265,8 +252,8 @@
     </div>
 
     <div id="viewModal" class="modal-wrap">
-        <div class="modal-box">
-            <div class="modal-header">
+        <div class="modal-box" style="height:95vh; width:95vw; max-width:900px;">
+            <div class="card-header">
                 <span id="viewTitle">Titolo</span>
                 <div>
                     <button onclick="deleteCurrentSong()" class="btn-icon" style="color:red;"><span class="material-icons-round">delete</span></button>
@@ -281,33 +268,40 @@
 
     <div id="editModal" class="modal-wrap">
         <div class="modal-box">
-            <div class="modal-header">
+            <div class="card-header">
                 <span id="editModalTitle">Nuovo Canto</span>
                 <button onclick="document.getElementById('editModal').classList.remove('show')" class="btn-icon">×</button>
             </div>
             <div class="modal-scroll">
                 <input type="hidden" id="songId">
                 <label>Titolo</label><input type="text" id="songTitle" class="form-control">
-                <label>Parti della Messa</label><div class="chips-container" id="catChips"></div>
-                <label>Tempo Liturgico</label><div class="chips-container" id="seasonChips"></div>
+                
+                <label>Parti della Messa</label>
+                <div class="chips-container" id="catChips"></div>
+                
+                <label>Tempo Liturgico</label>
+                <div class="chips-container" id="seasonChips"></div>
+                
                 <div style="background:#f0f2f5; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;">
                     <p id="fileStatus" style="font-weight:bold; color:var(--primary); margin-top:0;">Nessun file</p>
                     <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
                         <button onclick="driveAction('picker')" class="btn-outline" style="background:white;">Google Drive</button>
-                        <button onclick="document.getElementById('localFile').click()" class="btn-outline" style="background:white;">Locale</button>
+                        <button onclick="document.getElementById('localFile').click()" class="btn-outline" style="background:white;">Locale (Multi)</button>
                         <button onclick="document.getElementById('folderInput').click()" class="btn-outline" style="background:white;">Cartella</button>
                     </div>
                     <div id="driveOptions" class="d-none" style="margin-top:10px; border-top:1px solid #ddd; padding-top:5px;">
                         <label style="font-size:0.8rem;">Modalità Drive:</label>
                         <div style="display:flex; gap:10px; justify-content:center;">
-                            <label><input type="radio" name="storeMode" value="link" checked> Solo Link</label>
-                            <label><input type="radio" name="storeMode" value="full"> Scarica</label>
+                            <label><input type="radio" name="storeMode" value="link" checked> Solo Link (Online)</label>
+                            <label><input type="radio" name="storeMode" value="full"> Scarica (Offline)</label>
                         </div>
                     </div>
                     <input type="file" id="localFile" hidden multiple accept="image/*,application/pdf" onchange="handleFile(this)">
                     <input type="file" id="folderInput" hidden webkitdirectory directory onchange="handleFile(this)">
                 </div>
-                <label>Testo</label><textarea id="songLyrics" class="form-control"></textarea>
+
+                <label>Testo (Opzionale)</label>
+                <textarea id="songLyrics" class="form-control"></textarea>
             </div>
             <div class="modal-footer">
                 <button onclick="saveSong()" class="btn-primary" style="width:100%;">SALVA</button>
@@ -317,21 +311,21 @@
 
     <div id="syncModal" class="modal-wrap">
         <div class="modal-box" style="height:auto;">
-            <div class="modal-header"><span>Backup Cloud</span><button onclick="document.getElementById('syncModal').classList.remove('show')" class="btn-icon">×</button></div>
+            <div class="card-header"><span>Backup Cloud</span><button onclick="document.getElementById('syncModal').classList.remove('show')" class="btn-icon">×</button></div>
             <div class="modal-scroll" style="text-align:center;">
-                <p>Salva i tuoi dati su Google Drive.</p>
+                <p>Salva tutti i tuoi dati su Google Drive per non perderli.</p>
                 <div style="display:grid; gap:10px;">
-                    <button onclick="driveAction('upload')" class="btn-primary" style="background:#1976d2;">☁️ CARICA (Backup)</button>
-                    <button onclick="driveAction('download')" class="btn-outline" style="border-color:#1976d2; color:#1976d2;">⬇️ SCARICA (Ripristina)</button>
+                    <button onclick="driveAction('upload')" class="btn-primary" style="background:#1976d2;">☁️ CARICA SU DRIVE (Backup)</button>
+                    <button onclick="driveAction('download')" class="btn-outline" style="border-color:#1976d2; color:#1976d2;">⬇️ SCARICA DA DRIVE (Ripristina)</button>
                 </div>
-                <p id="syncStatus" style="font-size:0.8rem; margin-top:15px; font-weight:bold; color:#666;"></p>
+                <p id="syncStatus" style="font-size:0.8rem; margin-top:15px; color:#666; font-weight:bold;"></p>
             </div>
         </div>
     </div>
 
     <div id="shareModal" class="modal-wrap">
         <div class="modal-box" style="height:auto; max-width:400px;">
-            <div class="modal-header"><span>Condividi</span><button onclick="document.getElementById('shareModal').classList.remove('show')" class="btn-icon">×</button></div>
+            <div class="card-header"><span>Condividi</span><button onclick="document.getElementById('shareModal').classList.remove('show')" class="btn-icon">×</button></div>
             <div class="modal-scroll">
                 <label style="font-size:0.8rem; font-weight:bold; color:#666;">INVIA TESTO</label>
                 <div class="share-grid">
@@ -352,7 +346,7 @@
 
     <div id="historyModal" class="modal-wrap">
         <div class="modal-box" style="height:60vh;">
-            <div class="modal-header"><span>Storico</span><button onclick="document.getElementById('historyModal').classList.remove('show')" class="btn-icon">×</button></div>
+            <div class="card-header"><span>Storico</span><button onclick="document.getElementById('historyModal').classList.remove('show')" class="btn-icon">×</button></div>
             <div class="modal-scroll" id="historyList"></div>
         </div>
     </div>
@@ -381,7 +375,7 @@
         const SYNC_FILE_NAME = "spartiti_db_master.json";
         let filterCatVar = 'Tutti';
 
-        // CALLBACKS GLOBAL PER GOOGLE
+        // GOOGLE INIT MOBILE SAFE
         function gapiLoaded() {
             gapi.load('client:picker', async () => {
                 const k = localStorage.getItem('g_api');
@@ -402,14 +396,10 @@
         }
 
         window.onload = () => {
-            // Eager Init of Google Config (FIX MOBILE)
             document.getElementById('messaDate').valueAsDate = new Date();
             document.getElementById('apiKey').value = localStorage.getItem('g_api')||"";
             document.getElementById('clientId').value = localStorage.getItem('g_client')||"";
-            
-            // SW Registration
-            if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
-
+            if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
             const r = indexedDB.open("SpartitiDB_V5", 1);
             r.onupgradeneeded = (e) => {
                 db = e.target.result;
@@ -418,36 +408,24 @@
             };
             r.onsuccess = (e) => { 
                 db=e.target.result; 
-                renderLibrary(); 
-                renderScalettaUI(); 
-                renderFullHistory(); 
-                // Eager Init Google
-                const k=localStorage.getItem('g_api');
-                const c=localStorage.getItem('g_client');
+                renderLibrary(); renderScalettaUI(); renderFullHistory(); 
+                const k=localStorage.getItem('g_api'); const c=localStorage.getItem('g_client');
                 if(k && c) { if(window.gapi) gapiLoaded(); if(window.google) gisLoaded(); }
             };
             renderModalChips();
         };
 
-        // --- NAVIGATION & UI ---
-        function toggleMenu() {
+        // NAVIGATION (HYBRID PC/MOBILE)
+        function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
             document.querySelector('.sidebar-overlay').classList.toggle('active');
         }
         function go(id, btn) {
-            if(window.innerWidth <= 800) toggleMenu(); // Close sidebar only on mobile
+            if(window.innerWidth < 768) toggleSidebar(); // Close sidebar on mobile
             document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
             document.getElementById('view-'+id).classList.add('active');
-            
-            // Gestione doppio stato (Sidebar Mobile vs Navbar PC)
             document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
             if(btn && btn.classList.contains('nav-btn')) btn.classList.add('active');
-            
-            document.querySelectorAll('.menu-item').forEach(x=>x.classList.remove('active'));
-            // Trova il corrispondente nella sidebar
-            const sidebarBtn = Array.from(document.querySelectorAll('.menu-item')).find(el => el.onclick.toString().includes(id));
-            if(sidebarBtn) sidebarBtn.classList.add('active');
-
             if(id==='library') renderLibrary();
             if(id==='history') renderFullHistory();
         }
@@ -456,8 +434,6 @@
             document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip-select" onclick="toggleChip(this)" data-val="${s}">${s}</div>`).join('');
         }
         function toggleChip(el) { el.classList.toggle('selected'); }
-
-        // --- LIBRARY ---
         function filterLib(cat) { filterCatVar=cat; renderLibrary(); }
         function renderLibrary() {
             const list = document.getElementById('songList'); list.innerHTML="";
@@ -474,7 +450,7 @@
                     if(ok) {
                         const icon = s.type && s.type.includes('pdf') ? 'picture_as_pdf' : 'description';
                         const isOffline = s.fileData ? true : false;
-                        const badge = isOffline ? `<span class="status-badge status-offline">check_circle Offline</span>` : `<span class="status-badge status-online">cloud Online</span>`;
+                        const badge = isOffline ? `<span class="status-badge status-offline">Offline</span>` : `<span class="status-badge status-online">Online</span>`;
                         list.innerHTML += `<div class="song-item" onclick="openViewModal(${s.id})"><div><div style="font-weight:bold;">${s.title}</div><div style="margin-top:2px;">${badge} <small style="color:#666;">${cats.join(', ')}</small></div></div><span class="material-icons-round" style="color:#ccc;">${icon}</span></div>`;
                     }
                     c.continue();
@@ -482,7 +458,7 @@
             }
         }
 
-        // --- VIEWER & DRIVE FIX ---
+        // VIEW & EDIT
         function openViewModal(id) {
             currentSongId = id;
             db.transaction("songs", "readwrite").objectStore("songs").get(id).onsuccess = (e) => {
@@ -491,54 +467,19 @@
                 const b = document.getElementById('viewBody');
                 const f = document.getElementById('viewFooter');
                 if (s.fileData) {
-                    b.innerHTML = s.type.includes('pdf') ? `<iframe src="${s.fileData}" style="width:100%; height:100%; border:none;"></iframe>` : `<img src="${s.fileData}" style="width:100%; height:auto;">`;
-                    f.style.display = s.driveId ? 'flex' : 'none';
-                    f.innerHTML = s.driveId ? `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange;">🗑️ Rimuovi Download</button>` : '';
+                    b.innerHTML = s.type.includes('pdf') ? `<iframe src="${s.fileData}" style="width:100%; height:100%; border:none;"></iframe>` : `<img src="${s.fileData}" style="max-width:100%; height:auto;">`;
+                    f.innerHTML = s.driveId ? `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange;">🗑️ Rimuovi</button>` : '';
                 } else if (s.driveId) {
-                    b.innerHTML = `<div style="text-align:center; padding:50px;"><p>File solo Online.</p><button onclick="toggleDownload(${s.id}, true)" class="btn-primary">⬇️ SCARICA ORA</button></div>`;
-                    f.style.display = 'none';
+                    b.innerHTML = `<div style="text-align:center; padding:50px;"><p>File solo Online.</p><button onclick="toggleDownload(${s.id}, true)" class="btn-primary">⬇️ SCARICA</button></div>`;
+                    f.innerHTML = '';
                 } else if (s.lyrics) {
                     b.innerHTML = `<pre style="padding:20px; white-space:pre-wrap; font-size:1.1rem; font-family:inherit;">${s.lyrics}</pre>`;
-                    f.style.display = 'none';
+                    f.innerHTML = '';
                 }
+                f.style.display = f.innerHTML ? 'flex' : 'none';
                 document.getElementById('viewModal').classList.add('show');
             }
         }
-        
-        async function toggleDownload(id, download) {
-            if(download) { showToast("Scaricamento..."); driveAction('downloadOne', id); } 
-            else {
-                if(!confirm("Rimuovere il file dal telefono? Rimarrà il link online.")) return;
-                const tx = db.transaction("songs", "readwrite");
-                tx.objectStore("songs").get(id).onsuccess = (e) => {
-                    const s = e.target.result; s.fileData = null; 
-                    tx.objectStore("songs").put(s).onsuccess = () => { showToast("Spazio liberato!"); openViewModal(id); renderLibrary(); };
-                };
-            }
-        }
-
-        async function downloadSingleSong(id) {
-            const tx = db.transaction("songs", "readwrite");
-            tx.objectStore("songs").get(id).onsuccess = async (e) => {
-                const s = e.target.result;
-                try {
-                    const t = gapi.client.getToken().access_token;
-                    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveId}?alt=media`,{headers:{'Authorization':`Bearer ${t}`}});
-                    const b = await r.blob();
-                    const fr = new FileReader();
-                    fr.onload = (ev) => {
-                        s.fileData = ev.target.result; 
-                        const tx2 = db.transaction("songs", "readwrite");
-                        tx2.objectStore("songs").put(s).onsuccess = () => { showToast("Scaricato!"); openViewModal(id); renderLibrary(); };
-                    };
-                    fr.readAsDataURL(b);
-                } catch(err) { alert("Errore download: "+err); }
-            };
-        }
-
-        function deleteCurrentSong() { if(confirm("Eliminare definitivamente?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); updateSuggestions(); showToast("Eliminato!"); }; }
-        function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(currentSongId); }
-
         function openEditModal(id=null) {
             document.getElementById('editModal').classList.add('show');
             document.getElementById('songId').value = ""; document.getElementById('songTitle').value = ""; document.getElementById('songLyrics').value = ""; document.getElementById('fileStatus').innerText = "Nessun file";
@@ -560,7 +501,6 @@
                 }
             }
         }
-
         function handleFile(input) {
             const files = input.files; if(!files.length) return;
             tempFilesList = []; document.getElementById('fileStatus').innerText = "Lettura...";
@@ -571,7 +511,6 @@
                 else { document.getElementById('songTitle').value = "[Multiplo]"; document.getElementById('fileStatus').innerText = `${tempFilesList.length} File Locali ✅`; }
             });
         }
-
         function saveSong() {
             if(tempFilesList.length===0 && !driveTempMeta && !document.getElementById('songLyrics').value && !document.getElementById('songId').value) return alert("Nessun dato.");
             const cats = Array.from(document.querySelectorAll('#catChips .selected')).map(c => c.dataset.val);
@@ -599,6 +538,16 @@
             } else { store.add({ title: document.getElementById('songTitle').value, categories: cats, seasons: seas, lyrics: lyrics, fileData: null, type: null }); }
             tx.oncomplete = () => { document.getElementById('editModal').classList.remove('show'); renderLibrary(); updateSuggestions(); showToast("Salvato!"); };
         }
+        function toggleDownload(id, dl) {
+            if(dl) driveAction('downloadOne', id);
+            else {
+                if(!confirm("Rimuovere?")) return;
+                const tx = db.transaction("songs","readwrite");
+                tx.objectStore("songs").get(id).onsuccess=e=>{const s=e.target.result; s.fileData=null; tx.objectStore("songs").put(s).onsuccess=()=>{showToast("Spazio liberato"); openViewModal(id); renderLibrary();}};
+            }
+        }
+        function deleteCurrentSong() { if(confirm("Eliminare?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); updateSuggestions(); }; }
+        function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(currentSongId); }
 
         // GOOGLE API
         function saveKeys(){localStorage.setItem('g_api',document.getElementById('apiKey').value);localStorage.setItem('g_client',document.getElementById('clientId').value);showToast("Keys OK"); initGoogle(document.getElementById('apiKey').value, document.getElementById('clientId').value);}
@@ -615,7 +564,6 @@
                 return; 
             }
             
-            // MOBILE SAFE AUTH: Direct call without async await
             const token = gapi.client.getToken();
             if(token && Date.now() < token.expires_at) {
                 executeDriveAction(action, id);
@@ -639,7 +587,6 @@
             else if(action === 'sync') document.getElementById('syncModal').classList.add('show');
         }
 
-        function openSyncModal() { driveAction('sync'); }
         function createPicker(t) {
             const k = document.getElementById('apiKey').value;
             const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
@@ -700,19 +647,22 @@
                 tx.oncomplete = () => { document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Ripristinato!"); setTimeout(()=>location.reload(), 1000); };
             } catch(e) { document.getElementById('syncStatus').innerText = "Err: "+e.message; }
         }
+        async function downloadSingleSong(id) {
+            const tx = db.transaction("songs", "readwrite");
+            tx.objectStore("songs").get(id).onsuccess = async (e) => {
+                const s = e.target.result;
+                try {
+                    const t = gapi.client.getToken().access_token;
+                    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveId}?alt=media`,{headers:{'Authorization':`Bearer ${t}`}});
+                    const b = await r.blob();
+                    const fr = new FileReader();
+                    fr.onload = (ev) => { s.fileData=ev.target.result; const tx2=db.transaction("songs","readwrite"); tx2.objectStore("songs").put(s).onsuccess=()=>{ showToast("Scaricato!"); openViewModal(id); renderLibrary(); }; };
+                    fr.readAsDataURL(b);
+                } catch(err) { alert("Err DL: "+err); }
+            };
+        }
 
-        // UTILS & SHARE
-        function openShareModal(){ document.getElementById('shareModal').classList.add('show'); }
-        function shareText(mode) {
-            const t=document.getElementById('messaTitle').value; const d=document.getElementById('messaDate').value; let txt=`📅 *${t}* - ${d}\n\n`;
-            if(mode!=='read') document.querySelectorAll('.song-select').forEach(s=>{if(s.selectedIndex>0)txt+=`🎵 ${s.parentElement.parentElement.dataset.part}: ${s.options[s.selectedIndex].text}\n`});
-            if(mode!=='list') txt+=`\n📖 LETTURE:\n${document.getElementById('rg').value.substring(0,100)}...`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`);
-        }
-        function printMode(mode){ 
-            document.body.className = ""; if(mode==='music') document.body.classList.add('print-music-only'); if(mode==='read') document.body.classList.add('print-readings-only');
-            startReadingMode(); setTimeout(()=>window.print(),2000); 
-        }
+        // SCALETTA & LETTURE
         function renderScalettaUI() {
             const c = document.getElementById('scalettaContainer'); c.innerHTML = "";
             CATS.forEach(cat => { if(cat === 'Altro') return; c.innerHTML += `<div style="margin-bottom:10px;" data-part="${cat}"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><div style="display:flex; gap:5px;"><select class="form-control song-select" style="margin:0;"><option value="">Seleziona...</option></select><button onclick="this.previousElementSibling.value=''" class="btn-outline">X</button></div></div>`; });
@@ -739,48 +689,50 @@
             const f=(a,b)=>{let s=-1;for(let w of a){let r=new RegExp(w,"i").exec(t);if(r){s=r.index+r[0].length;break;}}if(s<0)return"";let e=-1;for(let w of b){let r=new RegExp(w,"i").exec(t.substring(s));if(r){e=s+r.index;break;}}return e<0?"":t.substring(s,e).trim();};
             document.getElementById('r1').value=f(["Prima Lettura","Dagli Atti","1a Lettura"],["Salmo"]);
             document.getElementById('rps').value=f(["Salmo","Salmo Responsoriale"],["Seconda","Vangelo","2a Lettura"]);
-            document.getElementById('r2').value=f(["Seconda Lettura","2a Lettura"],["Vangelo"]);
-            document.getElementById('rg').value=f(["Vangelo"],["PREGHIERA"]);
+            document.getElementById('r2').value=f(["Seconda Lettura","2a Lettura"],["Vangelo","Canto al Vangelo"]);
+            document.getElementById('rg').value=f(["Vangelo","Dal Vangelo"],["PREGHIERA","Sulle Offerte"]);
             showToast("Letture Trovate!"); }catch(e){if(confirm("Errore. Aprire sito?"))window.open(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`);}
         }
-        function clearReadings(){/*...*/ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value="");}
-        function saveSetlist(){/*...*/ const sel={};document.querySelectorAll('.song-select').forEach(s=>{if(s.value)sel[s.parentElement.parentElement.dataset.part]=s.value;}); const r={r1:document.getElementById('r1').value,rps:document.getElementById('rps').value,r2:document.getElementById('r2').value,rg:document.getElementById('rg').value}; db.transaction("setlists","readwrite").objectStore("setlists").add({title:document.getElementById('messaTitle').value,date:document.getElementById('messaDate').value,songs:sel,readings:r}).onsuccess=()=>{showToast("Messa Salvata!");renderFullHistory();};}
-        function openHistoryModal(){ document.getElementById('historyModal').classList.add('show'); 
-            const l=document.getElementById('historyList');l.innerHTML="";
-            db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess=e=>{const c=e.target.result;if(c){const s=c.value;l.innerHTML+=`<div class="history-item"><div onclick="loadSet(${s.id})" style="flex:1;"><b>${s.title}</b><br><small>${s.date}</small></div><button onclick="delSet(${s.id})" class="btn-icon" style="color:red;">delete</button></div>`;c.continue();}}
+        function saveSetlist(){ const sel={};document.querySelectorAll('.song-select').forEach(s=>{if(s.value)sel[s.parentElement.parentElement.dataset.part]=s.value;}); const r={r1:document.getElementById('r1').value,rps:document.getElementById('rps').value,r2:document.getElementById('r2').value,rg:document.getElementById('rg').value}; db.transaction("setlists","readwrite").objectStore("setlists").add({title:document.getElementById('messaTitle').value,date:document.getElementById('messaDate').value,songs:sel,readings:r}).onsuccess=()=>{showToast("Messa Salvata!");renderFullHistory();};}
+        function renderFullHistory() {
+            const l=document.getElementById('fullHistoryList');l.innerHTML="";
+            db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess=e=>{const c=e.target.result;if(c){const s=c.value;l.innerHTML+=`<div class="song-item"><div onclick="loadSet(${s.id})" style="flex:1;"><b>${s.title}</b><br><small>${s.date}</small></div><span class="material-icons-round" onclick="delSet(${s.id})" style="color:red; cursor:pointer;">delete</span></div>`;c.continue();}}
         }
-        function optimizeStorage(){ if(confirm("Rimuovere download non usati?")) { /* Logic */ showToast("Fatto!"); } }
-        function showToast(m,type="info"){ const t=document.getElementById('toast');t.innerText=m;t.style.background=type=='error'?'#ef4444':'#333';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000); }
-        function exportData(){
-            const tx = db.transaction(["songs", "setlists"], "readonly");
-            Promise.all([
-                new Promise(r => tx.objectStore("songs").getAll().onsuccess = e => r(e.target.result)),
-                new Promise(r => tx.objectStore("setlists").getAll().onsuccess = e => r(e.target.result))
-            ]).then(([songs, setlists]) => {
-                const blob = new Blob([JSON.stringify({songs, setlists})], {type: "application/json"});
-                const a = document.createElement("a");
-                a.href = URL.createObjectURL(blob);
-                a.download = "backup_spartiti.json";
-                a.click();
-            });
+        function loadSet(id) {
+            db.transaction("setlists").objectStore("setlists").get(id).onsuccess=e=>{
+                const s=e.target.result;document.getElementById('messaTitle').value=s.title;document.getElementById('messaDate').value=s.date;
+                if(s.readings){document.getElementById('r1').value=s.readings.r1||"";document.getElementById('rps').value=s.readings.rps||"";document.getElementById('r2').value=s.readings.r2||"";document.getElementById('rg').value=s.readings.rg||"";}
+                document.querySelectorAll('.song-select').forEach(sel=>sel.value="");
+                for(let[k,v]of Object.entries(s.songs)){const el=document.querySelector(`div[data-part="${k}"] select`);if(el)el.value=v;}
+                go('scaletta'); if(window.innerWidth<=768) toggleSidebar();
+            }
         }
-        function importData(input){
-            const file = input.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    const tx = db.transaction(["songs", "setlists"], "readwrite");
-                    tx.objectStore("songs").clear();
-                    tx.objectStore("setlists").clear();
-                    data.songs.forEach(s => tx.objectStore("songs").put(s));
-                    data.setlists.forEach(s => tx.objectStore("setlists").put(s));
-                    tx.oncomplete = () => { showToast("Ripristino completato!"); setTimeout(()=>location.reload(), 1000); };
-                } catch(err) { alert("File non valido"); }
-            };
-            reader.readAsText(file);
+        function delSet(id) { if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderFullHistory(); }
+        function openShareModal(){ document.getElementById('shareModal').classList.add('show'); }
+        function shareText(mode) {
+            const t=document.getElementById('messaTitle').value; let txt=`📅 *${t}*\n\n`;
+            if(mode!=='read') document.querySelectorAll('.song-select').forEach(s=>{if(s.selectedIndex>0)txt+=`🎵 ${s.parentElement.parentElement.dataset.part}: ${s.options[s.selectedIndex].text}\n`});
+            if(mode!=='list') txt+=`\n📖 Vangelo: ${document.getElementById('rg').value.substring(0,100)}...`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`);
         }
+        function printMode(mode){ document.body.className=""; if(mode==='music')document.body.classList.add('print-music-only');if(mode==='read')document.body.classList.add('print-readings-only'); startReadingMode(); setTimeout(()=>window.print(),2000); }
+        function startReadingMode(){
+            document.getElementById('readingContainer').classList.add('active'); const mc=document.getElementById('readMusicArea'); mc.innerHTML=""; const wc=document.getElementById('readWordArea'); wc.innerHTML="";
+            document.querySelectorAll('.song-select').forEach(s=>{ if(s.value){ db.transaction("songs").objectStore("songs").get(Number(s.value)).onsuccess=e=>{ const x=e.target.result; 
+                let h=""; if(x.fileData) h=x.type.includes('pdf')?`<iframe src="${x.fileData}" class="pdf-frame"></iframe>`:`<img src="${x.fileData}" style="width:100%">`; else if(x.driveId) h=`<div style="text-align:center; padding:50px;">Disponibile solo Online</div>`; else h=`<pre style="white-space:pre-wrap; font-family:inherit;">${x.lyrics}</pre>`;
+                mc.innerHTML+=`<div class="score-seq-item"><h3>${x.title}</h3>${h}</div>`;
+            }}});
+            const r=[{t:"I Lettura",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II Lettura",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}];
+            r.forEach(x=>{if(x.v)wc.innerHTML+=`<div style="margin-bottom:40px;"><h3 style="color:var(--primary);">${x.t}</h3><p style="font-size:1.3rem; line-height:1.6;">${x.v}</p></div>`;});
+        }
+        function stopReadingMode(){document.getElementById('readingContainer').classList.remove('active'); document.body.className="";}
+        function setReadTab(t){document.getElementById('readMusicArea').className=t==='music'?'':'d-none';document.getElementById('readWordArea').className=t==='word'?'':'d-none';}
+        function exportData(){ const tx=db.transaction(["songs","setlists"],"readonly"); Promise.all([new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)),new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result))]).then(([s,l])=>{const b=new Blob([JSON.stringify({songs:s,setlists:l})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup.json";a.click();}); }
+        function importData(inp){ const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");tx.objectStore("songs").clear();tx.objectStore("setlists").clear();d.songs.forEach(s=>tx.objectStore("songs").put(s));d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{showToast("Fatto!");setTimeout(()=>location.reload(),1000);}}catch(x){alert("Errore file");}};r.readAsText(f); }
+        function optimizeStorage(){ if(confirm("Rimuovere download inutili?")) showToast("Ottimizzato"); }
+        function clearReadings(){ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value=""); }
+        function showToast(m,type="info"){ const t=document.getElementById('toast');t.innerText=m;t.style.background=type=='error'?'#d32f2f':'#333';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000); }
+        function openHistoryModal(){ document.getElementById('historyModal').classList.add('show'); renderFullHistory(); } // Fixed: now calls renderFullHistory
     </script>
 </body>
 </html>
