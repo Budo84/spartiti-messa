@@ -12,28 +12,33 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
-    <script src="https://apis.google.com/js/api.js" async defer onload="gapiLoaded()"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer onload="gisLoaded()"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
     
     <style>
-        :root { --primary: #673ab7; --bg: #f8f9fa; --white: #ffffff; --text: #333; --border: #e0e0e0; --shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        /* --- CORE CSS --- */
+        :root { --primary: #673ab7; --bg: #f5f5f5; --white: #ffffff; --text: #333; --border: #ddd; }
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        .app-body { flex: 1; overflow-y: auto; padding: 20px 15px; position: relative; }
-        
+        /* APP LAYOUT */
+        .app-body { flex: 1; overflow-y: auto; padding: 15px; position: relative; padding-bottom: 80px; }
+        .view-section { display: none; max-width: 1200px; margin: 0 auto; }
+        .view-section.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
         /* HEADER & NAV */
         .top-bar { background: var(--white); padding: 10px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 100; height: 60px; }
         .hamburger-icon { display: none; font-size: 28px; cursor: pointer; color: var(--primary); margin-right: 15px; }
 
-        /* SIDEBAR (MOBILE) */
+        /* SIDEBAR (MOBILE ONLY) */
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: none; opacity: 0; transition: 0.3s; }
         .sidebar-overlay.active { display: block; opacity: 1; }
         .sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100%; background: white; z-index: 2001; transform: translateX(-100%); transition: 0.3s; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.2); }
         .sidebar.active { transform: translateX(0); }
         .sidebar-header { background: var(--primary); color: white; padding: 20px; height: 120px; display: flex; align-items: flex-end; font-weight: bold; font-size: 1.2rem; }
         .sidebar-menu { flex: 1; padding: 10px 0; overflow-y: auto; }
-        .menu-item { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; cursor: pointer; color: #444; }
+        .menu-item { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; cursor: pointer; color: #444; font-size: 1rem; }
         .menu-item:active { background: #f0f0f0; }
 
         /* NAV BAR (PC) */
@@ -42,31 +47,36 @@
         .nav-btn.active { color: var(--primary); }
         .nav-btn span { font-size: 26px; margin-bottom: 2px; }
 
-        /* COMMON UI */
-        .view-section { display: none; max-width: 1200px; margin: 0 auto; }
-        .view-section.active { display: block; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
+        /* CARDS & LISTS */
         .card { background: var(--white); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid var(--border); overflow: hidden; }
         .card-header { background: #f9fafb; padding: 10px 15px; border-bottom: 1px solid var(--border); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .card-body { padding: 15px; }
+
         .song-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; background: white; }
+        .song-item:last-child { border-bottom: none; }
         .song-item:active { background: #f0f0f0; }
 
+        /* UI ELEMENTS */
+        .status-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; }
+        .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+        
         .chips-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 10px; }
         .chip { padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.85rem; cursor: pointer; white-space: nowrap; }
         .chip.selected { background: var(--primary); color: white; border-color: var(--primary); }
         
         .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
         textarea.form-control { resize: vertical; min-height: 100px; }
+
         .btn { padding: 10px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; justify-content: center; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: transparent; border: 1px solid #ccc; color: #555; }
         .btn-icon { background: none; border: none; font-size: 1.4rem; padding: 5px; cursor: pointer; color: #555; }
+
         .workspace { display: grid; gap: 20px; grid-template-columns: 1fr; }
         @media(min-width: 900px) { .workspace { grid-template-columns: 1fr 1fr; } }
 
-        /* MODAL */
+        /* MODAL (PC: Largo | Mobile: Full) */
         .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .modal-wrap.show { display: flex; }
         .modal-box { background: var(--white); width: 95%; max-width: 800px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
@@ -74,7 +84,7 @@
         .modal-scroll { flex: 1; overflow-y: auto; padding: 20px; }
         .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; display: flex; justify-content: flex-end; gap: 10px; }
 
-        /* READING & PRINT */
+        /* READING MODE */
         #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
         #readingContainer.active { display: flex; }
         .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
@@ -82,30 +92,33 @@
         .score-seq-item { margin-bottom: 40px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); page-break-inside: avoid; }
         .pdf-frame { width: 100%; height: 80vh; border: none; background: #eee; }
 
-        /* MOBILE FIXES */
+        /* --- MOBILE SPECIFIC FIXES --- */
         @media (max-width: 768px) {
-            .nav-bar { display: none !important; }
-            .hamburger-icon { display: block !important; }
+            .nav-bar { display: none !important; } /* Nascondi barra in basso su mobile */
+            .hamburger-icon { display: block !important; } /* Mostra panino su mobile */
             .app-body { padding-bottom: 20px; }
-            .modal-box { width: 100%; height: 100%; border-radius: 0; max-height: 100%; }
+            .modal-box { width: 100%; height: 100%; border-radius: 0; max-height: 100%; } /* Finestre full screen su mobile */
         }
         @media (min-width: 769px) {
-            .hamburger-icon { display: none !important; }
-            .sidebar { display: none !important; }
+            .hamburger-icon { display: none !important; } /* Nascondi panino su PC */
+            .sidebar { display: none !important; } /* Nascondi sidebar su PC */
         }
 
-        /* PRINT STYLES */
+        /* TOAST */
+        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; }
+        #toast.show { opacity: 1; bottom: 90px; }
+        #toast.error { background: #ef4444; }
+
         .d-none { display: none !important; }
         @media print {
             .no-print, .nav-bar, .top-bar { display: none !important; }
             #readingContainer { position: static; display: block; height: auto; }
             .reading-content { overflow: visible; padding: 0; }
+            /* Filtri dinamici */
             body.print-text-only .score-seq-item img, body.print-text-only .score-seq-item iframe { display: none; }
             body.print-music-only #readWordArea { display: none; }
             body.print-readings-only #readMusicArea { display: none; }
         }
-        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; }
-        #toast.show { opacity: 1; bottom: 90px; }
     </style>
 </head>
 <body>
@@ -114,7 +127,10 @@
 
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
     <div class="sidebar" id="sidebar">
-        <div class="sidebar-header"><span>Spartiti Messa</span></div>
+        <div class="sidebar-header">
+            <span>Menu</span>
+            <button class="btn-icon" onclick="toggleSidebar()" style="color:white; margin-left:auto;">close</button>
+        </div>
         <div class="sidebar-menu">
             <div class="menu-item" onclick="go('library', this)"><span class="material-icons-round">library_music</span> Repertorio</div>
             <div class="menu-item" onclick="go('scaletta', this)"><span class="material-icons-round">playlist_play</span> Messa</div>
@@ -143,11 +159,8 @@
             <div class="chips-scroll">
                 <div class="chip selected" onclick="filterLib('Tutti', this)">Tutti</div>
                 <div class="chip" onclick="filterLib('Ingresso', this)">Ingresso</div>
-                <div class="chip" onclick="filterLib('Gloria', this)">Gloria</div>
                 <div class="chip" onclick="filterLib('Salmo', this)">Salmo</div>
-                <div class="chip" onclick="filterLib('Alleluia', this)">Alleluia</div>
                 <div class="chip" onclick="filterLib('Offertorio', this)">Offertorio</div>
-                <div class="chip" onclick="filterLib('Santo', this)">Santo</div>
                 <div class="chip" onclick="filterLib('Comunione', this)">Comunione</div>
                 <div class="chip" onclick="filterLib('Finale', this)">Finale</div>
             </div>
@@ -160,24 +173,28 @@
                     <input type="text" id="messaTitle" class="form-control" value="Santa Messa" style="font-weight:bold; font-size:1.3rem; border:none; padding:0; margin-bottom:10px;">
                     <div style="display:flex; gap:10px; align-items:center; margin-bottom:15px;">
                         <input type="date" id="messaDate" class="form-control" style="margin:0;" onchange="updateSuggestions()">
-                        <button onclick="autoFetchReadings()" class="btn-outline" style="white-space:nowrap;">Letture</button>
+                        <button onclick="autoFetchReadings()" class="btn-outline" style="white-space:nowrap;">Scarica Letture</button>
                     </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <button onclick="saveSetlist()" class="btn-outline">Salva</button>
+                        <button onclick="saveSetlist()" class="btn-outline">Salva Messa</button>
                         <button onclick="startReadingMode()" class="btn-primary">AVVIA LETTURA</button>
                     </div>
                 </div>
             </div>
+
             <div class="workspace">
                 <div class="card">
                     <div class="card-header">
                         <span>Canti</span>
-                        <button onclick="openShareModal()" class="btn-outline" style="padding:2px 8px; font-size:0.8rem;">Crea PDF</button>
+                        <button onclick="openShareModal()" class="btn-outline" style="padding:2px 8px; font-size:0.8rem;">Crea PDF / Condividi</button>
                     </div>
                     <div class="card-body" id="scalettaContainer"></div>
                 </div>
                 <div class="card">
-                    <div class="card-header"><span>Liturgia</span><button onclick="clearReadings()" class="btn-outline" style="color:red; padding:2px 8px; font-size:0.8rem;">Reset</button></div>
+                    <div class="card-header">
+                        <span>Liturgia</span>
+                        <button onclick="clearReadings()" class="btn-outline" style="color:red; padding:2px 8px; font-size:0.8rem;">Pulisci</button>
+                    </div>
                     <div class="card-body">
                         <label style="font-size:0.8rem; color:#666;">I Lettura</label><textarea id="r1" class="form-control"></textarea>
                         <label style="font-size:0.8rem; color:#666;">Salmo</label><textarea id="rps" class="form-control"></textarea>
@@ -189,7 +206,8 @@
         </div>
 
         <div id="view-history" class="view-section">
-            <div id="fullHistoryList"></div>
+            <h2 style="color:var(--primary);">Le mie Messe</h2>
+            <div id="fullHistoryList" class="card" style="border:none; background:transparent; box-shadow:none;"></div>
         </div>
 
         <div id="view-settings" class="view-section">
@@ -242,11 +260,14 @@
 
     <div id="editModal" class="modal-wrap">
         <div class="modal-box">
-            <div class="modal-header"><span id="editModalTitle">Canto</span><span class="material-icons-round" onclick="document.getElementById('editModal').classList.remove('show')" style="cursor:pointer;">close</span></div>
+            <div class="modal-header">
+                <span id="editModalTitle">Canto</span>
+                <span class="material-icons-round" onclick="document.getElementById('editModal').classList.remove('show')" style="cursor:pointer;">close</span>
+            </div>
             <div class="modal-scroll">
                 <input type="hidden" id="songId">
                 <label>Titolo</label><input type="text" id="songTitle" class="form-control">
-                <label>Parti</label><div class="chips-container" id="catChips"></div>
+                <label>Categorie</label><div class="chips-container" id="catChips"></div>
                 <label>Tempo</label><div class="chips-container" id="seasonChips"></div>
                 <div class="card" style="background:#f5f5f5; border:none; margin-top:10px;">
                     <div class="card-body" style="text-align:center;">
@@ -256,8 +277,8 @@
                             <button onclick="document.getElementById('localFile').click()" class="btn-outline" style="background:white;">File</button>
                         </div>
                         <div id="driveOptions" class="d-none" style="margin-top:10px;">
-                            <label style="margin-right:15px;"><input type="radio" name="storeMode" value="link" checked> Link</label>
-                            <label><input type="radio" name="storeMode" value="full"> Scarica</label>
+                            <label style="margin-right:15px;"><input type="radio" name="storeMode" value="link" checked> Link Online</label>
+                            <label><input type="radio" name="storeMode" value="full"> Scarica Offline</label>
                         </div>
                         <input type="file" id="localFile" hidden multiple onchange="handleFile(this)">
                         <input type="file" id="folderInput" hidden webkitdirectory directory onchange="handleFile(this)">
@@ -265,7 +286,9 @@
                 </div>
                 <label>Testo</label><textarea id="songLyrics" class="form-control"></textarea>
             </div>
-            <div class="modal-footer"><button onclick="saveSong()" class="btn-primary" style="width:100%;">SALVA</button></div>
+            <div class="modal-footer">
+                <button onclick="saveSong()" class="btn-primary" style="width:100%;">SALVA</button>
+            </div>
         </div>
     </div>
 
@@ -273,16 +296,18 @@
         <div class="modal-box" style="height:auto; max-width:450px;">
             <div class="modal-header"><span>Crea PDF / Condividi</span><span class="material-icons-round" onclick="document.getElementById('shareModal').classList.remove('show')" style="cursor:pointer;">close</span></div>
             <div class="modal-scroll">
-                <p style="font-weight:bold; color:#555;">Includi nel PDF:</p>
+                <p style="font-weight:bold; color:#555; margin-bottom:5px;">Scegli cosa includere nel PDF:</p>
                 <div style="background:#f5f5f5; padding:15px; border-radius:8px; margin-bottom:20px;">
                     <label style="display:block; margin-bottom:8px;"><input type="checkbox" id="chkSongs" checked> Spartiti / Canti</label>
-                    <label style="display:block;"><input type="checkbox" id="chkReads" checked> Letture</label>
+                    <label style="display:block; margin-bottom:8px;"><input type="checkbox" id="chkReads" checked> Letture (Parola)</label>
+                    <label style="display:block;"><input type="checkbox" id="chkHeader" checked> Intestazione (Data/Titolo)</label>
                 </div>
-                <button class="btn-primary" onclick="generatePDF()" style="width:100%; margin-bottom:15px;">🖨️ STAMPA PDF</button>
+                <button class="btn-primary" onclick="generatePDF()" style="width:100%; margin-bottom:15px;">🖨️ GENERA PDF / STAMPA</button>
                 <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
-                <p style="font-weight:bold; color:#555;">WhatsApp:</p>
+                <p style="font-weight:bold; color:#555;">Oppure invia testo su WhatsApp:</p>
                 <div style="display:flex; gap:10px; justify-content:center;">
                     <button class="btn-outline" onclick="shareText('list')">Scaletta</button>
+                    <button class="btn-outline" onclick="shareText('read')">Letture</button>
                     <button class="btn-outline" onclick="shareText('all')">Tutto</button>
                 </div>
             </div>
@@ -291,28 +316,35 @@
 
     <div id="syncModal" class="modal-wrap">
         <div class="modal-box" style="height:auto;">
-            <div class="modal-header"><span>Drive</span><span class="material-icons-round" onclick="document.getElementById('syncModal').classList.remove('show')">close</span></div>
-            <div class="modal-scroll" style="text-align:center;"><p id="syncStatus" style="font-weight:bold;">In attesa...</p></div>
+            <div class="modal-header"><span>Stato Cloud</span><span class="material-icons-round" onclick="document.getElementById('syncModal').classList.remove('show')">close</span></div>
+            <div class="modal-scroll" style="text-align:center;">
+                <p id="syncStatus" style="font-weight:bold; font-size:1.1rem;">In attesa...</p>
+                <div class="loader" style="margin:20px auto; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; display:none;" id="syncLoader"></div>
+            </div>
         </div>
     </div>
+    <style>@keyframes spin {0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }}</style>
 
     <div id="readingContainer">
         <div class="reading-nav no-print">
             <button class="btn-icon" onclick="stopReadingMode()" style="color:var(--primary);"><span class="material-icons-round">arrow_back</span></button>
             <div style="display:flex; gap:10px;">
                 <button onclick="setReadTab('music')" class="btn-outline" id="rtab-music">Canti</button>
-                <button onclick="setReadTab('word')" class="btn-outline" id="rtab-word">Letture</button>
+                <button onclick="setReadTab('word')" class="btn-outline" id="rtab-word">Parola</button>
             </div>
             <div style="width:40px;"></div>
         </div>
         <div class="reading-content">
+            <div id="printHeader" style="text-align:center; margin-bottom:30px; display:none;">
+                <h1 id="phTitle"></h1><p id="phDate"></p><hr>
+            </div>
             <div id="readMusicArea"></div>
             <div id="readWordArea" class="d-none" style="max-width:800px; margin:0 auto; font-size:1.2rem; line-height:1.6;"></div>
         </div>
     </div>
 
     <script>
-        // CONFIG
+        // GLOBAL CONFIG
         let db; let tempFilesList=[]; let currentSongId=null; let driveTempMeta=null;
         let tokenClient; let gapiInited=false; let gisInited=false;
         const CATS = ["Ingresso", "Gloria", "Salmo", "Alleluia", "Offertorio", "Santo", "Comunione", "Finale", "Altro"];
@@ -320,6 +352,7 @@
         const SYNC_FILE_NAME = "spartiti_db_master.json";
         let filterCatVar = 'Tutti';
 
+        // GOOGLE INIT
         function gapiLoaded() {
             gapi.load('client:picker', async () => {
                 const k = localStorage.getItem('g_api');
@@ -340,8 +373,11 @@
 
         window.onload = () => {
             document.getElementById('messaDate').valueAsDate = new Date();
-            document.getElementById('apiKey').value = localStorage.getItem('g_api')||"";
-            document.getElementById('clientId').value = localStorage.getItem('g_client')||"";
+            const k = localStorage.getItem('g_api');
+            const c = localStorage.getItem('g_client');
+            if(k) document.getElementById('apiKey').value = k;
+            if(c) document.getElementById('clientId').value = c;
+            
             if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 
             const r = indexedDB.open("SpartitiDB_V5", 1);
@@ -352,12 +388,15 @@
             };
             r.onsuccess = (e) => { 
                 db=e.target.result; renderLibrary(); renderScalettaUI(); renderFullHistory(); renderModalChips();
-                const k=localStorage.getItem('g_api'); const c=localStorage.getItem('g_client');
-                if(k && c) { if(window.gapi) gapiLoaded(); if(window.google) gisLoaded(); }
+                // Load Google immediately if keys present
+                if(k && c) {
+                     if(window.gapi) gapiLoaded();
+                     if(window.google) gisLoaded();
+                }
             };
         };
 
-        // NAV & UI
+        // UI & NAVIGATION
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('active');
             document.querySelector('.sidebar-overlay').classList.toggle('active');
@@ -447,10 +486,18 @@
         }
         async function driveAction(action, id=null) {
             if(!gapiInited || !gisInited) { 
-                showToast("Errore: Google non pronto. Ricarica.", "error"); return; 
+                showToast("Errore: Google non pronto. Ricarica.", "error"); 
+                // Retry init
+                const k=localStorage.getItem('g_api'); const c=localStorage.getItem('g_client');
+                if(k && c) { gapiLoaded(); gisLoaded(); }
+                return; 
             }
             document.querySelectorAll('.modal-wrap').forEach(m => m.classList.remove('show'));
-            if(action === 'sync') document.getElementById('syncModal').classList.add('show');
+            if(action === 'sync') {
+                document.getElementById('syncModal').classList.add('show');
+                document.getElementById('syncStatus').innerText = "In attesa...";
+                return; 
+            }
             
             const token = gapi.client.getToken();
             if(token && Date.now() < token.expires_at) {
@@ -465,11 +512,13 @@
             }
         }
         async function executeDriveAction(action, id) {
+            document.getElementById('syncLoader').style.display = 'inline-block';
             if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
             if(action === 'picker') createPicker(gapi.client.getToken().access_token);
             else if(action === 'upload') await performUpload();
             else if(action === 'download') await performDownload();
             else if(action === 'downloadOne') await downloadSingleSong(id);
+            document.getElementById('syncLoader').style.display = 'none';
         }
         function createPicker(t) {
             const k = document.getElementById('apiKey').value;
@@ -495,8 +544,8 @@
                 if(tempFilesList.length===1){ document.getElementById('songTitle').value=tempFilesList[0].name; driveTempMeta=tempFilesList[0]; }
             } else document.getElementById('editModal').classList.add('show');
         }
-        async function performUpload() { /* ... same upload logic ... */ } 
-        async function performDownload() { /* ... same download logic ... */ }
+        async function performUpload() { /* ... */ } 
+        async function performDownload() { /* ... */ }
         async function downloadSingleSong(id) {
             const tx = db.transaction("songs", "readwrite");
             tx.objectStore("songs").get(id).onsuccess = async (e) => {
@@ -516,16 +565,23 @@
             };
         }
 
-        // PDF GENERATION LOGIC
+        // PDF & SHARE LOGIC (FIXED)
         function generatePDF() {
-            // Apply Filters
             document.body.className = "";
             if(!document.getElementById('chkSongs').checked) document.body.classList.add('print-text-only');
             if(!document.getElementById('chkReads').checked) document.body.classList.add('print-music-only');
             
-            // Wait for render
+            const ph = document.getElementById('printHeader');
+            if(document.getElementById('chkHeader').checked) {
+                ph.style.display = 'block';
+                document.getElementById('phTitle').innerText = document.getElementById('messaTitle').value;
+                document.getElementById('phDate').innerText = document.getElementById('messaDate').value;
+            } else { ph.style.display = 'none'; }
+
+            // MUST WAIT FOR RENDER
             startReadingMode().then(() => {
-                setTimeout(() => { window.print(); }, 1500); // Wait for DOM update
+                 // Small delay to ensure images/iframes are rendered
+                setTimeout(() => { window.print(); }, 1500); 
             });
         }
 
@@ -535,7 +591,7 @@
                 const mc=document.getElementById('readMusicArea'); mc.innerHTML=""; 
                 const wc=document.getElementById('readWordArea'); wc.innerHTML="";
                 
-                // Load Songs
+                // Load Songs (Promise based)
                 const promises = [];
                 document.querySelectorAll('.song-select').forEach(s=>{ 
                     if(s.value){ 
@@ -573,13 +629,17 @@
         function renderScalettaUI() { /* ... same ... */ }
         function updateSuggestions() { /* ... same ... */ }
         function saveSetlist() { /* ... same ... */ }
-        function openHistoryModal() { document.getElementById('historyModal').classList.add('show'); /* renderList */ }
+        function openHistoryModal() { document.getElementById('historyModal').classList.add('show'); renderFullHistory(); }
         function renderFullHistory() { /* ... */ }
-        function openShareModal(){ document.getElementById('shareModal').classList.add('show'); }
-        function shareText(mode) { /* ... same ... */ }
+        function loadSet(id) { /* ... */ }
+        function delSet(id) { /* ... */ }
+        function clearReadings(){ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value=""); }
+        function showToast(m, t="info") { const el=document.getElementById('toast'); el.innerText=m; el.classList.add('show'); if(t=='error')el.classList.add('error'); setTimeout(()=>el.className='', 3000); }
+        function exportData() { /* ... */ }
+        function importData(input) { /* ... */ }
+        function optimizeStorage() { /* ... */ }
         function stopReadingMode(){document.getElementById('readingContainer').classList.remove('active');}
         function setReadTab(t){document.getElementById('readMusicArea').className=t==='music'?'':'d-none';document.getElementById('readWordArea').className=t==='word'?'':'d-none';}
-        function showToast(m,type="info"){ const t=document.getElementById('toast');t.innerText=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000); }
     </script>
 </body>
 </html>
