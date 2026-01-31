@@ -53,7 +53,7 @@
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
         textarea.form-control { resize: vertical; min-height: 100px; }
 
-        /* MODAL (OVERLAY) */
+        /* MODAL */
         .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .modal-wrap.show { display: flex; }
         .modal-box { background: var(--white); width: 95%; max-width: 600px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
@@ -61,7 +61,7 @@
         .modal-scroll { flex: 1; overflow-y: auto; padding: 20px; }
         .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; }
 
-        /* SHARE GRID */
+        /* SHARE GRID (REINSERITO) */
         .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .btn-share-opt { padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: white; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; transition: 0.2s; }
         .btn-share-opt:active { background: #f0f0f0; border-color: var(--primary); }
@@ -72,7 +72,7 @@
         #readingContainer.active { display: flex; }
         .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
         .reading-content { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
-        .score-seq-item { margin-bottom: 40px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); page-break-inside: avoid; }
+        .score-seq-item { margin-bottom: 40px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .pdf-frame { width: 100%; height: 80vh; border: none; background: #eee; }
 
         /* NAV BAR */
@@ -82,7 +82,7 @@
         .nav-btn span { font-size: 26px; margin-bottom: 2px; }
 
         /* BUTTONS */
-        .btn { padding: 10px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: transparent; border: 1px solid #ccc; color: #555; }
         .btn-icon { background: none; border: none; font-size: 1.4rem; padding: 5px; cursor: pointer; color: #555; }
@@ -103,6 +103,7 @@
             .app-body { overflow: visible; height: auto; }
             #readingContainer { position: static; display: block; height: auto; overflow: visible; }
             .reading-content { overflow: visible; height: auto; padding: 0; }
+            /* Filtri Stampa */
             body.print-text-only .score-seq-item img, body.print-text-only .score-seq-item iframe { display: none; }
             body.print-music-only #readWordArea { display: none; }
             body.print-readings-only #readMusicArea { display: none; }
@@ -379,7 +380,7 @@
             document.getElementById('apiKey').value = localStorage.getItem('g_api')||"";
             document.getElementById('clientId').value = localStorage.getItem('g_client')||"";
             
-            // SW Registration (FIX MOBILE)
+            // SW Registration
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW reg ok', reg)).catch(err => console.log('SW reg fail', err));
             }
@@ -395,7 +396,6 @@
                 renderLibrary(); 
                 renderScalettaUI(); 
                 renderFullHistory(); 
-                // Init Google immediately
                 const k=localStorage.getItem('g_api');
                 const c=localStorage.getItem('g_client');
                 if(k && c) {
@@ -412,6 +412,7 @@
         }
         function toggleChip(el) { el.classList.toggle('selected'); }
 
+        // NAV
         function go(id, btn) {
             document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
             document.getElementById('view-'+id).classList.add('active');
@@ -421,6 +422,7 @@
             if(id==='history') renderFullHistory();
         }
 
+        // LIBRARY
         function filterLib(cat) { filterCatVar=cat; renderLibrary(); }
         function renderLibrary() {
             const list = document.getElementById('songList'); list.innerHTML="";
@@ -574,7 +576,6 @@
 
             if(!gapiInited || !gisInited) { 
                 showToast("Attendi caricamento Google...", "info");
-                // Retry if needed, but onload should catch it
                 if(!gapiInited) gapiLoaded();
                 if(!gisInited) gisLoaded();
                 return;
@@ -682,21 +683,7 @@
             CATS.forEach(cat => { if(cat === 'Altro') return; c.innerHTML += `<div style="margin-bottom:10px;" data-part="${cat}"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><div style="display:flex; gap:5px;"><select class="form-control song-select" style="margin:0;"><option value="">Seleziona...</option></select><button onclick="this.previousElementSibling.value=''" class="btn-outline">X</button></div></div>`; });
             setTimeout(updateSuggestions, 500);
         }
-        function updateSuggestions() {
-            const d = new Date(document.getElementById('messaDate').value); const m = d.getMonth()+1; const day = d.getDate();
-            let season = "Ordinario"; if (m===11&&day>=27||m===12&&day<=24) season="Avvento"; else if (m===12&&day>=25||m===1) season="Natale"; else if (m>=2&&m<=4) season="Quaresima"; else if (m===4||m===5) season="Pasqua";
-            db.transaction("songs").objectStore("songs").getAll().onsuccess=(e)=>{
-                const songs = e.target.result.sort((a,b)=>a.title.localeCompare(b.title));
-                document.querySelectorAll('.song-select').forEach(sel=>{
-                    const part=sel.parentElement.parentElement.dataset.part; const old=sel.value; let sug="", oth="";
-                    songs.forEach(s=>{
-                        const cats = Array.isArray(s.categories)?s.categories:[s.category]; const seas = Array.isArray(s.seasons)?s.seasons:[s.season];
-                        if(cats.includes(part)&&(seas.includes(season)||seas.includes("Tutti"))) sug+=`<option value="${s.id}">★ ${s.title}</option>`; else oth+=`<option value="${s.id}">${s.title}</option>`;
-                    });
-                    sel.innerHTML=`<option value="">Seleziona...</option><optgroup label="Suggeriti (${season})">${sug}</optgroup><optgroup label="Altri">${oth}</optgroup>`; sel.value=old;
-                });
-            }
-        }
+        function updateSuggestions() { /* Same as before */ const d = new Date(document.getElementById('messaDate').value); const m = d.getMonth()+1; const day = d.getDate(); let season = "Ordinario"; if (m===11&&day>=27||m===12&&day<=24) season="Avvento"; else if (m===12&&day>=25||m===1) season="Natale"; else if (m>=2&&m<=4) season="Quaresima"; else if (m===4||m===5) season="Pasqua"; db.transaction("songs").objectStore("songs").getAll().onsuccess=(e)=>{ const songs = e.target.result.sort((a,b)=>a.title.localeCompare(b.title)); document.querySelectorAll('.song-select').forEach(sel=>{ const part=sel.parentElement.parentElement.dataset.part; const old=sel.value; let sug="", oth=""; songs.forEach(s=>{ const cats = Array.isArray(s.categories)?s.categories:[s.category]; const seas = Array.isArray(s.seasons)?s.seasons:[s.season]; if(cats.includes(part)&&(seas.includes(season)||seas.includes("Tutti"))) sug+=`<option value="${s.id}">★ ${s.title}</option>`; else oth+=`<option value="${s.id}">${s.title}</option>`; }); sel.innerHTML=`<option value="">Seleziona...</option><optgroup label="Suggeriti (${season})">${sug}</optgroup><optgroup label="Altri">${oth}</optgroup>`; sel.value=old; }); } }
         async function autoFetchReadings() {
             const d=new Date(document.getElementById('messaDate').value); const url=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`)}`;
             try{ const r=await fetch(url); const j=await r.json(); const t=new DOMParser().parseFromString(j.contents,"text/html").body.innerText.replace(/\s+/g,' '); 
@@ -707,13 +694,13 @@
             document.getElementById('rg').value=f(["Vangelo"],["PREGHIERA"]);
             showToast("Letture Trovate!"); }catch(e){if(confirm("Errore. Aprire sito?"))window.open(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`);}
         }
-        function clearReadings(){ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value=""); }
-        function saveSetlist(){ const sel={};document.querySelectorAll('.song-select').forEach(s=>{if(s.value)sel[s.parentElement.parentElement.dataset.part]=s.value;}); const r={r1:document.getElementById('r1').value,rps:document.getElementById('rps').value,r2:document.getElementById('r2').value,rg:document.getElementById('rg').value}; db.transaction("setlists","readwrite").objectStore("setlists").add({title:document.getElementById('messaTitle').value,date:document.getElementById('messaDate').value,songs:sel,readings:r}).onsuccess=()=>{showToast("Messa Salvata!");renderFullHistory();};}
+        function clearReadings(){/*...*/ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value="");}
+        function saveSetlist(){/*...*/ const sel={};document.querySelectorAll('.song-select').forEach(s=>{if(s.value)sel[s.parentElement.parentElement.dataset.part]=s.value;}); const r={r1:document.getElementById('r1').value,rps:document.getElementById('rps').value,r2:document.getElementById('r2').value,rg:document.getElementById('rg').value}; db.transaction("setlists","readwrite").objectStore("setlists").add({title:document.getElementById('messaTitle').value,date:document.getElementById('messaDate').value,songs:sel,readings:r}).onsuccess=()=>{showToast("Messa Salvata!");renderFullHistory();};}
         function openHistoryModal(){ document.getElementById('historyModal').classList.add('show'); 
             const l=document.getElementById('historyList');l.innerHTML="";
             db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess=e=>{const c=e.target.result;if(c){const s=c.value;l.innerHTML+=`<div class="history-item"><div onclick="loadSet(${s.id})" style="flex:1;"><b>${s.title}</b><br><small>${s.date}</small></div><button onclick="delSet(${s.id})" class="btn-icon" style="color:red;">delete</button></div>`;c.continue();}}
         }
-        function optimizeStorage(){ if(confirm("Rimuovere download non usati?")) { showToast("Fatto!"); } }
+        function optimizeStorage(){ if(confirm("Rimuovere download non usati?")) { /* Logic */ showToast("Fatto!"); } }
         function showToast(m,type="info"){ const t=document.getElementById('toast');t.innerText=m;t.style.background=type=='error'?'#ef4444':'#333';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000); }
         function exportData(){
             const tx = db.transaction(["songs", "setlists"], "readonly");
