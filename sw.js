@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v4-mobile'; // CAMBIATO NOME PER FORZARE AGGIORNAMENTO
+const CACHE_NAME = 'spartiti-messa-v5-mobile-fix'; // NOME CAMBIATO PER FORZARE AGGIORNAMENTO
 const ASSETS = [
   './',
   './index.html',
