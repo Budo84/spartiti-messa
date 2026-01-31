@@ -91,6 +91,8 @@
         .reading-content { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
         .score-seq-item { margin-bottom: 40px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); page-break-inside: avoid; }
         .pdf-frame { width: 100%; height: 80vh; border: none; background: #eee; }
+        /* Stile specifico per PDF */
+        .pdf-page { width: 210mm; min-height: 297mm; background: white; margin: 0 auto; padding: 10mm; }
 
         /* MOBILE FIXES */
         @media (max-width: 899px) {
@@ -107,7 +109,14 @@
         #toast.show { opacity: 1; bottom: 90px; }
         .d-none { display: none !important; }
         
-        @media print { .no-print { display: none !important; } #readingContainer { position: static; display: block; } }
+        @media print {
+            .no-print, .nav-bar, .top-bar { display: none !important; }
+            #readingContainer { position: static; display: block; height: auto; z-index: 9999; background:white; }
+            .reading-content { overflow: visible; padding: 0; height: auto; }
+            body.print-text-only .score-seq-item img, body.print-text-only .score-seq-item iframe { display: none; }
+            body.print-music-only #readWordArea { display: none; }
+            body.print-readings-only #readMusicArea { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -149,6 +158,7 @@
                 <div class="chip" onclick="filterLib('Salmo', this)">Salmo</div>
                 <div class="chip" onclick="filterLib('Alleluia', this)">Alleluia</div>
                 <div class="chip" onclick="filterLib('Offertorio', this)">Offertorio</div>
+                <div class="chip" onclick="filterLib('Santo', this)">Santo</div>
                 <div class="chip" onclick="filterLib('Comunione', this)">Comunione</div>
                 <div class="chip" onclick="filterLib('Finale', this)">Finale</div>
             </div>
@@ -164,7 +174,7 @@
                         <button onclick="autoFetchReadings()" class="btn-outline" style="white-space:nowrap;">Scarica Letture</button>
                     </div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                        <button onclick="saveSetlist()" class="btn-outline">Salva Messa</button>
+                        <button onclick="saveSetlist()" class="btn-outline">Salva</button>
                         <button onclick="startReadingMode()" class="btn-primary">AVVIA LETTURA</button>
                     </div>
                 </div>
@@ -318,20 +328,23 @@
             <button class="btn-icon" onclick="stopReadingMode()" style="color:var(--primary);"><span class="material-icons-round">arrow_back</span></button>
             <div style="display:flex; gap:10px;">
                 <button onclick="setReadTab('music')" class="btn-outline" id="rtab-music">Canti</button>
-                <button onclick="setReadTab('word')" class="btn-outline" id="rtab-word">Parola</button>
+                <button onclick="setReadTab('word')" class="btn-outline" id="rtab-word">Letture</button>
             </div>
             <div style="width:40px;"></div>
         </div>
         <div class="reading-content">
-            <div id="printHeader" style="text-align:center; margin-bottom:30px; display:none;">
-                <h1 id="phTitle"></h1><p id="phDate"></p><hr>
+            <div id="pdf-content">
+                <div id="printHeader" style="text-align:center; margin-bottom:30px; display:none;">
+                    <h1 id="phTitle" style="font-size:24px; margin:0;"></h1><p id="phDate" style="color:#666;"></p><hr>
+                </div>
+                <div id="readMusicArea"></div>
+                <div id="readWordArea" class="d-none" style="max-width:800px; margin:0 auto; font-size:1.2rem; line-height:1.6;"></div>
             </div>
-            <div id="readMusicArea"></div>
-            <div id="readWordArea" class="d-none" style="max-width:800px; margin:0 auto; font-size:1.2rem; line-height:1.6;"></div>
         </div>
     </div>
 
     <script>
+        // CONFIG
         let db; let tempFilesList=[]; let currentSongId=null; let driveTempMeta=null;
         let tokenClient; let gapiInited=false; let gisInited=false;
         const CATS = ["Ingresso", "Gloria", "Salmo", "Alleluia", "Offertorio", "Santo", "Comunione", "Finale", "Altro"];
@@ -468,6 +481,7 @@
                 document.getElementById('syncStatus').innerText = "In attesa...";
                 return; 
             }
+            
             const token = gapi.client.getToken();
             if(token && Date.now() < token.expires_at) {
                 executeDriveAction(action, id);
@@ -489,15 +503,13 @@
             else if(action === 'downloadOne') await downloadSingleSong(id);
             document.getElementById('syncLoader').style.display = 'none';
         }
-        
-        // ... (Picker/Upload/Download same as before) ...
         function createPicker(t) { const k = document.getElementById('apiKey').value; const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg"); new google.picker.PickerBuilder().setDeveloperKey(k).setOAuthToken(t).addView(view).enableFeature(google.picker.Feature.MULTISELECT_ENABLED).setCallback(pickerCallback).build().setVisible(true); }
         async function pickerCallback(d) { if(d.action === google.picker.Action.PICKED) { tempFilesList = []; document.getElementById('editModal').classList.add('show'); const t = gapi.client.getToken().access_token; document.getElementById('fileStatus').innerText = "Caricamento..."; for(let doc of d.docs) { try { const r = await fetch(`https://www.googleapis.com/drive/v3/files/${doc.id}?alt=media`,{headers:{'Authorization':`Bearer ${t}`}}); const b = await r.blob(); const base64 = await new Promise(res => { const fr=new FileReader(); fr.onload=e=>res(e.target.result); fr.readAsDataURL(b); }); tempFilesList.push({ name: doc.name.replace(/\.[^/.]+$/,""), id: doc.id, type: doc.mimeType, data: base64, source: 'drive' }); } catch(e) {} } document.getElementById('fileStatus').innerText = `${tempFilesList.length} File Drive`; document.getElementById('driveOptions').classList.remove('d-none'); if(tempFilesList.length===1){ document.getElementById('songTitle').value=tempFilesList[0].name; driveTempMeta=tempFilesList[0]; } } else document.getElementById('editModal').classList.add('show'); }
         async function performUpload() { document.getElementById('syncStatus').innerText = "Caricamento..."; const tx = db.transaction(["songs","setlists"],"readonly"); const s = await new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)); const l = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result)); const fileContent = JSON.stringify({songs:s, setlists:l}); const meta = { name: SYNC_FILE_NAME, mimeType: 'application/json' }; const form = new FormData(); form.append('metadata', new Blob([JSON.stringify(meta)],{type:'application/json'})); form.append('file', new Blob([fileContent],{type:'application/json'})); try { const q = `name = '${SYNC_FILE_NAME}' and trashed = false`; const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'}); if(list.result.files.length > 0) await fetch(`https://www.googleapis.com/upload/drive/v3/files/${list.result.files[0].id}?uploadType=media`,{method:'PATCH',headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`,'Content-Type':'application/json'},body:fileContent}); else await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {method:'POST',headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`},body:form}); document.getElementById('syncStatus').innerText = "Backup Completato ✅"; } catch(e) { document.getElementById('syncStatus').innerText = "Errore Upload"; } }
         async function performDownload() { document.getElementById('syncStatus').innerText = "Download..."; try { const q = `name = '${SYNC_FILE_NAME}' and trashed = false`; const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'}); if(list.result.files.length===0) return document.getElementById('syncStatus').innerText = "Nessun backup"; const res = await gapi.client.drive.files.get({fileId: list.result.files[0].id, alt: 'media'}); const data = res.result; const tx = db.transaction(["songs","setlists"],"readwrite"); tx.objectStore("songs").clear(); tx.objectStore("setlists").clear(); data.songs.forEach(s=>tx.objectStore("songs").put(s)); data.setlists.forEach(s=>tx.objectStore("setlists").put(s)); tx.oncomplete = () => { document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Ripristinato!"); setTimeout(()=>location.reload(), 1500); }; } catch(e) { document.getElementById('syncStatus').innerText = "Errore"; } }
         async function downloadSingleSong(id) { const tx = db.transaction("songs", "readwrite"); tx.objectStore("songs").get(id).onsuccess = async (e) => { const s = e.target.result; try { const t = gapi.client.getToken().access_token; const r = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveId}?alt=media`,{headers:{'Authorization':`Bearer ${t}`}}); const b = await r.blob(); const fr = new FileReader(); fr.onload = (ev) => { s.fileData = ev.target.result; const tx2 = db.transaction("songs", "readwrite"); tx2.objectStore("songs").put(s).onsuccess = () => { showToast("File Scaricato!"); openViewModal(id); renderLibrary(); }; }; fr.readAsDataURL(b); } catch(err) { alert("Err: "+err); } }; }
 
-        // PDF GENERATION (FIXED DOWNLOAD)
+        // PDF GENERATION
         function generatePDF(mode) {
             document.body.className = "";
             if(!document.getElementById('chkSongs').checked) document.body.classList.add('print-text-only');
@@ -511,11 +523,17 @@
             } else { ph.style.display = 'none'; }
 
             startReadingMode().then(() => {
-                const element = document.getElementById('readingContainer');
+                const element = document.getElementById('pdf-content') || document.getElementById('readingContainer');
                 if(mode === 'print') {
                     setTimeout(() => { window.print(); }, 1500); 
                 } else {
-                    const opt = { margin: 5, filename: `Messa_${document.getElementById('messaDate').value}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+                    const opt = { 
+                        margin: 10, 
+                        filename: `Messa_${document.getElementById('messaDate').value}.pdf`, 
+                        image: { type: 'jpeg', quality: 0.98 }, 
+                        html2canvas: { scale: 2 }, 
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+                    };
                     html2pdf().set(opt).from(element).save();
                 }
             });
@@ -526,78 +544,57 @@
                 document.getElementById('readingContainer').classList.add('active'); 
                 const mc=document.getElementById('readMusicArea'); mc.innerHTML=""; 
                 const wc=document.getElementById('readWordArea'); wc.innerHTML="";
-                
                 const promises = [];
+                
                 document.querySelectorAll('.song-select').forEach(s=>{ 
                     if(s.value){ 
                         const p = new Promise(r => {
                             db.transaction("songs").objectStore("songs").get(Number(s.value)).onsuccess=e=>{ 
                                 const x=e.target.result; 
                                 let h=""; 
-                                if(x.fileData) h=x.type.includes('pdf')?`<iframe src="${x.fileData}" class="pdf-frame"></iframe>`:`<img src="${x.fileData}" style="width:100%">`; 
+                                if(x.fileData) h=x.type.includes('pdf')?`<iframe src="${x.fileData}" class="pdf-frame"></iframe>`:`<img src="${x.fileData}" style="width:100%; max-width:100%;">`; 
                                 else if(x.driveId) h=`<div style="text-align:center; padding:50px;">Disponibile solo Online</div>`; 
                                 else h=`<pre style="white-space:pre-wrap; font-family:inherit;">${x.lyrics}</pre>`;
                                 mc.innerHTML+=`<div class="score-seq-item"><h3>${x.title}</h3>${h}</div>`;
-                                r();
+                                // Wait for image load if it's an image
+                                const img = mc.lastElementChild.querySelector('img');
+                                if(img) img.onload = r; else r();
                             }
                         });
                         promises.push(p);
                     }
                 });
+
                 const r=[{t:"I Lettura",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II Lettura",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}];
                 r.forEach(x=>{if(x.v)wc.innerHTML+=`<div style="margin-bottom:40px;"><h3 style="color:var(--primary);">${x.t}</h3><p style="font-size:1.3rem; line-height:1.6;">${x.v}</p></div>`;});
-                Promise.all(promises).then(resolve);
+
+                Promise.all(promises).then(() => setTimeout(resolve, 500));
             });
         }
 
-        // READINGS LOGIC (ORIGINAL FUZZY - REVERTED)
+        // READINGS LOGIC (ORIGINAL FUZZY)
         async function autoFetchReadings() {
-            const dStr = document.getElementById('messaDate').value;
-            if(!dStr) return alert("Inserisci data");
-            const d = new Date(dStr);
-            const url = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`)}`;
-            showToast("Ricerca...", 2000);
+            const d=new Date(document.getElementById('messaDate').value); 
+            const url=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`)}`;
+            showToast("Ricerca...");
             try {
-                const res = await fetch(url);
-                const json = await res.json();
-                if(!json.contents) throw "No data";
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(json.contents, "text/html");
-                const text = doc.body.innerText.replace(/\s+/g, ' '); // Clean text
-                
-                // Original Fuzzy Logic
-                const find = (startKeys, endKeys) => {
-                    let bestIdx = -1;
-                    for (let key of startKeys) {
-                        const idx = text.toLowerCase().indexOf(key.toLowerCase());
-                        if (idx !== -1 && (bestIdx === -1 || idx < bestIdx)) bestIdx = idx + key.length;
-                    }
-                    if (bestIdx === -1) return "";
-                    
-                    let endIdx = -1;
-                    for (let key of endKeys) {
-                        const idx = text.toLowerCase().indexOf(key.toLowerCase(), bestIdx);
-                        if (idx !== -1 && (endIdx === -1 || idx < endIdx)) endIdx = idx;
-                    }
-                    return endIdx !== -1 ? text.substring(bestIdx, endIdx).trim() : "";
-                };
-
-                document.getElementById('r1').value = find(["Prima Lettura", "Dagli Atti"], ["Salmo", "Salmo Responsoriale"]);
-                document.getElementById('rps').value = find(["Salmo Responsoriale", "Salmo"], ["Seconda Lettura", "Vangelo"]);
-                document.getElementById('r2').value = find(["Seconda Lettura"], ["Vangelo", "Canto al Vangelo"]);
-                document.getElementById('rg').value = find(["Dal Vangelo", "Vangelo"], ["PREGHIERA", "Sulle Offerte"]);
+                const r = await fetch(url); const j = await r.json(); const t = new DOMParser().parseFromString(j.contents,"text/html").body.innerText.replace(/\s+/g,' ');
+                const find=(a,b)=>{let s=-1;for(let w of a){let i=t.toLowerCase().indexOf(w.toLowerCase());if(i>-1){s=i+w.length;break;}}if(s<0)return"";let e=-1;for(let w of b){let i=t.toLowerCase().indexOf(w.toLowerCase(),s);if(i>-1){e=i;break;}}return e<0?"":t.substring(s,e).trim();};
+                document.getElementById('r1').value=find(["Prima Lettura","Dagli Atti","1a Lettura"],["Salmo"]);
+                document.getElementById('rps').value=find(["Salmo","Salmo Responsoriale"],["Seconda","Vangelo","2a Lettura"]);
+                document.getElementById('r2').value=find(["Seconda Lettura","2a Lettura"],["Vangelo","Canto al Vangelo"]);
+                document.getElementById('rg').value=find(["Vangelo","Dal Vangelo"],["PREGHIERA","Sulle Offerte"]);
                 showToast("Fatto!");
             } catch(e) { 
-                if(confirm("Errore scaricamento. Vuoi aprire il sito originale?"))
-                    window.open(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`); 
+                 if(confirm("Errore scaricamento. Aprire sito?")) window.open(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`);
             }
         }
 
         // OTHER UTILS
-        function openEditModal(id=null) { document.getElementById('editModal').classList.add('show'); /* ... reset fields ... */ } 
+        function openEditModal(id=null) { document.getElementById('editModal').classList.add('show'); /* ... reset ... */ } 
         function handleFile(input){ const f=input.files; if(!f.length)return; tempFilesList=[]; const rd=(file)=>new Promise(r=>{const fr=new FileReader();fr.onload=e=>r({name:file.name.replace(/\.[^/.]+$/,""),type:file.type,data:e.target.result});fr.readAsDataURL(file);}); Promise.all(Array.from(f).map(rd)).then(res=>{tempFilesList=res; if(res.length===1)document.getElementById('songTitle').value=res[0].name; document.getElementById('fileStatus').innerText=`${res.length} File Locali`;}); }
         function saveSong(){ if(tempFilesList.length===0 && !driveTempMeta && !document.getElementById('songLyrics').value) return alert("Dati mancanti"); const cats=Array.from(document.querySelectorAll('#catChips .selected')).map(c=>c.dataset.val); if(!cats.length)cats.push("Altro"); const seas=Array.from(document.querySelectorAll('#seasonChips .selected')).map(c=>c.dataset.val); if(!seas.length)seas.push("Ordinario"); const lyrics=document.getElementById('songLyrics').value; const editId=document.getElementById('songId').value; const tx=db.transaction("songs","readwrite"); const store=tx.objectStore("songs"); if(driveTempMeta){ const mode=document.querySelector('input[name="storeMode"]:checked').value; const s={title:document.getElementById('songTitle').value,categories:cats,seasons:seas,lyrics:lyrics,driveId:driveTempMeta.id,type:driveTempMeta.mimeType,fileData:mode==='full'?driveTempMeta.data:null}; if(editId)s.id=Number(editId); store.put(s); } else if(tempFilesList.length>0){ if(tempFilesList.length===1 && editId){ store.put({id:Number(editId),title:document.getElementById('songTitle').value,categories:cats,seasons:seas,lyrics:lyrics,fileData:tempFilesList[0].data,type:tempFilesList[0].type}); } else { tempFilesList.forEach(f=>{ store.add({title:f.name,categories:cats,seasons:seas,lyrics:"",fileData:f.data,type:f.type}); }); } } else if(editId){ store.get(Number(editId)).onsuccess=e=>{const old=e.target.result; store.put({...old,title:document.getElementById('songTitle').value,lyrics:lyrics,categories:cats,seasons:seas});}; } else { store.add({title:document.getElementById('songTitle').value,categories:cats,seasons:seas,lyrics:lyrics,fileData:null,type:null}); } tx.oncomplete=()=>{document.getElementById('editModal').classList.remove('show');renderLibrary();updateSuggestions();}; }
-        function deleteCurrentSong() { if(confirm("Eliminare?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); }; }
+        function deleteCurrentSong() { if(confirm("Eliminare?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); updateSuggestions(); }; }
         function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(currentSongId); }
         async function toggleDownload(id, dl) { if(dl) driveAction('downloadOne', id); else { const tx=db.transaction("songs","readwrite"); tx.objectStore("songs").get(id).onsuccess=e=>{ const s=e.target.result; s.fileData=null; tx.objectStore("songs").put(s).onsuccess=()=>{showToast("Rimosso"); openViewModal(id); renderLibrary();}; }; } }
         function renderScalettaUI() { const c=document.getElementById('scalettaContainer'); c.innerHTML=""; CATS.forEach(cat=>{if(cat==='Altro')return; c.innerHTML+=`<div style="margin-bottom:10px;" data-part="${cat}"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><div style="display:flex; gap:5px;"><select class="form-control song-select" style="margin:0;"><option value="">Seleziona...</option></select><button onclick="this.previousElementSibling.value=''" class="btn-outline">X</button></div></div>`;}); setTimeout(updateSuggestions, 500); }
@@ -607,15 +604,15 @@
         function renderFullHistory() { const l=document.getElementById('fullHistoryList');l.innerHTML=""; db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess=e=>{const c=e.target.result;if(c){const s=c.value;l.innerHTML+=`<div class="song-item"><div onclick="loadSet(${s.id})" style="flex:1;"><b>${s.title}</b><br><small>${s.date}</small></div><span class="material-icons-round" onclick="delSet(${s.id})" style="color:red; cursor:pointer;">delete</span></div>`;c.continue();}} }
         function loadSet(id) { db.transaction("setlists").objectStore("setlists").get(id).onsuccess=e=>{ const s=e.target.result;document.getElementById('messaTitle').value=s.title;document.getElementById('messaDate').value=s.date; if(s.readings){document.getElementById('r1').value=s.readings.r1||"";document.getElementById('rps').value=s.readings.rps||"";document.getElementById('r2').value=s.readings.r2||"";document.getElementById('rg').value=s.readings.rg||"";} document.querySelectorAll('.song-select').forEach(sel=>sel.value=""); for(let[k,v]of Object.entries(s.songs)){const el=document.querySelector(`div[data-part="${k}"] select`);if(el)el.value=v;} go('scaletta'); if(window.innerWidth<=768) toggleSidebar(); } }
         function delSet(id) { if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderFullHistory(); }
-        function clearReadings(){ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value=""); }
-        function showToast(m, t="info") { const el=document.getElementById('toast'); el.innerText=m; el.classList.add('show'); if(t=='error')el.classList.add('error'); setTimeout(()=>el.className='', 3000); }
-        function exportData() { const tx=db.transaction(["songs","setlists"],"readonly"); Promise.all([new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)),new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result))]).then(([s,l])=>{const b=new Blob([JSON.stringify({songs:s,setlists:l})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup.json";a.click();}); }
-        function importData(inp) { const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");tx.objectStore("songs").clear();tx.objectStore("setlists").clear();d.songs.forEach(s=>tx.objectStore("songs").put(s));d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{showToast("Fatto!");setTimeout(()=>location.reload(),1000);}}catch(x){alert("Errore file");}};r.readAsText(f); }
-        function optimizeStorage() { if(confirm("Rimuovere download inutili?")) showToast("Fatto!"); }
-        function stopReadingMode(){document.getElementById('readingContainer').classList.remove('active');}
-        function setReadTab(t){document.getElementById('readMusicArea').className=t==='music'?'':'d-none';document.getElementById('readWordArea').className=t==='word'?'':'d-none';}
         function openShareModal(){ document.getElementById('shareModal').classList.add('show'); }
         function shareText(mode) { const t=document.getElementById('messaTitle').value; let txt=`📅 *${t}*\n\n`; if(mode!=='read') document.querySelectorAll('.song-select').forEach(s=>{if(s.selectedIndex>0)txt+=`🎵 ${s.options[s.selectedIndex].text}\n`}); if(mode!=='list') txt+=`\n📖 Vangelo: ${document.getElementById('rg').value.substring(0,100)}...`; window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
+        function exportData(){ const tx=db.transaction(["songs","setlists"],"readonly"); Promise.all([new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)),new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result))]).then(([s,l])=>{const b=new Blob([JSON.stringify({songs:s,setlists:l})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup.json";a.click();}); }
+        function importData(inp){ const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");tx.objectStore("songs").clear();tx.objectStore("setlists").clear();d.songs.forEach(s=>tx.objectStore("songs").put(s));d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{showToast("Fatto!");setTimeout(()=>location.reload(),1000);}}catch(x){alert("Errore file");}};r.readAsText(f); }
+        function optimizeStorage(){ if(confirm("Rimuovere download inutili?")) showToast("Ottimizzato"); }
+        function stopReadingMode(){document.getElementById('readingContainer').classList.remove('active');}
+        function setReadTab(t){document.getElementById('readMusicArea').className=t==='music'?'':'d-none';document.getElementById('readWordArea').className=t==='word'?'':'d-none';}
+        function showToast(m, t="info") { const el=document.getElementById('toast'); el.innerText=m; el.classList.add('show'); if(t=='error')el.classList.add('error'); setTimeout(()=>el.className='', 3000); }
+        function clearReadings(){ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value=""); }
     </script>
 </body>
 </html>
