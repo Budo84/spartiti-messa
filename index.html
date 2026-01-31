@@ -13,11 +13,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
-    <script src="https://apis.google.com/js/api.js" async defer onload="this.onload=function(){};gapiLoaded()"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer onload="this.onload=function(){};gisLoaded()"></script>
+    <!-- CRITICAL FIX: Caricamento sincrono delle API Google per evitare problemi di popup -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
     
     <style>
-        /* --- CORE CSS (Preso da Index 10) --- */
+        /* --- CORE CSS --- */
         :root { --primary: #673ab7; --bg: #f5f5f5; --white: #ffffff; --text: #333; --border: #ddd; }
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -30,7 +31,7 @@
         /* HEADER */
         .top-bar { background: var(--white); padding: 10px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 100; height: 60px; }
         
-        /* SIDEBAR (Nuova aggiunta per Mobile) */
+        /* SIDEBAR (Mobile) */
         .hamburger-icon { display: none; font-size: 28px; cursor: pointer; color: var(--primary); margin-right: 15px; }
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: none; opacity: 0; transition: 0.3s; }
         .sidebar-overlay.active { display: block; opacity: 1; }
@@ -41,7 +42,7 @@
         .menu-item { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; cursor: pointer; color: #444; }
         .menu-item:active { background: #f0f0f0; }
 
-        /* CARDS & UI (Stile originale PC) */
+        /* CARDS & UI */
         .card { background: var(--white); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid var(--border); overflow: hidden; }
         .card-header { background: #f9fafb; padding: 10px 15px; border-bottom: 1px solid var(--border); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .card-body { padding: 15px; }
@@ -60,7 +61,7 @@
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
         textarea.form-control { resize: vertical; min-height: 100px; }
 
-        /* NAV BAR (Classica PC) */
+        /* NAV BAR (Desktop) */
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--white); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 500; }
         .nav-btn { background: none; border: none; color: #999; font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; width: 100%; cursor: pointer; }
         .nav-btn.active { color: var(--primary); }
@@ -79,7 +80,6 @@
             .nav-bar { display: none !important; }
             .hamburger-icon { display: block !important; }
             .app-body { padding-bottom: 20px; }
-            /* Finestre full screen su mobile */
             .modal-box { width: 100% !important; height: 100% !important; max-width: 100% !important; border-radius: 0 !important; }
         }
         @media (min-width: 900px) {
@@ -95,104 +95,92 @@
         .modal-scroll { flex: 1; overflow-y: auto; padding: 20px; }
         .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; }
 
-        /* SHARE GRID */
-        .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .btn-share-opt { padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: white; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; transition: 0.2s; }
-
-        /* READING */
+        /* READING MODE */
         #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
         #readingContainer.active { display: flex; }
         .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
         .reading-content { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
-        .score-seq-item { margin-bottom: 40px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .score-seq-item { margin-bottom: 40px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); page-break-inside: avoid; }
+        .pdf-frame { width: 100%; height: 80vh; border: none; background: #eee; }
 
+        /* TOAST & UTILS */
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; }
         #toast.show { opacity: 1; bottom: 90px; }
+        #toast.error { background: #ef4444; }
         .d-none { display: none !important; }
-        @media print { .no-print, .nav-bar, .top-bar { display: none !important; } #readingContainer { position: static; display: block; } }
+        .no-print { display: block; }
+        
+        /* PRINT STYLES */
+        @media print {
+            body { overflow: visible !important; }
+            .no-print { display: none !important; }
+            .reading-content { padding: 0; background: white; }
+            .score-seq-item { page-break-inside: avoid; margin-bottom: 20px; box-shadow: none; }
+            #readingContainer { position: static; display: block !important; }
+        }
+        @media print { .print-music-only #readMusicArea { display: none !important; } }
+        @media print { .print-text-only #readWordArea { display: none !important; } }
     </style>
 </head>
 <body>
-
-    <div id="toast">Messaggio</div>
-
     <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header"><span>Menu</span></div>
+    <div class="sidebar">
+        <div class="sidebar-header">🎵 Menu</div>
         <div class="sidebar-menu">
-            <div class="menu-item" onclick="go('library', this)"><span class="material-icons-round">library_music</span> Repertorio</div>
-            <div class="menu-item" onclick="go('scaletta', this)"><span class="material-icons-round">playlist_play</span> Messa</div>
-            <div class="menu-item" onclick="go('history', this)"><span class="material-icons-round">history</span> Storico</div>
-            <div class="menu-item" onclick="go('settings', this)"><span class="material-icons-round">settings</span> Opzioni</div>
-            <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-            <div class="menu-item" onclick="toggleSidebar(); driveAction('sync');"><span class="material-icons-round">cloud_sync</span> Backup Drive</div>
+            <div class="menu-item" onclick="go('library', this); toggleSidebar();"><span class="material-icons-round">library_music</span>Canti</div>
+            <div class="menu-item" onclick="go('scaletta', this); toggleSidebar();"><span class="material-icons-round">playlist_play</span>Messa</div>
+            <div class="menu-item" onclick="go('history', this); toggleSidebar();"><span class="material-icons-round">history</span>Messe</div>
+            <div class="menu-item" onclick="go('settings', this); toggleSidebar();"><span class="material-icons-round">settings</span>Opzioni</div>
         </div>
     </div>
 
     <div class="top-bar no-print">
-        <div style="display:flex; align-items:center;">
-            <span class="material-icons-round hamburger-icon" onclick="toggleSidebar()">menu</span>
-            <h3 style="font-size:1.2rem; font-weight:800; color:var(--primary); margin:0;">Spartiti Messa</h3>
-        </div>
-        <button onclick="driveAction('sync')" class="btn-icon" style="color:#2e7d32;" title="Cloud"><span class="material-icons-round">cloud_sync</span></button>
+        <span class="hamburger-icon material-icons-round" onclick="toggleSidebar()">menu</span>
+        <h1 style="margin:0; font-size:1.2rem; color:var(--primary);">🎵 Spartiti Messa</h1>
+        <div style="width:30px;"></div>
     </div>
 
     <div class="app-body">
-        
         <div id="view-library" class="view-section active">
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="searchInput" class="form-control" placeholder="🔍 Cerca titolo..." onkeyup="renderLibrary()" style="margin-bottom:10px;">
-                <button onclick="openEditModal()" class="btn-primary" style="white-space:nowrap;">+ Canto</button>
+            <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
+                ${['Tutti', ...Array.from(new Set(['Ingresso', 'Gloria', 'Salmo', 'Alleluia', 'Offertorio', 'Santo', 'Comunione', 'Finale', 'Altro']))].map(c => 
+                    `<button class="btn-outline" onclick="filterLib('${c}')" style="${c==='Tutti'?'background:var(--primary);color:white;':''}">${c}</button>`
+                ).join('')}
             </div>
-            <div style="display:flex; overflow-x:auto; gap:5px; padding-bottom:10px; margin-bottom:10px;">
-                <button onclick="filterLib('Tutti')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Tutti</button>
-                <button onclick="filterLib('Ingresso')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Ingresso</button>
-                <button onclick="filterLib('Salmo')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Salmo</button>
-                <button onclick="filterLib('Offertorio')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Offertorio</button>
-                <button onclick="filterLib('Comunione')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Comunione</button>
-                <button onclick="filterLib('Finale')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Finale</button>
-            </div>
+            <input type="text" id="searchInput" class="form-control" placeholder="🔍 Cerca..." oninput="renderLibrary()">
             <div id="songList" class="card" style="border:none; background:transparent; box-shadow:none;"></div>
+            <button onclick="openEditModal()" class="btn-primary" style="width:100%; margin-top:10px;">+ NUOVO CANTO</button>
         </div>
 
         <div id="view-scaletta" class="view-section">
             <div class="card">
+                <div class="card-header">Info Messa</div>
                 <div class="card-body">
-                    <input type="text" id="messaTitle" class="form-control" value="Santa Messa" style="font-weight:bold; font-size:1.2rem; border:none; padding:0; margin:0;">
-                    <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
-                        <input type="date" id="messaDate" class="form-control" style="width:auto; margin:0;" onchange="updateSuggestions()">
-                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.85rem;">⬇️ Scarica Letture</button>
-                        <div style="flex:1; text-align:right;">
-                            <button onclick="saveSetlist()" class="btn-primary">Salva</button>
-                        </div>
-                    </div>
-                    <button onclick="startReadingMode()" class="btn-primary" style="background:#2e7d32; width:100%; margin-top:10px;">▶ AVVIA LETTURA</button>
+                    <input type="text" id="messaTitle" class="form-control" placeholder="Titolo (es. Domenica delle Palme)">
+                    <input type="date" id="messaDate" class="form-control" onchange="updateSuggestions()">
                 </div>
             </div>
-
             <div class="workspace">
                 <div class="card">
-                    <div class="card-header">
-                        <span>🎵 Scaletta Canti</span>
-                        <div>
-                            <button onclick="openShareModal()" class="btn-outline" style="padding:2px 8px; font-size:0.8rem; background:#e3f2fd; color:#1565c0;">Condividi / PDF</button>
-                        </div>
-                    </div>
+                    <div class="card-header">Canti</div>
                     <div class="card-body" id="scalettaContainer"></div>
                 </div>
-
                 <div class="card">
                     <div class="card-header">
-                        <span>📖 Liturgia</span>
-                        <button onclick="clearReadings()" class="btn-outline" style="padding:4px 8px; font-size:0.8rem; color:red;">Pulisci</button>
+                        <span>Letture</span>
+                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.75rem;">📖 Scarica</button>
                     </div>
                     <div class="card-body">
-                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">I Lettura</label><textarea id="r1" class="form-control"></textarea>
-                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">Salmo</label><textarea id="rps" class="form-control"></textarea>
-                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">II Lettura</label><textarea id="r2" class="form-control"></textarea>
-                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">Vangelo</label><textarea id="rg" class="form-control" style="height:150px;"></textarea>
+                        <textarea id="reading1" class="form-control" placeholder="Prima Lettura"></textarea>
+                        <textarea id="psalm" class="form-control" placeholder="Salmo"></textarea>
+                        <textarea id="reading2" class="form-control" placeholder="Seconda Lettura"></textarea>
+                        <textarea id="gospel" class="form-control" placeholder="Vangelo"></textarea>
                     </div>
                 </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px;">
+                <button onclick="saveSetlist()" class="btn-primary">💾 SALVA</button>
+                <button onclick="document.getElementById('shareModal').classList.add('show')" class="btn-outline">📤 CONDIVIDI</button>
             </div>
         </div>
 
@@ -219,7 +207,7 @@
                     </div>
                 </div>
             </div>
-             <div class="card">
+            <div class="card">
                 <div class="card-header">Backup Locale</div>
                 <div class="card-body" style="display:flex; gap:10px;">
                     <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica</button>
@@ -335,6 +323,8 @@
         </div>
     </div>
 
+    <div id="toast"></div>
+
     <script>
         let db; let tempFilesList=[]; let currentSongId=null; let driveTempMeta=null;
         const CATS = ["Ingresso", "Gloria", "Salmo", "Alleluia", "Offertorio", "Santo", "Comunione", "Finale", "Altro"];
@@ -343,49 +333,82 @@
         let filterCatVar = 'Tutti';
         let tokenClient; let gapiInited=false; let gisInited=false;
 
-        function gapiLoaded() { gapi.load('client:picker', async () => { const k=localStorage.getItem('g_api'); if(k) await gapi.client.init({apiKey:k, discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]}); gapiInited=true; }); }
-        function gisLoaded() { const c=localStorage.getItem('g_client'); if(c) { tokenClient=google.accounts.oauth2.initTokenClient({client_id:c, scope:'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly', callback:''}); gisInited=true; } }
-
+        // CRITICAL FIX: Inizializzazione sincrona di Google API
         window.onload = () => {
             document.getElementById('messaDate').valueAsDate = new Date();
-            const k = localStorage.getItem('g_api'); const c = localStorage.getItem('g_client');
-            if(k) document.getElementById('apiKey').value = k;
-            if(c) document.getElementById('clientId').value = c;
+            document.getElementById('apiKey').value = localStorage.getItem('g_api')||"";
+            document.getElementById('clientId').value = localStorage.getItem('g_client')||"";
             
-            if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
-
+            // Inizializza DB
             const r = indexedDB.open("SpartitiDB_V5", 1);
             r.onupgradeneeded = (e) => {
                 db = e.target.result;
                 if(!db.objectStoreNames.contains("songs")) db.createObjectStore("songs", {keyPath:"id", autoIncrement:true});
                 if(!db.objectStoreNames.contains("setlists")) db.createObjectStore("setlists", {keyPath:"id", autoIncrement:true});
             };
-            r.onsuccess = (e) => { 
-                db=e.target.result; 
-                renderLibrary(); 
-                renderScalettaUI(); 
-                renderFullHistory(); 
-                renderModalChips();
-                if(k && c) { if(window.gapi) gapiLoaded(); if(window.google) gisLoaded(); }
-            };
+            r.onsuccess = (e) => { db=e.target.result; renderLibrary(); renderScalettaUI(); renderFullHistory(); };
+            renderModalChips();
+            
+            // CRITICAL FIX: Inizializza Google API in modo sincrono
+            const k = localStorage.getItem('g_api');
+            const c = localStorage.getItem('g_client');
+            if(k && c) {
+                // Carica GAPI
+                gapi.load('client:picker', async () => {
+                    await gapi.client.init({
+                        apiKey: k,
+                        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]
+                    });
+                    gapiInited = true;
+                    console.log('GAPI ready');
+                });
+                
+                // Inizializza GIS
+                setTimeout(() => {
+                    tokenClient = google.accounts.oauth2.initTokenClient({
+                        client_id: c,
+                        scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
+                        callback: ''
+                    });
+                    gisInited = true;
+                    console.log('GIS ready');
+                }, 500);
+            }
         };
 
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
-        function go(id, btn) {
-            if(window.innerWidth < 800) toggleSidebar();
-            document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
-            document.getElementById('view-'+id).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
-            if(btn && btn.classList.contains('nav-btn')) btn.classList.add('active');
-            if(id==='library') renderLibrary();
-            if(id==='history') renderFullHistory();
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+            document.querySelector('.sidebar-overlay').classList.toggle('active');
         }
+
         function renderModalChips() {
             document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip-select" onclick="toggleChip(this)" data-val="${c}">${c}</div>`).join('');
             document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip-select" onclick="toggleChip(this)" data-val="${s}">${s}</div>`).join('');
         }
         function toggleChip(el) { el.classList.toggle('selected'); }
-        function filterLib(cat) { filterCatVar=cat; renderLibrary(); }
+
+        function go(id, btn) {
+            document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
+            document.getElementById('view-'+id).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            if(id==='library') renderLibrary();
+            if(id==='history') renderFullHistory();
+        }
+
+        function filterLib(cat) { 
+            filterCatVar=cat; 
+            renderLibrary(); 
+            document.querySelectorAll('#view-library .btn-outline').forEach(b => {
+                if(b.innerText === cat) {
+                    b.style.background = 'var(--primary)';
+                    b.style.color = 'white';
+                } else {
+                    b.style.background = 'transparent';
+                    b.style.color = '#555';
+                }
+            });
+        }
         
         function renderLibrary() {
             const list = document.getElementById('songList'); list.innerHTML="";
@@ -395,7 +418,7 @@
                 const c = e.target.result;
                 if(c) {
                     const s = c.value;
-                    const cats = Array.isArray(s.categories) ? s.categories : [s.category];
+                    const cats = Array.isArray(s.categories) ? s.categories : [s.category||'Altro'];
                     let ok = true;
                     if(filterCatVar!=='Tutti' && !cats.includes(filterCatVar)) ok=false;
                     if(txt && !s.title.toLowerCase().includes(txt)) ok=false;
@@ -410,72 +433,718 @@
             }
         }
 
-        // SCALETTA UI
         function renderScalettaUI() {
             const c = document.getElementById('scalettaContainer'); c.innerHTML = "";
-            CATS.forEach(cat => { if(cat === 'Altro') return; c.innerHTML += `<div style="margin-bottom:10px;" data-part="${cat}"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><div style="display:flex; gap:5px;"><select class="form-control song-select" style="margin:0;"><option value="">Seleziona...</option></select><button onclick="this.previousElementSibling.value=''" class="btn-outline">X</button></div></div>`; });
+            CATS.forEach(cat => { 
+                if(cat === 'Altro') return; 
+                c.innerHTML += `<div style="margin-bottom:10px;" data-part="${cat}"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><div style="display:flex; gap:5px;"><select class="form-control song-select" style="margin:0;"><option value="">Seleziona...</option></select><button onclick="this.previousElementSibling.value=''" class="btn-outline">X</button></div></div>`;
+            });
             setTimeout(updateSuggestions, 500);
         }
+        
         function updateSuggestions() {
-            const d = new Date(document.getElementById('messaDate').value); const m = d.getMonth()+1; const day = d.getDate();
-            let season = "Ordinario"; if (m===11&&day>=27||m===12&&day<=24) season="Avvento"; else if (m===12&&day>=25||m===1) season="Natale"; else if (m>=2&&m<=4) season="Quaresima"; else if (m===4||m===5) season="Pasqua";
+            const d = new Date(document.getElementById('messaDate').value); 
+            const m = d.getMonth()+1; 
+            const day = d.getDate();
+            let season = "Ordinario"; 
+            if (m===11&&day>=27||m===12&&day<=24) season="Avvento"; 
+            else if (m===12&&day>=25||m===1) season="Natale"; 
+            else if (m>=2&&m<=4) season="Quaresima"; 
+            else if (m===4||m===5) season="Pasqua";
+            
             db.transaction("songs").objectStore("songs").getAll().onsuccess=(e)=>{
                 const songs = e.target.result.sort((a,b)=>a.title.localeCompare(b.title));
                 document.querySelectorAll('.song-select').forEach(sel=>{
-                    const part=sel.parentElement.parentElement.dataset.part; const old=sel.value; let sug="", oth="";
+                    const part=sel.parentElement.parentElement.dataset.part; 
+                    const old=sel.value; 
+                    let sug="", oth="";
                     songs.forEach(s=>{
-                        const cats = Array.isArray(s.categories)?s.categories:[s.category]; const seas = Array.isArray(s.seasons)?s.seasons:[s.season];
-                        if(cats.includes(part)&&(seas.includes(season)||seas.includes("Tutti"))) sug+=`<option value="${s.id}">★ ${s.title}</option>`; else oth+=`<option value="${s.id}">${s.title}</option>`;
+                        const cats = Array.isArray(s.categories)?s.categories:[s.category];
+                        const seas = Array.isArray(s.seasons)?s.seasons:[s.season];
+                        if(cats.includes(part)&&(seas.includes(season)||seas.includes("Tutti"))) 
+                            sug+=`<option value="${s.id}">★ ${s.title}</option>`; 
+                        else 
+                            oth+=`<option value="${s.id}">${s.title}</option>`;
                     });
-                    sel.innerHTML=`<option value="">Seleziona...</option><optgroup label="Suggeriti (${season})">${sug}</optgroup><optgroup label="Altri">${oth}</optgroup>`; sel.value=old;
+                    sel.innerHTML=`<option value="">Seleziona...</option><optgroup label="Suggeriti (${season})">${sug}</optgroup><optgroup label="Altri">${oth}</optgroup>`; 
+                    sel.value=old;
                 });
             }
         }
 
-        // GOOGLE DRIVE
-        function saveKeys(){ localStorage.setItem('g_api',document.getElementById('apiKey').value); localStorage.setItem('g_client',document.getElementById('clientId').value); showToast("Riavvio..."); setTimeout(()=>location.reload(), 1000); }
+        // GOOGLE DRIVE - CRITICAL FIX
+        function saveKeys(){
+            localStorage.setItem('g_api',document.getElementById('apiKey').value);
+            localStorage.setItem('g_client',document.getElementById('clientId').value);
+            showToast("Riavvio...");
+            setTimeout(()=>location.reload(), 1000);
+        }
+        
         async function driveAction(action, id=null) {
-            if(!gapiInited || !gisInited) { 
-                showToast("Errore: Google non pronto. Ricarica.", "error"); return; 
+            const k = document.getElementById('apiKey').value;
+            const c = document.getElementById('clientId').value;
+            if(!k || !c) {
+                showToast("Configurare API Key e Client ID prima", "error");
+                go('settings');
+                return;
             }
+            
             document.querySelectorAll('.modal-wrap').forEach(m => m.classList.remove('show'));
             if(action === 'sync') {
                 document.getElementById('syncModal').classList.add('show');
-                document.getElementById('syncStatus').innerText = "In attesa...";
-                return; 
+                return;
             }
             
+            // CRITICAL FIX: Inizializza se necessario in modo sincrono
+            if(!gapiInited) {
+                await new Promise(resolve => {
+                    gapi.load('client:picker', async () => {
+                        await gapi.client.init({
+                            apiKey: k,
+                            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]
+                        });
+                        gapiInited = true;
+                        resolve();
+                    });
+                });
+            }
+            
+            if(!gisInited) {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: c,
+                    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
+                    callback: ''
+                });
+                gisInited = true;
+            }
+            
+            // CRITICAL FIX: Controllo token e richiesta diretta (non async)
             const token = gapi.client.getToken();
             if(token && Date.now() < token.expires_at) {
                 executeDriveAction(action, id);
             } else {
+                // QUESTO È IL FIX CRITICO: callback sincrono e requestAccessToken sincrono
                 tokenClient.callback = (resp) => {
-                    if(resp.error) return showToast("Errore Auth", "error");
+                    if(resp.error) {
+                        showToast("Errore Auth: " + resp.error, "error");
+                        return;
+                    }
                     gapi.client.setToken(resp);
                     executeDriveAction(action, id);
                 };
+                // CRITICAL: Chiamata DIRETTA senza await
                 tokenClient.requestAccessToken({prompt: ''});
             }
         }
+        
         async function executeDriveAction(action, id) {
+            document.getElementById('syncModal').classList.add('show');
+            document.getElementById('syncStatus').innerText = "Operazione in corso...";
             document.getElementById('syncLoader').style.display = 'inline-block';
+            
             if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
+            
             if(action === 'picker') createPicker(gapi.client.getToken().access_token);
             else if(action === 'upload') await performUpload();
             else if(action === 'download') await performDownload();
             else if(action === 'downloadOne') await downloadSingleSong(id);
+            
             document.getElementById('syncLoader').style.display = 'none';
         }
         
-        // ... STANDARD DRIVE FUNCTIONS ...
-        function createPicker(t) { const k=document.getElementById('apiKey').value; const v=new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg"); new google.picker.PickerBuilder().setDeveloperKey(k).setOAuthToken(t).addView(v).enableFeature(google.picker.Feature.MULTISELECT_ENABLED).setCallback(pickerCallback).build().setVisible(true); }
-        async function pickerCallback(d) { if(d.action===google.picker.Action.PICKED){ tempFilesList=[]; document.getElementById('editModal').classList.add('show'); const t=gapi.client.getToken().access_token; for(let doc of d.docs){ try{ const r=await fetch(`https://www.googleapis.com/drive/v3/files/${doc.id}?alt=media`,{headers:{'Authorization':`Bearer ${t}`}}); const b=await r.blob(); const base64=await new Promise(res=>{const fr=new FileReader(); fr.onload=e=>res(e.target.result); fr.readAsDataURL(b);}); tempFilesList.push({name:doc.name.replace(/\.[^/.]+$/,""),id:doc.id,type:doc.mimeType,data:base64,source:'drive'}); }catch(e){} } document.getElementById('fileStatus').innerText=`${tempFilesList.length} File Drive`; if(tempFilesList.length===1){document.getElementById('songTitle').value=tempFilesList[0].name; driveTempMeta=tempFilesList[0];} } else document.getElementById('editModal').classList.add('show'); }
-        async function performUpload() { document.getElementById('syncStatus').innerText = "Caricamento..."; const tx = db.transaction(["songs","setlists"],"readonly"); const s = await new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)); const l = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result)); const fileContent = JSON.stringify({songs:s, setlists:l}); const meta = { name: SYNC_FILE_NAME, mimeType: 'application/json' }; const form = new FormData(); form.append('metadata', new Blob([JSON.stringify(meta)],{type:'application/json'})); form.append('file', new Blob([fileContent],{type:'application/json'})); try { const q = `name = '${SYNC_FILE_NAME}' and trashed = false`; const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'}); if(list.result.files.length > 0) await fetch(`https://www.googleapis.com/upload/drive/v3/files/${list.result.files[0].id}?uploadType=media`,{method:'PATCH',headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`,'Content-Type':'application/json'},body:fileContent}); else await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {method:'POST',headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`},body:form}); document.getElementById('syncStatus').innerText = "Backup Completato ✅"; } catch(e) { document.getElementById('syncStatus').innerText = "Errore Upload"; } }
-        async function performDownload() { document.getElementById('syncStatus').innerText = "Scaricamento..."; try { const q = `name = '${SYNC_FILE_NAME}' and trashed = false`; const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'}); if(list.result.files.length===0) return document.getElementById('syncStatus').innerText = "Nessun backup"; const res = await gapi.client.drive.files.get({fileId: list.result.files[0].id, alt: 'media'}); const data = res.result; const tx = db.transaction(["songs","setlists"],"readwrite"); tx.objectStore("songs").clear(); tx.objectStore("setlists").clear(); data.songs.forEach(s=>tx.objectStore("songs").put(s)); data.setlists.forEach(s=>tx.objectStore("setlists").put(s)); tx.oncomplete = () => { document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Ripristinato!"); setTimeout(()=>location.reload(), 1500); }; } catch(e) { document.getElementById('syncStatus').innerText = "Errore"; } }
-        async function downloadSingleSong(id) { const tx = db.transaction("songs", "readwrite"); tx.objectStore("songs").get(id).onsuccess = async (e) => { const s = e.target.result; try { const t = gapi.client.getToken().access_token; const r = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveId}?alt=media`,{headers:{'Authorization':`Bearer ${t}`}}); const b = await r.blob(); const fr = new FileReader(); fr.onload = (ev) => { s.fileData = ev.target.result; const tx2 = db.transaction("songs", "readwrite"); tx2.objectStore("songs").put(s).onsuccess = () => { showToast("Scaricato!"); openViewModal(id); renderLibrary(); }; }; fr.readAsDataURL(b); } catch(err) { alert("Err: "+err); } }; }
+        function createPicker(t) {
+            const k = document.getElementById('apiKey').value;
+            const v = new google.picker.DocsView(google.picker.ViewId.DOCS)
+                .setIncludeFolders(true)
+                .setMimeTypes("application/pdf,image/png,image/jpeg");
+            new google.picker.PickerBuilder()
+                .setDeveloperKey(k)
+                .setOAuthToken(t)
+                .addView(v)
+                .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+                .setCallback(pickerCallback)
+                .build()
+                .setVisible(true);
+        }
+        
+        async function pickerCallback(d) {
+            if(d.action === google.picker.Action.PICKED) {
+                tempFilesList = [];
+                document.getElementById('editModal').classList.add('show');
+                const t = gapi.client.getToken().access_token;
+                for(let doc of d.docs) {
+                    try {
+                        const r = await fetch(`https://www.googleapis.com/drive/v3/files/${doc.id}?alt=media`, {
+                            headers: {'Authorization': `Bearer ${t}`}
+                        });
+                        const b = await r.blob();
+                        const base64 = await new Promise(res => {
+                            const fr = new FileReader();
+                            fr.onload = e => res(e.target.result);
+                            fr.readAsDataURL(b);
+                        });
+                        tempFilesList.push({
+                            name: doc.name.replace(/\.[^/.]+$/, ""),
+                            id: doc.id,
+                            type: doc.mimeType,
+                            data: base64,
+                            source: 'drive'
+                        });
+                    } catch(e) {
+                        console.error('Errore download file:', e);
+                    }
+                }
+                document.getElementById('fileStatus').innerText = `${tempFilesList.length} File Drive`;
+                document.getElementById('driveOptions').classList.remove('d-none');
+                if(tempFilesList.length === 1) {
+                    document.getElementById('songTitle').value = tempFilesList[0].name;
+                    driveTempMeta = tempFilesList[0];
+                }
+            } else {
+                document.getElementById('editModal').classList.add('show');
+            }
+        }
+        
+        async function performUpload() {
+            document.getElementById('syncStatus').innerText = "Caricamento in corso...";
+            const tx = db.transaction(["songs", "setlists"], "readonly");
+            const s = await new Promise(r => tx.objectStore("songs").getAll().onsuccess = e => r(e.target.result));
+            const l = await new Promise(r => tx.objectStore("setlists").getAll().onsuccess = e => r(e.target.result));
+            const fileContent = JSON.stringify({songs: s, setlists: l});
+            
+            try {
+                const q = `name = '${SYNC_FILE_NAME}' and trashed = false`;
+                const list = await gapi.client.drive.files.list({q: q, fields: 'files(id)'});
+                
+                if(list.result.files.length > 0) {
+                    // Aggiorna file esistente
+                    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${list.result.files[0].id}?uploadType=media`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Bearer ${gapi.client.getToken().access_token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: fileContent
+                    });
+                } else {
+                    // Crea nuovo file
+                    const meta = {name: SYNC_FILE_NAME, mimeType: 'application/json'};
+                    const form = new FormData();
+                    form.append('metadata', new Blob([JSON.stringify(meta)], {type: 'application/json'}));
+                    form.append('file', new Blob([fileContent], {type: 'application/json'}));
+                    await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                        method: 'POST',
+                        headers: {'Authorization': `Bearer ${gapi.client.getToken().access_token}`},
+                        body: form
+                    });
+                }
+                document.getElementById('syncStatus').innerText = "Backup Completato ✅";
+                showToast("Backup completato!");
+            } catch(e) {
+                document.getElementById('syncStatus').innerText = "Errore Upload: " + e.message;
+                showToast("Errore upload", "error");
+            }
+        }
+        
+        async function performDownload() {
+            document.getElementById('syncStatus').innerText = "Scaricamento...";
+            try {
+                const q = `name = '${SYNC_FILE_NAME}' and trashed = false`;
+                const list = await gapi.client.drive.files.list({q: q, fields: 'files(id)'});
+                
+                if(list.result.files.length === 0) {
+                    document.getElementById('syncStatus').innerText = "Nessun backup trovato";
+                    return;
+                }
+                
+                const res = await gapi.client.drive.files.get({
+                    fileId: list.result.files[0].id,
+                    alt: 'media'
+                });
+                
+                const data = res.result;
+                const tx = db.transaction(["songs", "setlists"], "readwrite");
+                tx.objectStore("songs").clear();
+                tx.objectStore("setlists").clear();
+                data.songs.forEach(s => tx.objectStore("songs").put(s));
+                data.setlists.forEach(s => tx.objectStore("setlists").put(s));
+                
+                tx.oncomplete = () => {
+                    document.getElementById('syncStatus').innerText = "Ripristino Completato ✅";
+                    showToast("Ripristinato!");
+                    setTimeout(() => location.reload(), 1500);
+                };
+            } catch(e) {
+                document.getElementById('syncStatus').innerText = "Errore: " + e.message;
+                showToast("Errore download", "error");
+            }
+        }
+        
+        async function downloadSingleSong(id) {
+            const tx = db.transaction("songs", "readwrite");
+            tx.objectStore("songs").get(id).onsuccess = async (e) => {
+                const s = e.target.result;
+                try {
+                    const t = gapi.client.getToken().access_token;
+                    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveId}?alt=media`, {
+                        headers: {'Authorization': `Bearer ${t}`}
+                    });
+                    const b = await r.blob();
+                    const fr = new FileReader();
+                    fr.onload = (ev) => {
+                        s.fileData = ev.target.result;
+                        const tx2 = db.transaction("songs", "readwrite");
+                        tx2.objectStore("songs").put(s).onsuccess = () => {
+                            showToast("Scaricato!");
+                            openViewModal(id);
+                            renderLibrary();
+                        };
+                    };
+                    fr.readAsDataURL(b);
+                } catch(err) {
+                    showToast("Errore: " + err, "error");
+                }
+            };
+        }
 
-        // PDF GENERATION (FIXED & NEW)
-        function generatePDF(mode) {
+        function handleFile(input) {
+            const files = input.files;
+            if(!files.length) return;
+            tempFilesList = [];
+            document.getElementById('fileStatus').innerText = "Lettura...";
+            const readFile = (f) => new Promise(r => {
+                const rd = new FileReader();
+                rd.onload = e => r({
+                    name: f.name.replace(/\.[^/.]+$/, ""),
+                    type: f.type,
+                    data: e.target.result
+                });
+                rd.readAsDataURL(f);
+            });
+            Promise.all(Array.from(files).map(f => readFile(f))).then(res => {
+                tempFilesList = res;
+                if(tempFilesList.length === 1) {
+                    document.getElementById('songTitle').value = tempFilesList[0].name;
+                    document.getElementById('fileStatus').innerText = "1 File Locale ✅";
+                } else {
+                    document.getElementById('songTitle').value = "[Multiplo]";
+                    document.getElementById('fileStatus').innerText = `${tempFilesList.length} File Locali ✅`;
+                }
+            });
+        }
+
+        function saveSong() {
+            if(tempFilesList.length === 0 && !driveTempMeta && !document.getElementById('songLyrics').value && !document.getElementById('songId').value) {
+                showToast("Nessun dato da salvare", "error");
+                return;
+            }
+            
+            const cats = Array.from(document.querySelectorAll('#catChips .selected')).map(c => c.dataset.val);
+            const seas = Array.from(document.querySelectorAll('#seasonChips .selected')).map(c => c.dataset.val);
+            if(cats.length === 0) cats.push("Altro");
+            if(seas.length === 0) seas.push("Ordinario");
+            
+            const lyrics = document.getElementById('songLyrics').value;
+            const editId = document.getElementById('songId').value;
+            const tx = db.transaction("songs", "readwrite");
+            const store = tx.objectStore("songs");
+
+            if(driveTempMeta) {
+                const mode = document.querySelector('input[name="storeMode"]:checked').value;
+                const s = {
+                    title: document.getElementById('songTitle').value,
+                    categories: cats,
+                    seasons: seas,
+                    lyrics: lyrics,
+                    driveId: driveTempMeta.id,
+                    type: driveTempMeta.type,
+                    fileData: mode === 'full' ? driveTempMeta.data : null
+                };
+                if(editId) s.id = Number(editId);
+                store.put(s);
+            } else if(tempFilesList.length > 0) {
+                if(tempFilesList.length === 1 && editId) {
+                    store.put({
+                        id: Number(editId),
+                        title: document.getElementById('songTitle').value,
+                        categories: cats,
+                        seasons: seas,
+                        lyrics: lyrics,
+                        fileData: tempFilesList[0].data,
+                        type: tempFilesList[0].type
+                    });
+                } else {
+                    tempFilesList.forEach(f => {
+                        const data = f.source === 'drive' ? (document.querySelector('input[name="storeMode"]:checked').value === 'full' ? f.data : null) : f.data;
+                        const drvId = f.source === 'drive' ? f.id : null;
+                        store.add({
+                            title: f.name,
+                            categories: cats,
+                            seasons: seas,
+                            lyrics: "",
+                            fileData: data,
+                            type: f.type,
+                            driveId: drvId
+                        });
+                    });
+                }
+            } else if(editId) {
+                store.get(Number(editId)).onsuccess = (e) => {
+                    const old = e.target.result;
+                    const s = {
+                        id: Number(editId),
+                        title: document.getElementById('songTitle').value,
+                        categories: cats,
+                        seasons: seas,
+                        lyrics: lyrics,
+                        fileData: old.fileData,
+                        type: old.type,
+                        driveId: old.driveId
+                    };
+                    store.put(s);
+                };
+            } else {
+                store.add({
+                    title: document.getElementById('songTitle').value,
+                    categories: cats,
+                    seasons: seas,
+                    lyrics: lyrics,
+                    fileData: null,
+                    type: null
+                });
+            }
+            
+            tx.oncomplete = () => {
+                document.getElementById('editModal').classList.remove('show');
+                renderLibrary();
+                updateSuggestions();
+                showToast("Salvato!");
+            };
+        }
+
+        function openViewModal(id) {
+            currentSongId = id;
+            db.transaction("songs").objectStore("songs").get(id).onsuccess = (e) => {
+                const s = e.target.result;
+                document.getElementById('viewTitle').innerText = s.title;
+                const body = document.getElementById('viewBody');
+                const footer = document.getElementById('viewFooter');
+                body.innerHTML = "";
+                footer.style.display = "none";
+                
+                if(s.fileData) {
+                    if(s.type && s.type.includes('pdf')) {
+                        body.innerHTML = `<iframe src="${s.fileData}" class="pdf-frame"></iframe>`;
+                    } else {
+                        body.innerHTML = `<img src="${s.fileData}" style="width:100%; display:block;">`;
+                    }
+                } else if(s.driveId) {
+                    body.innerHTML = `<div style="padding:40px; text-align:center;"><p style="color:#666;">File su Google Drive</p><button onclick="driveAction('downloadOne', ${id})" class="btn-primary">⬇️ Scarica File</button></div>`;
+                } else if(s.lyrics) {
+                    body.innerHTML = `<div style="padding:20px; white-space:pre-wrap; font-size:1.1rem;">${s.lyrics}</div>`;
+                } else {
+                    body.innerHTML = `<div style="padding:40px; text-align:center; color:#999;">Nessun contenuto</div>`;
+                }
+                
+                document.getElementById('viewModal').classList.add('show');
+            };
+        }
+
+        function deleteCurrentSong() {
+            if(confirm("Eliminare definitivamente questo canto?")) {
+                db.transaction("songs", "readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => {
+                    document.getElementById('viewModal').classList.remove('show');
+                    renderLibrary();
+                    updateSuggestions();
+                    showToast("Eliminato!");
+                };
+            }
+        }
+
+        function editFromView() {
+            document.getElementById('viewModal').classList.remove('show');
+            openEditModal(currentSongId);
+        }
+
+        function openEditModal(id=null) {
+            document.getElementById('editModal').classList.add('show');
+            document.getElementById('songId').value = "";
+            document.getElementById('songTitle').value = "";
+            document.getElementById('songLyrics').value = "";
+            document.getElementById('fileStatus').innerText = "Nessun file";
+            tempFilesList = [];
+            driveTempMeta = null;
+            document.getElementById('driveOptions').classList.add('d-none');
+            document.querySelectorAll('.chip-select').forEach(c => c.classList.remove('selected'));
+            document.getElementById('editModalTitle').innerText = id ? "Modifica Canto" : "Nuovo Canto";
+            
+            if(id) {
+                document.getElementById('songId').value = id;
+                db.transaction("songs").objectStore("songs").get(id).onsuccess = (e) => {
+                    const s = e.target.result;
+                    document.getElementById('songTitle').value = s.title;
+                    document.getElementById('songLyrics').value = s.lyrics || "";
+                    
+                    if(s.fileData) {
+                        tempFilesList = [{data: s.fileData, type: s.type, name: s.title}];
+                        document.getElementById('fileStatus').innerText = "File Presente ✅";
+                    } else if(s.driveId) {
+                        document.getElementById('fileStatus').innerText = "File Drive ☁️";
+                    }
+                    
+                    const cats = Array.isArray(s.categories) ? s.categories : [s.category];
+                    const seas = Array.isArray(s.seasons) ? s.seasons : [s.season];
+                    document.querySelectorAll('#catChips .chip-select').forEach(c => {
+                        if(cats.includes(c.dataset.val)) c.classList.add('selected');
+                    });
+                    document.querySelectorAll('#seasonChips .chip-select').forEach(c => {
+                        if(seas.includes(c.dataset.val)) c.classList.add('selected');
+                    });
+                };
+            }
+        }
+
+        function saveSetlist() {
+            const data = {
+                date: document.getElementById('messaDate').value,
+                title: document.getElementById('messaTitle').value,
+                songs: {},
+                readings: {
+                    first: document.getElementById('reading1').value,
+                    psalm: document.getElementById('psalm').value,
+                    second: document.getElementById('reading2').value,
+                    gospel: document.getElementById('gospel').value
+                }
+            };
+            
+            document.querySelectorAll('.song-select').forEach(sel => {
+                if(sel.value) {
+                    const part = sel.parentElement.parentElement.dataset.part;
+                    data.songs[part] = Number(sel.value);
+                }
+            });
+            
+            const tx = db.transaction("setlists", "readwrite");
+            tx.objectStore("setlists").add(data);
+            tx.oncomplete = () => {
+                showToast("Messa salvata!");
+                renderFullHistory();
+            };
+        }
+
+        function renderFullHistory() {
+            const list = document.getElementById('fullHistoryList');
+            list.innerHTML = "";
+            const tx = db.transaction("setlists", "readonly");
+            tx.objectStore("setlists").openCursor(null, 'prev').onsuccess = (e) => {
+                const c = e.target.result;
+                if(c) {
+                    const s = c.value;
+                    const songCount = Object.keys(s.songs || {}).length;
+                    list.innerHTML += `<div class="history-item" onclick="loadSetlist(${s.id})"><div><div style="font-weight:bold;">${s.title || 'Messa'}</div><div style="font-size:0.85rem; color:#666; margin-top:2px;">${s.date} • ${songCount} canti</div></div><span class="material-icons-round" style="color:#ccc;">event</span></div>`;
+                    c.continue();
+                }
+            };
+        }
+
+        function loadSetlist(id) {
+            db.transaction("setlists").objectStore("setlists").get(id).onsuccess = (e) => {
+                const s = e.target.result;
+                document.getElementById('messaDate').value = s.date;
+                document.getElementById('messaTitle').value = s.title || "";
+                document.getElementById('reading1').value = s.readings.first || "";
+                document.getElementById('psalm').value = s.readings.psalm || "";
+                document.getElementById('reading2').value = s.readings.second || "";
+                document.getElementById('gospel').value = s.readings.gospel || "";
+                
+                updateSuggestions();
+                setTimeout(() => {
+                    document.querySelectorAll('.song-select').forEach(sel => {
+                        const part = sel.parentElement.parentElement.dataset.part;
+                        if(s.songs[part]) sel.value = s.songs[part];
+                    });
+                }, 600);
+                
+                go('scaletta');
+                showToast("Messa caricata!");
+            };
+        }
+
+        async function autoFetchReadings() {
+            const date = document.getElementById('messaDate').value;
+            if(!date) {
+                showToast("Seleziona una data", "error");
+                return;
+            }
+            
+            showToast("Scaricamento letture...");
+            const [y, m, d] = date.split('-');
+            const url = `https://api.allorigins.win/get?url=${encodeURIComponent('https://www.lachiesa.it/mobile_liturgia.php?data=' + date)}`;
+            
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data.contents, 'text/html');
+                const text = doc.body.innerText;
+                
+                const sections = {
+                    first: /Prima Lettura[\s\S]*?(?=Salmo|$)/i,
+                    psalm: /Salmo Responsoriale[\s\S]*?(?=Seconda|Vangelo|$)/i,
+                    second: /Seconda Lettura[\s\S]*?(?=Vangelo|$)/i,
+                    gospel: /Vangelo[\s\S]*?$/i
+                };
+                
+                for(let [key, regex] of Object.entries(sections)) {
+                    const match = text.match(regex);
+                    if(match) {
+                        const field = key === 'first' ? 'reading1' : 
+                                    key === 'psalm' ? 'psalm' :
+                                    key === 'second' ? 'reading2' : 'gospel';
+                        document.getElementById(field).value = match[0].trim();
+                    }
+                }
+                
+                showToast("Letture scaricate!");
+            } catch(e) {
+                showToast("Errore download letture", "error");
+            }
+        }
+
+        function shareText(mode) {
+            let text = `🎵 ${document.getElementById('messaTitle').value || 'Messa'}\n📅 ${document.getElementById('messaDate').value}\n\n`;
+            
+            if(mode === 'list' || mode === 'all') {
+                text += "📋 SCALETTA CANTI\n";
+                document.querySelectorAll('.song-select').forEach(sel => {
+                    if(sel.value) {
+                        const part = sel.parentElement.parentElement.dataset.part;
+                        const songId = Number(sel.value);
+                        db.transaction("songs").objectStore("songs").get(songId).onsuccess = (e) => {
+                            text += `${part}: ${e.target.result.title}\n`;
+                        };
+                    }
+                });
+                text += "\n";
+            }
+            
+            if(mode === 'read' || mode === 'all') {
+                text += "📖 LETTURE\n\n";
+                const r1 = document.getElementById('reading1').value;
+                const ps = document.getElementById('psalm').value;
+                const r2 = document.getElementById('reading2').value;
+                const gos = document.getElementById('gospel').value;
+                if(r1) text += "PRIMA LETTURA\n" + r1 + "\n\n";
+                if(ps) text += "SALMO\n" + ps + "\n\n";
+                if(r2) text += "SECONDA LETTURA\n" + r2 + "\n\n";
+                if(gos) text += "VANGELO\n" + gos + "\n\n";
+            }
+            
+            setTimeout(() => {
+                if(navigator.share) {
+                    navigator.share({text: text}).catch(() => {});
+                } else {
+                    navigator.clipboard.writeText(text);
+                    showToast("Copiato!");
+                }
+            }, 500);
+        }
+
+        async function startReadingMode() {
+            document.getElementById('readingContainer').classList.add('active');
+            const musicArea = document.getElementById('readMusicArea');
+            const wordArea = document.getElementById('readWordArea');
+            musicArea.innerHTML = "";
+            wordArea.innerHTML = "";
+            
+            // Carica canti
+            const promises = [];
+            document.querySelectorAll('.song-select').forEach(sel => {
+                if(sel.value) {
+                    const part = sel.parentElement.parentElement.dataset.part;
+                    const songId = Number(sel.value);
+                    const p = new Promise(resolve => {
+                        db.transaction("songs").objectStore("songs").get(songId).onsuccess = (e) => {
+                            const s = e.target.result;
+                            let html = `<div class="score-seq-item"><h3>${part}: ${s.title}</h3>`;
+                            if(s.fileData) {
+                                if(s.type && s.type.includes('pdf')) {
+                                    html += `<iframe src="${s.fileData}" class="pdf-frame"></iframe>`;
+                                } else {
+                                    html += `<img src="${s.fileData}" style="width:100%;" onload="this.dispatchEvent(new Event('imageloaded'))">`;
+                                }
+                            } else if(s.lyrics) {
+                                html += `<pre style="white-space:pre-wrap; font-size:1rem;">${s.lyrics}</pre>`;
+                            }
+                            html += `</div>`;
+                            musicArea.innerHTML += html;
+                            resolve();
+                        };
+                    });
+                    promises.push(p);
+                }
+            });
+            
+            // Carica letture
+            const r1 = document.getElementById('reading1').value;
+            const ps = document.getElementById('psalm').value;
+            const r2 = document.getElementById('reading2').value;
+            const gos = document.getElementById('gospel').value;
+            
+            if(r1) wordArea.innerHTML += `<h3>Prima Lettura</h3><p>${r1.replace(/\n/g, '<br>')}</p><br>`;
+            if(ps) wordArea.innerHTML += `<h3>Salmo Responsoriale</h3><p>${ps.replace(/\n/g, '<br>')}</p><br>`;
+            if(r2) wordArea.innerHTML += `<h3>Seconda Lettura</h3><p>${r2.replace(/\n/g, '<br>')}</p><br>`;
+            if(gos) wordArea.innerHTML += `<h3>Vangelo</h3><p>${gos.replace(/\n/g, '<br>')}</p><br>`;
+            
+            // Attendi caricamento immagini
+            await Promise.all(promises);
+            await new Promise(resolve => {
+                const images = musicArea.querySelectorAll('img');
+                if(images.length === 0) {
+                    resolve();
+                    return;
+                }
+                let loaded = 0;
+                images.forEach(img => {
+                    if(img.complete) {
+                        loaded++;
+                        if(loaded === images.length) resolve();
+                    } else {
+                        img.addEventListener('imageloaded', () => {
+                            loaded++;
+                            if(loaded === images.length) resolve();
+                        });
+                    }
+                });
+            });
+            
+            setReadTab('music');
+        }
+
+        function stopReadingMode() {
+            document.getElementById('readingContainer').classList.remove('active');
+            document.body.className = "";
+        }
+
+        function setReadTab(mode) {
+            if(mode === 'music') {
+                document.getElementById('readMusicArea').classList.remove('d-none');
+                document.getElementById('readWordArea').classList.add('d-none');
+                document.getElementById('rtab-music').style.background = 'var(--primary)';
+                document.getElementById('rtab-music').style.color = 'white';
+                document.getElementById('rtab-word').style.background = 'transparent';
+                document.getElementById('rtab-word').style.color = '#555';
+            } else {
+                document.getElementById('readMusicArea').classList.add('d-none');
+                document.getElementById('readWordArea').classList.remove('d-none');
+                document.getElementById('rtab-word').style.background = 'var(--primary)';
+                document.getElementById('rtab-word').style.color = 'white';
+                document.getElementById('rtab-music').style.background = 'transparent';
+                document.getElementById('rtab-music').style.color = '#555';
+            }
+        }
+
+        async function generatePDF(mode) {
             document.body.className = "";
             if(!document.getElementById('chkSongs').checked) document.body.classList.add('print-text-only');
             if(!document.getElementById('chkReads').checked) document.body.classList.add('print-music-only');
@@ -485,106 +1154,86 @@
                 ph.style.display = 'block';
                 document.getElementById('phTitle').innerText = document.getElementById('messaTitle').value;
                 document.getElementById('phDate').innerText = document.getElementById('messaDate').value;
-            } else { ph.style.display = 'none'; }
+            } else {
+                ph.style.display = 'none';
+            }
 
-            startReadingMode().then(() => {
+            await startReadingMode();
+            
+            if(mode === 'print') {
+                setTimeout(() => {
+                    window.print();
+                }, 1500);
+            } else {
                 const element = document.getElementById('readingContainer');
-                if(mode === 'print') {
-                    setTimeout(() => { window.print(); }, 1500); 
-                } else {
-                    const opt = { 
-                        margin: 10, 
-                        filename: `Messa_${document.getElementById('messaDate').value}.pdf`, 
-                        image: { type: 'jpeg', quality: 0.98 }, 
-                        html2canvas: { scale: 2 }, 
-                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
-                    };
-                    html2pdf().set(opt).from(element).save();
-                }
-            });
-        }
-
-        function startReadingMode() {
-            return new Promise((resolve) => {
-                document.getElementById('readingContainer').classList.add('active'); 
-                const mc=document.getElementById('readMusicArea'); mc.innerHTML=""; 
-                const wc=document.getElementById('readWordArea'); wc.innerHTML="";
-                
-                const promises = [];
-                document.querySelectorAll('.song-select').forEach(s=>{ 
-                    if(s.value){ 
-                        const p = new Promise(r => {
-                            db.transaction("songs").objectStore("songs").get(Number(s.value)).onsuccess=e=>{ 
-                                const x=e.target.result; 
-                                let h=""; 
-                                if(x.fileData) h=x.type.includes('pdf')?`<iframe src="${x.fileData}" class="pdf-frame"></iframe>`:`<img src="${x.fileData}" style="width:100%; max-width:100%;">`; 
-                                else if(x.driveId) h=`<div style="text-align:center; padding:50px;">Disponibile solo Online</div>`; 
-                                else h=`<pre style="white-space:pre-wrap; font-family:inherit;">${x.lyrics}</pre>`;
-                                mc.innerHTML+=`<div class="score-seq-item"><h3>${x.title}</h3>${h}</div>`;
-                                const img = mc.lastElementChild.querySelector('img');
-                                if(img) img.onload = r; else r();
-                            }
-                        });
-                        promises.push(p);
-                    }
-                });
-                
-                const r=[{t:"I Lettura",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II Lettura",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}];
-                r.forEach(x=>{if(x.v)wc.innerHTML+=`<div style="margin-bottom:40px;"><h3 style="color:var(--primary);">${x.t}</h3><p style="font-size:1.3rem; line-height:1.6;">${x.v}</p></div>`;});
-
-                Promise.all(promises).then(() => setTimeout(resolve, 500));
-            });
-        }
-
-        // READINGS LOGIC (ORIGINAL FUZZY)
-        async function autoFetchReadings() {
-            const d=new Date(document.getElementById('messaDate').value); 
-            const url=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`)}`;
-            showToast("Ricerca...", 2000);
-            try {
-                const res = await fetch(url);
-                const json = await res.json();
-                if(!json.contents) throw "No data";
-                const t = new DOMParser().parseFromString(json.contents, "text/html").body.innerText.replace(/\s+/g, ' '); 
-                const find = (a, b) => {
-                    let s = -1;
-                    for (let w of a) { let i = t.indexOf(w); if (i > -1) { s = i + w.length; break; } }
-                    if (s < 0) return "";
-                    let e = -1;
-                    for (let w of b) { let i = t.indexOf(w, s); if (i > -1) { e = i; break; } }
-                    return e < 0 ? "" : t.substring(s, e).trim();
+                const opt = {
+                    margin: 10,
+                    filename: `Messa_${document.getElementById('messaDate').value}.pdf`,
+                    image: {type: 'jpeg', quality: 0.98},
+                    html2canvas: {scale: 2},
+                    jsPDF: {unit: 'mm', format: 'a4', orientation: 'portrait'}
                 };
-                document.getElementById('r1').value=find(["Prima Lettura", "Dagli Atti"], ["Salmo"]);
-                document.getElementById('rps').value=find(["Salmo"], ["Seconda Lettura", "Vangelo"]);
-                document.getElementById('r2').value=find(["Seconda Lettura"], ["Vangelo", "Canto al Vangelo"]);
-                document.getElementById('rg').value=find(["Vangelo", "Dal Vangelo"], ["PREGHIERA", "Sulle Offerte"]);
-                showToast("Fatto!");
-            } catch(e) { 
-                 if(confirm("Errore scaricamento. Aprire sito?")) window.open(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`);
+                
+                setTimeout(() => {
+                    html2pdf().from(element).set(opt).save().then(() => {
+                        stopReadingMode();
+                        document.getElementById('shareModal').classList.remove('show');
+                    });
+                }, 2000);
             }
         }
 
-        // OTHER UTILS
-        function openEditModal(id=null) { document.getElementById('editModal').classList.add('show'); document.getElementById('songId').value=""; document.getElementById('songTitle').value=""; document.getElementById('songLyrics').value=""; tempFilesList=[]; driveTempMeta=null; document.getElementById('fileStatus').innerText="Nessun file"; document.getElementById('driveOptions').classList.add('d-none'); document.querySelectorAll('.chip-select').forEach(c=>c.classList.remove('selected')); if(id){ document.getElementById('songId').value=id; db.transaction("songs").objectStore("songs").get(id).onsuccess=e=>{const s=e.target.result; document.getElementById('songTitle').value=s.title; document.getElementById('songLyrics').value=s.lyrics||""; if(s.fileData){tempFilesList=[{data:s.fileData,type:s.type,name:s.title}];document.getElementById('fileStatus').innerText="File Presente";} else if(s.driveId)document.getElementById('fileStatus').innerText="File Drive";} } } 
-        function handleFile(input){ const f=input.files; if(!f.length)return; tempFilesList=[]; const rd=(file)=>new Promise(r=>{const fr=new FileReader();fr.onload=e=>r({name:file.name.replace(/\.[^/.]+$/,""),type:file.type,data:e.target.result});fr.readAsDataURL(file);}); Promise.all(Array.from(f).map(rd)).then(res=>{tempFilesList=res; if(res.length===1)document.getElementById('songTitle').value=res[0].name; document.getElementById('fileStatus').innerText=`${res.length} File Locali`;}); }
-        function saveSong(){ if(tempFilesList.length===0 && !driveTempMeta && !document.getElementById('songLyrics').value) return alert("Dati mancanti"); const cats=Array.from(document.querySelectorAll('#catChips .selected')).map(c=>c.innerText); if(!cats.length)cats.push("Altro"); const seas=Array.from(document.querySelectorAll('#seasonChips .selected')).map(c=>c.innerText); if(!seas.length)seas.push("Ordinario"); const lyrics=document.getElementById('songLyrics').value; const editId=document.getElementById('songId').value; const tx=db.transaction("songs","readwrite"); const store=tx.objectStore("songs"); if(driveTempMeta){ const mode=document.querySelector('input[name="storeMode"]:checked').value; const s={title:document.getElementById('songTitle').value,categories:cats,seasons:seas,lyrics:lyrics,driveId:driveTempMeta.id,type:driveTempMeta.mimeType,fileData:mode==='full'?driveTempMeta.data:null}; if(editId)s.id=Number(editId); store.put(s); } else if(tempFilesList.length>0){ if(tempFilesList.length===1 && editId){ store.put({id:Number(editId),title:document.getElementById('songTitle').value,categories:cats,seasons:seas,lyrics:lyrics,fileData:tempFilesList[0].data,type:tempFilesList[0].type}); } else { tempFilesList.forEach(f=>{ store.add({title:f.name,categories:cats,seasons:seas,lyrics:"",fileData:f.data,type:f.type}); }); } } else if(editId){ store.get(Number(editId)).onsuccess=e=>{const old=e.target.result; store.put({...old,title:document.getElementById('songTitle').value,lyrics:lyrics,categories:cats,seasons:seas});}; } else { store.add({title:document.getElementById('songTitle').value,categories:cats,seasons:seas,lyrics:lyrics,fileData:null,type:null}); } tx.oncomplete=()=>{document.getElementById('editModal').classList.remove('show');renderLibrary();updateSuggestions();}; }
-        function deleteCurrentSong() { if(confirm("Eliminare?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); }; }
-        function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(currentSongId); }
-        async function toggleDownload(id, dl) { if(dl) driveAction('downloadOne', id); else { const tx=db.transaction("songs","readwrite"); tx.objectStore("songs").get(id).onsuccess=e=>{ const s=e.target.result; s.fileData=null; tx.objectStore("songs").put(s).onsuccess=()=>{showToast("Rimosso"); openViewModal(id); renderLibrary();}; }; } }
-        function openHistoryModal() { document.getElementById('historyModal').classList.add('show'); renderFullHistory(); }
-        function renderFullHistory() { const l=document.getElementById('fullHistoryList');l.innerHTML=""; db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess=e=>{const c=e.target.result;if(c){const s=c.value;l.innerHTML+=`<div class="song-item"><div onclick="loadSet(${s.id})" style="flex:1;"><b>${s.title}</b><br><small>${s.date}</small></div><span class="material-icons-round" onclick="delSet(${s.id})" style="color:red; cursor:pointer;">delete</span></div>`;c.continue();}} }
-        function loadSet(id) { db.transaction("setlists").objectStore("setlists").get(id).onsuccess=e=>{ const s=e.target.result;document.getElementById('messaTitle').value=s.title;document.getElementById('messaDate').value=s.date; if(s.readings){document.getElementById('r1').value=s.readings.r1||"";document.getElementById('rps').value=s.readings.rps||"";document.getElementById('r2').value=s.readings.r2||"";document.getElementById('rg').value=s.readings.rg||"";} document.querySelectorAll('.song-select').forEach(sel=>sel.value=""); for(let[k,v]of Object.entries(s.songs)){const el=document.querySelector(`div[data-part="${k}"] select`);if(el)el.value=v;} go('scaletta'); if(window.innerWidth<=768) toggleSidebar(); } }
-        function delSet(id) { if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderFullHistory(); }
-        function openShareModal(){ document.getElementById('shareModal').classList.add('show'); }
-        function shareText(mode) { const t=document.getElementById('messaTitle').value; let txt=`📅 *${t}*\n\n`; if(mode!=='read') document.querySelectorAll('.song-select').forEach(s=>{if(s.selectedIndex>0)txt+=`🎵 ${s.options[s.selectedIndex].text}\n`}); if(mode!=='list') txt+=`\n📖 Vangelo: ${document.getElementById('rg').value.substring(0,100)}...`; window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
-        function exportData(){ const tx=db.transaction(["songs","setlists"],"readonly"); Promise.all([new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)),new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result))]).then(([s,l])=>{const b=new Blob([JSON.stringify({songs:s,setlists:l})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup.json";a.click();}); }
-        function importData(inp){ const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");tx.objectStore("songs").clear();tx.objectStore("setlists").clear();d.songs.forEach(s=>tx.objectStore("songs").put(s));d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{showToast("Fatto!");setTimeout(()=>location.reload(),1000);}}catch(x){alert("Errore file");}};r.readAsText(f); }
-        function optimizeStorage(){ if(confirm("Rimuovere download inutili?")) showToast("Fatto!"); }
-        function stopReadingMode(){document.getElementById('readingContainer').classList.remove('active');}
-        function setReadTab(t){document.getElementById('readMusicArea').className=t==='music'?'':'d-none';document.getElementById('readWordArea').className=t==='word'?'':'d-none';}
-        function showToast(m, t="info") { const el=document.getElementById('toast'); el.innerText=m; el.classList.add('show'); if(t=='error')el.classList.add('error'); setTimeout(()=>el.className='', 3000); }
-        function clearReadings(){ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value=""); }
-        function openViewModal(id) { currentSongId=id; db.transaction("songs","readwrite").objectStore("songs").get(id).onsuccess=e=>{const s=e.target.result; document.getElementById('viewTitle').innerText=s.title; const b=document.getElementById('viewBody'); const f=document.getElementById('viewFooter'); if(s.fileData){ b.innerHTML=s.type.includes('pdf')?`<iframe src="${s.fileData}" style="width:100%;height:100%;border:none;"></iframe>`:`<img src="${s.fileData}" style="width:100%;">`; f.innerHTML=s.driveId?`<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="color:orange;">Rimuovi</button>`:''; }else if(s.driveId){b.innerHTML="<div style='text-align:center;padding:50px'>Online</div>";f.innerHTML=`<button onclick="toggleDownload(${s.id}, true)" class="btn-primary">Scarica</button>`;}else{b.innerHTML=`<pre>${s.lyrics}</pre>`; f.innerHTML='';} document.getElementById('viewModal').classList.add('show');}}
+        function exportData() {
+            const tx = db.transaction(["songs", "setlists"], "readonly");
+            Promise.all([
+                new Promise(r => tx.objectStore("songs").getAll().onsuccess = e => r(e.target.result)),
+                new Promise(r => tx.objectStore("setlists").getAll().onsuccess = e => r(e.target.result))
+            ]).then(([songs, setlists]) => {
+                const data = JSON.stringify({songs, setlists});
+                const blob = new Blob([data], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `spartiti_backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                showToast("Backup scaricato!");
+            });
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const tx = db.transaction(["songs", "setlists"], "readwrite");
+                    tx.objectStore("songs").clear();
+                    tx.objectStore("setlists").clear();
+                    data.songs.forEach(s => tx.objectStore("songs").put(s));
+                    data.setlists.forEach(s => tx.objectStore("setlists").put(s));
+                    tx.oncomplete = () => {
+                        showToast("Dati importati!");
+                        setTimeout(() => location.reload(), 1000);
+                    };
+                } catch(err) {
+                    showToast("Errore import", "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function showToast(msg, type="") {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.className = type === "error" ? "show error" : "show";
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Service Worker
+        if('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(() => {});
+        }
     </script>
 </body>
 </html>
