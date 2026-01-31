@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v16-fix-total';
+const CACHE_NAME = 'spartiti-messa-v17-pdf-readings';
 const ASSETS = [
   './',
   './index.html',
@@ -8,7 +8,8 @@ const ASSETS = [
   './logo512.png',
   'https://fonts.googleapis.com/icon?family=Material+Icons+Round',
   'https://apis.google.com/js/api.js',
-  'https://accounts.google.com/gsi/client'
+  'https://accounts.google.com/gsi/client',
+  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
 ];
 
 self.addEventListener('install', (e) => {
