@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v6-reborn'; // CAMBIATO NOME PER FORZARE AGGIORNAMENTO
+const CACHE_NAME = 'spartiti-messa-v7-hamburger';
 const ASSETS = [
   './',
   './index.html',
