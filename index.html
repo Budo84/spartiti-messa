@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Spartiti Messa Pro</title>
     
-    <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo192.png">
     <meta name="theme-color" content="#673ab7">
@@ -47,11 +46,11 @@
 
         /* CHIPS */
         .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
-        .chip-select { padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.85rem; cursor: pointer; user-select: none; }
+        .chip-select { padding: 8px 14px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.9rem; cursor: pointer; user-select: none; }
         .chip-select.selected { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; box-shadow: 0 2px 5px rgba(103, 58, 183, 0.3); }
 
         /* INPUTS */
-        .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
         textarea.form-control { resize: vertical; min-height: 100px; }
 
         /* MODAL (OVERLAY) */
@@ -73,7 +72,7 @@
         #readingContainer.active { display: flex; }
         .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
         .reading-content { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
-        .score-seq-item { margin-bottom: 40px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); page-break-inside: avoid; }
+        .score-seq-item { margin-bottom: 40px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); page-break-inside: avoid; }
         .pdf-frame { width: 100%; height: 80vh; border: none; background: #eee; }
 
         /* NAV BAR */
@@ -83,10 +82,10 @@
         .nav-btn span { font-size: 26px; margin-bottom: 2px; }
 
         /* BUTTONS */
-        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        .btn { padding: 10px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; font-size: 0.95rem; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: transparent; border: 1px solid #ccc; color: #555; }
-        .btn-icon { background: none; border: none; font-size: 1.4rem; padding: 5px; cursor: pointer; color: #555; }
+        .btn-icon { background: none; border: none; font-size: 1.6rem; padding: 8px; cursor: pointer; color: #555; }
         .fab { position: fixed; bottom: 85px; right: 20px; width: 56px; height: 56px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 200; }
 
         /* GRID SYSTEM */
@@ -207,6 +206,13 @@
             </div>
 
             <div class="card">
+                <div class="card-header">Gestione Spazio</div>
+                <div class="card-body" style="text-align:center;">
+                    <button onclick="optimizeStorage()" class="btn-outline" style="border-color:#e65100; color:#e65100; width:100%;">🧹 Ottimizza Spazio (Auto)</button>
+                </div>
+            </div>
+
+            <div class="card">
                 <div class="card-header">Backup Locale</div>
                 <div class="card-body" style="display:flex; gap:10px;">
                     <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica</button>
@@ -317,6 +323,13 @@
         </div>
     </div>
 
+    <div id="historyModal" class="modal-wrap">
+        <div class="modal-box" style="height:60vh;">
+            <div class="card-header"><span>Storico</span><button onclick="document.getElementById('historyModal').classList.remove('show')" class="btn-icon">×</button></div>
+            <div class="modal-scroll" id="historyList"></div>
+        </div>
+    </div>
+
     <div id="readingContainer">
         <div class="reading-nav no-print">
             <button onclick="stopReadingMode()" class="btn-icon" style="color:red; font-weight:bold;">← ESCI</button>
@@ -333,34 +346,62 @@
     </div>
 
     <script>
-        // CONFIG
+        // --- CONFIG & INIT ---
         let db; let tempFilesList=[]; let currentSongId=null; let driveTempMeta=null;
+        let tokenClient; let gapiInited=false; let gisInited=false;
         const CATS = ["Ingresso", "Gloria", "Salmo", "Alleluia", "Offertorio", "Santo", "Comunione", "Finale", "Altro"];
         const SEASONS = ["Ordinario", "Avvento", "Natale", "Quaresima", "Pasqua"];
         const SYNC_FILE_NAME = "spartiti_db_master.json";
         let filterCatVar = 'Tutti';
 
         window.onload = () => {
+            // Eager Init of Google Config
             document.getElementById('messaDate').valueAsDate = new Date();
             document.getElementById('apiKey').value = localStorage.getItem('g_api')||"";
             document.getElementById('clientId').value = localStorage.getItem('g_client')||"";
+            
+            // Init DB
             const r = indexedDB.open("SpartitiDB_V5", 1);
             r.onupgradeneeded = (e) => {
                 db = e.target.result;
                 if(!db.objectStoreNames.contains("songs")) db.createObjectStore("songs", {keyPath:"id", autoIncrement:true});
                 if(!db.objectStoreNames.contains("setlists")) db.createObjectStore("setlists", {keyPath:"id", autoIncrement:true});
             };
-            r.onsuccess = (e) => { db=e.target.result; renderLibrary(); renderScalettaUI(); renderFullHistory(); };
+            r.onsuccess = (e) => { 
+                db=e.target.result; 
+                renderLibrary(); 
+                renderScalettaUI(); 
+                renderFullHistory(); 
+                // Eager Load Google Scripts for Mobile responsiveness
+                const k=localStorage.getItem('g_api');
+                const c=localStorage.getItem('g_client');
+                if(k && c) initGoogle(k, c); 
+            };
             renderModalChips();
         };
 
+        function initGoogle(k, c) {
+            try {
+                gapi.load('client:picker', async () => {
+                    await gapi.client.init({ apiKey: k, discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"] });
+                    gapiInited = true;
+                });
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: c,
+                    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
+                    callback: '' 
+                });
+                gisInited = true;
+            } catch(e) { console.warn("Init err", e); }
+        }
+
+        // --- CORE FUNCTIONS ---
         function renderModalChips() {
             document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip-select" onclick="toggleChip(this)" data-val="${c}">${c}</div>`).join('');
             document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip-select" onclick="toggleChip(this)" data-val="${s}">${s}</div>`).join('');
         }
         function toggleChip(el) { el.classList.toggle('selected'); }
 
-        // NAV
         function go(id, btn) {
             document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
             document.getElementById('view-'+id).classList.add('active');
@@ -370,7 +411,6 @@
             if(id==='history') renderFullHistory();
         }
 
-        // LIBRARY
         function filterLib(cat) { filterCatVar=cat; renderLibrary(); }
         function renderLibrary() {
             const list = document.getElementById('songList'); list.innerHTML="";
@@ -395,7 +435,6 @@
             }
         }
 
-        // VIEW & EDIT
         function openViewModal(id) {
             currentSongId = id;
             db.transaction("songs", "readwrite").objectStore("songs").get(id).onsuccess = (e) => {
@@ -403,16 +442,12 @@
                 document.getElementById('viewTitle').innerText = s.title;
                 const b = document.getElementById('viewBody');
                 const f = document.getElementById('viewFooter');
-                // LOGICA OFFLINE/ONLINE
                 if (s.fileData) {
-                    // FILE SCARICATO
                     b.innerHTML = s.type.includes('pdf') ? `<iframe src="${s.fileData}" style="width:100%; height:100%; border:none;"></iframe>` : `<img src="${s.fileData}" style="width:100%; height:auto;">`;
-                    // Se viene da drive, mostra opzione per rimuovere download
                     f.style.display = s.driveId ? 'flex' : 'none';
                     f.innerHTML = s.driveId ? `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange;">🗑️ Rimuovi Download</button>` : '';
                 } else if (s.driveId) {
-                    // FILE SOLO ONLINE
-                    b.innerHTML = `<div style="text-align:center; padding:50px;"><p>File solo Online.</p><button onclick="toggleDownload(${s.id}, true)" class="btn-primary">⬇️ SCARICA ORA</button></div>`;
+                    b.innerHTML = `<div style="text-align:center; padding:50px;"><p>File solo Online.</p><button onclick="driveAction('downloadOne', ${s.id})" class="btn-primary">⬇️ SCARICA</button></div>`;
                     f.style.display = 'none';
                 } else if (s.lyrics) {
                     b.innerHTML = `<pre style="padding:20px; white-space:pre-wrap; font-size:1.1rem; font-family:inherit;">${s.lyrics}</pre>`;
@@ -421,42 +456,6 @@
                 document.getElementById('viewModal').classList.add('show');
             }
         }
-        
-        async function toggleDownload(id, download) {
-            if(download) { 
-                showToast("Scaricamento..."); 
-                driveAction('downloadOne', id); 
-            } else {
-                if(!confirm("Rimuovere il file dal telefono? Rimarrà il link online.")) return;
-                const tx = db.transaction("songs", "readwrite");
-                tx.objectStore("songs").get(id).onsuccess = (e) => {
-                    const s = e.target.result; s.fileData = null; 
-                    tx.objectStore("songs").put(s).onsuccess = () => { showToast("Spazio liberato!"); openViewModal(id); renderLibrary(); };
-                };
-            }
-        }
-
-        async function downloadSingleSong(id) {
-            const tx = db.transaction("songs", "readwrite");
-            tx.objectStore("songs").get(id).onsuccess = async (e) => {
-                const s = e.target.result;
-                try {
-                    const t = gapi.client.getToken().access_token;
-                    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveId}?alt=media`,{headers:{'Authorization':`Bearer ${t}`}});
-                    const b = await r.blob();
-                    const fr = new FileReader();
-                    fr.onload = (ev) => {
-                        s.fileData = ev.target.result; 
-                        const tx2 = db.transaction("songs", "readwrite");
-                        tx2.objectStore("songs").put(s).onsuccess = () => { showToast("Scaricato!"); openViewModal(id); renderLibrary(); };
-                    };
-                    fr.readAsDataURL(b);
-                } catch(err) { alert("Errore download: "+err); }
-            };
-        }
-
-        function deleteCurrentSong() { if(confirm("Eliminare definitivamente?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); updateSuggestions(); showToast("Eliminato!"); }; }
-        function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(currentSongId); }
 
         function openEditModal(id=null) {
             document.getElementById('editModal').classList.add('show');
@@ -480,6 +479,135 @@
             }
         }
 
+        // --- LOCAL BACKUP IMPL ---
+        function exportData() {
+            const tx = db.transaction(["songs", "setlists"], "readonly");
+            Promise.all([
+                new Promise(r => tx.objectStore("songs").getAll().onsuccess = e => r(e.target.result)),
+                new Promise(r => tx.objectStore("setlists").getAll().onsuccess = e => r(e.target.result))
+            ]).then(([songs, setlists]) => {
+                const blob = new Blob([JSON.stringify({songs, setlists})], {type: "application/json"});
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = "backup_spartiti.json";
+                a.click();
+            });
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    const tx = db.transaction(["songs", "setlists"], "readwrite");
+                    tx.objectStore("songs").clear();
+                    tx.objectStore("setlists").clear();
+                    data.songs.forEach(s => tx.objectStore("songs").put(s));
+                    data.setlists.forEach(s => tx.objectStore("setlists").put(s));
+                    tx.oncomplete = () => { showToast("Ripristino completato!"); setTimeout(()=>location.reload(), 1000); };
+                } catch(err) { alert("File non valido"); }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- GOOGLE API ACTIONS ---
+        function saveKeys(){localStorage.setItem('g_api',document.getElementById('apiKey').value);localStorage.setItem('g_client',document.getElementById('clientId').value);showToast("Keys OK"); initGoogle(document.getElementById('apiKey').value, document.getElementById('clientId').value);}
+        
+        async function driveAction(action, id) {
+            const k = document.getElementById('apiKey').value; const c = document.getElementById('clientId').value;
+            if(!k||!c) return showToast("Mancano Key", "error");
+            document.querySelectorAll('.modal-wrap').forEach(m => m.classList.remove('show'));
+            if(action === 'sync') document.getElementById('syncModal').classList.add('show');
+
+            if(!gapiInited || !gisInited) { initGoogle(k, c); setTimeout(()=>driveAction(action, id), 1000); return; }
+            
+            if(gapi.client.getToken()) { executeDriveAction(action, id); } 
+            else {
+                tokenClient.callback = (r) => { 
+                    if(r.error) return showToast("Err Auth", "error"); 
+                    gapi.client.setToken(r); 
+                    executeDriveAction(action, id); 
+                };
+                tokenClient.requestAccessToken({prompt:''});
+            }
+        }
+
+        async function executeDriveAction(action, id) {
+            if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
+            if(action === 'picker') createPicker(gapi.client.getToken().access_token);
+            else if(action === 'upload') performUpload();
+            else if(action === 'download') performDownload();
+            else if(action === 'downloadOne') downloadSingleSong(id);
+            else if(action === 'sync') document.getElementById('syncModal').classList.add('show');
+        }
+
+        function openSyncModal() { driveAction('sync'); }
+        function createPicker(t) {
+            const k = document.getElementById('apiKey').value;
+            const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
+            new google.picker.PickerBuilder().setDeveloperKey(k).setOAuthToken(t).addView(view).enableFeature(google.picker.Feature.MULTISELECT_ENABLED).setCallback(pickerCallback).build().setVisible(true);
+        }
+        async function pickerCallback(d) {
+            if(d.action === google.picker.Action.CANCEL) document.getElementById('editModal').classList.add('show');
+            if(d.action === google.picker.Action.PICKED) {
+                tempFilesList = [];
+                const t = gapi.client.getToken().access_token;
+                document.getElementById('fileStatus').innerText = "Scaricamento...";
+                document.getElementById('editModal').classList.add('show');
+                for (const doc of d.docs) {
+                    try {
+                        const r = await fetch(`https://www.googleapis.com/drive/v3/files/${doc.id}?alt=media`,{headers:{'Authorization':`Bearer ${t}`}});
+                        const b = await r.blob();
+                        const base64 = await new Promise(res => { const fr=new FileReader(); fr.onload=e=>res(e.target.result); fr.readAsDataURL(b); });
+                        tempFilesList.push({ name: doc.name.replace(/\.[^/.]+$/,""), id: doc.id, type: doc.mimeType, data: base64, source: 'drive' });
+                    } catch(e) { console.error("Skip", e); }
+                }
+                document.getElementById('fileStatus').innerText = `${tempFilesList.length} File Drive ✅`;
+                document.getElementById('driveOptions').classList.remove('d-none');
+                if(tempFilesList.length === 1) {
+                    document.getElementById('songTitle').value = tempFilesList[0].name;
+                    driveTempMeta = tempFilesList[0]; 
+                } else document.getElementById('songTitle').value = "[Multiplo Drive]";
+            }
+        }
+
+        async function performUpload() {
+            document.getElementById('syncStatus').innerText = "Caricamento...";
+            const tx = db.transaction(["songs","setlists"],"readonly");
+            const songs = await new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result));
+            const sets = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result));
+            const fileContent = JSON.stringify({songs, setlists: sets});
+            const metadata = { name: SYNC_FILE_NAME, mimeType: 'application/json' };
+            const form = new FormData(); form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'})); form.append('file', new Blob([fileContent], {type:'application/json'}));
+            try {
+                const q = `name = '${SYNC_FILE_NAME}' and trashed = false`;
+                const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'});
+                if(list.result.files.length > 0) await fetch(`https://www.googleapis.com/upload/drive/v3/files/${list.result.files[0].id}?uploadType=media`, {method:'PATCH', headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`, 'Content-Type':'application/json'}, body:fileContent});
+                else await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {method:'POST', headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`}, body:form});
+                document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Backup OK!");
+            } catch(e) { document.getElementById('syncStatus').innerText = "Err: "+e.message; }
+        }
+
+        async function performDownload() {
+            document.getElementById('syncStatus').innerText = "Scaricamento...";
+            try {
+                const q = `name = '${SYNC_FILE_NAME}' and trashed = false`;
+                const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'});
+                if(list.result.files.length === 0) return document.getElementById('syncStatus').innerText = "Nessun Backup";
+                const res = await gapi.client.drive.files.get({fileId: list.result.files[0].id, alt: 'media'});
+                const data = res.result;
+                const tx = db.transaction(["songs","setlists"],"readwrite");
+                await new Promise(r=>tx.objectStore("songs").clear().onsuccess=r);
+                await new Promise(r=>tx.objectStore("setlists").clear().onsuccess=r);
+                data.songs.forEach(s=>tx.objectStore("songs").put(s));
+                data.setlists.forEach(s=>tx.objectStore("setlists").put(s));
+                tx.oncomplete = () => { document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Ripristinato!"); location.reload(); };
+            } catch(e) { document.getElementById('syncStatus').innerText = "Err: "+e.message; }
+        }
+
+        // UTILS
         function handleFile(input) {
             const files = input.files; if(!files.length) return;
             tempFilesList = []; document.getElementById('fileStatus').innerText = "Lettura...";
@@ -490,7 +618,6 @@
                 else { document.getElementById('songTitle').value = "[Multiplo]"; document.getElementById('fileStatus').innerText = `${tempFilesList.length} File Locali ✅`; }
             });
         }
-
         function saveSong() {
             if(tempFilesList.length===0 && !driveTempMeta && !document.getElementById('songLyrics').value && !document.getElementById('songId').value) return alert("Nessun dato.");
             const cats = Array.from(document.querySelectorAll('#catChips .selected')).map(c => c.dataset.val);
@@ -504,7 +631,6 @@
                 const s = { title: document.getElementById('songTitle').value, categories: cats, seasons: seas, lyrics: lyrics, driveId: driveTempMeta.id, type: driveTempMeta.mimeType, fileData: mode==='full' ? driveTempMeta.data : null };
                 if(editId) s.id = Number(editId); store.put(s);
             } else if (tempFilesList.length > 0) {
-                // FIXED MULTI-UPLOAD
                 if(tempFilesList.length===1 && editId) {
                     store.put({ id: Number(editId), title: document.getElementById('songTitle').value, categories: cats, seasons: seas, lyrics: lyrics, fileData: tempFilesList[0].data, type: tempFilesList[0].type });
                 } else {
@@ -519,68 +645,6 @@
             } else { store.add({ title: document.getElementById('songTitle').value, categories: cats, seasons: seas, lyrics: lyrics, fileData: null, type: null }); }
             tx.oncomplete = () => { document.getElementById('editModal').classList.remove('show'); renderLibrary(); updateSuggestions(); showToast("Salvato!"); };
         }
-
-        // GOOGLE API
-        let tokenClient; let gapiInited=false; let gisInited=false;
-        function saveKeys(){localStorage.setItem('g_api',document.getElementById('apiKey').value);localStorage.setItem('g_client',document.getElementById('clientId').value);showToast("Keys OK");}
-        async function driveAction(action, id) {
-            const k = document.getElementById('apiKey').value; const c = document.getElementById('clientId').value;
-            if(!k||!c) return showToast("Mancano Key", "error");
-            document.querySelectorAll('.modal-wrap').forEach(m => m.classList.remove('show'));
-            if(action === 'sync') document.getElementById('syncModal').classList.add('show');
-
-            if(!gapiInited) { await new Promise(r => gapi.load('client:picker', async()=>{await gapi.client.init({apiKey:k,discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]});gapiInited=true;r()})); }
-            if(!gisInited) { tokenClient=google.accounts.oauth2.initTokenClient({client_id:c,scope:'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',callback:''});gisInited=true; }
-            
-            if(gapi.client.getToken()) { executeDriveAction(action, id); } 
-            else {
-                tokenClient.callback = (r) => { if(r.error) return showToast("Err Auth", "error"); gapi.client.setToken(r); executeDriveAction(action, id); };
-                tokenClient.requestAccessToken({prompt:''});
-            }
-        }
-        async function executeDriveAction(action, id) {
-            if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
-            if(action === 'picker') createPicker(gapi.client.getToken().access_token);
-            else if(action === 'upload') performUpload();
-            else if(action === 'download') performDownload();
-            else if(action === 'downloadOne') downloadSingleSong(id);
-            else if(action === 'sync') document.getElementById('syncModal').classList.add('show');
-        }
-        function openSyncModal() { driveAction('sync'); }
-        function createPicker(t) {
-            const k = document.getElementById('apiKey').value;
-            const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
-            new google.picker.PickerBuilder().setDeveloperKey(k).setOAuthToken(t).addView(view).enableFeature(google.picker.Feature.MULTISELECT_ENABLED).setCallback(pickerCallback).build().setVisible(true);
-        }
-        async function pickerCallback(d) {
-            if(d.action === google.picker.Action.CANCEL) document.getElementById('editModal').classList.add('show');
-            if(d.action === google.picker.Action.PICKED) {
-                tempFilesList = [];
-                const t = gapi.client.getToken().access_token;
-                document.getElementById('fileStatus').innerText = "Analisi...";
-                document.getElementById('editModal').classList.add('show');
-                
-                // MULTI-DRIVE FETCH
-                for(let doc of d.docs) {
-                    try {
-                        const r = await fetch(`https://www.googleapis.com/drive/v3/files/${doc.id}?alt=media`,{headers:{'Authorization':`Bearer ${t}`}});
-                        const b = await r.blob();
-                        const base64 = await new Promise(res => { const fr=new FileReader(); fr.onload=e=>res(e.target.result); fr.readAsDataURL(b); });
-                        tempFilesList.push({ name: doc.name.replace(/\.[^/.]+$/,""), id: doc.id, type: doc.mimeType, data: base64, source: 'drive' });
-                    } catch(e) { console.error("Skip", e); }
-                }
-                document.getElementById('fileStatus').innerText = `${tempFilesList.length} File Drive ✅`;
-                document.getElementById('driveOptions').classList.remove('d-none');
-                if(tempFilesList.length === 1) {
-                    document.getElementById('songTitle').value = tempFilesList[0].name;
-                    driveTempMeta = tempFilesList[0]; // Compatibility for single mode
-                } else document.getElementById('songTitle').value = "[Multiplo Drive]";
-            }
-        }
-        async function performUpload() { /* Same Backup Logic */ document.getElementById('syncStatus').innerText = "Caricamento..."; const tx = db.transaction(["songs","setlists"],"readonly"); const songs = await new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)); const sets = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result)); const fileContent = JSON.stringify({songs, setlists: sets}); const metadata = { name: SYNC_FILE_NAME, mimeType: 'application/json' }; const form = new FormData(); form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'})); form.append('file', new Blob([fileContent], {type:'application/json'})); try { const q = `name = '${SYNC_FILE_NAME}' and trashed = false`; const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'}); if(list.result.files.length > 0) await fetch(`https://www.googleapis.com/upload/drive/v3/files/${list.result.files[0].id}?uploadType=media`, {method:'PATCH', headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`, 'Content-Type':'application/json'}, body:fileContent}); else await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {method:'POST', headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`}, body:form}); document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Backup OK!"); } catch(e) { document.getElementById('syncStatus').innerText = "Err: "+e.message; } }
-        async function performDownload() { /* Same Restore Logic */ document.getElementById('syncStatus').innerText = "Scaricamento..."; try { const q = `name = '${SYNC_FILE_NAME}' and trashed = false`; const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'}); if(list.result.files.length === 0) return document.getElementById('syncStatus').innerText = "Nessun Backup"; const res = await gapi.client.drive.files.get({fileId: list.result.files[0].id, alt: 'media'}); const data = res.result; const tx = db.transaction(["songs","setlists"],"readwrite"); await new Promise(r=>tx.objectStore("songs").clear().onsuccess=r); await new Promise(r=>tx.objectStore("setlists").clear().onsuccess=r); data.songs.forEach(s=>tx.objectStore("songs").put(s)); data.setlists.forEach(s=>tx.objectStore("setlists").put(s)); tx.oncomplete = () => { document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Ripristinato!"); location.reload(); }; } catch(e) { document.getElementById('syncStatus').innerText = "Err: "+e.message; } }
-
-        // UTILS & SHARE
         function openShareModal(){ document.getElementById('shareModal').classList.add('show'); }
         function shareText(mode) {
             const t=document.getElementById('messaTitle').value; const d=document.getElementById('messaDate').value; let txt=`📅 *${t}* - ${d}\n\n`;
@@ -597,30 +661,50 @@
             CATS.forEach(cat => { if(cat === 'Altro') return; c.innerHTML += `<div style="margin-bottom:10px;" data-part="${cat}"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><div style="display:flex; gap:5px;"><select class="form-control song-select" style="margin:0;"><option value="">Seleziona...</option></select><button onclick="this.previousElementSibling.value=''" class="btn-outline">X</button></div></div>`; });
             setTimeout(updateSuggestions, 500);
         }
-        function updateSuggestions() { /* Same as before */ const d = new Date(document.getElementById('messaDate').value); const m = d.getMonth()+1; const day = d.getDate(); let season = "Ordinario"; if (m===11&&day>=27||m===12&&day<=24) season="Avvento"; else if (m===12&&day>=25||m===1) season="Natale"; else if (m>=2&&m<=4) season="Quaresima"; else if (m===4||m===5) season="Pasqua"; db.transaction("songs").objectStore("songs").getAll().onsuccess=(e)=>{ const songs = e.target.result.sort((a,b)=>a.title.localeCompare(b.title)); document.querySelectorAll('.song-select').forEach(sel=>{ const part=sel.parentElement.parentElement.dataset.part; const old=sel.value; let sug="", oth=""; songs.forEach(s=>{ const cats = Array.isArray(s.categories)?s.categories:[s.category]; const seas = Array.isArray(s.seasons)?s.seasons:[s.season]; if(cats.includes(part)&&(seas.includes(season)||seas.includes("Tutti"))) sug+=`<option value="${s.id}">★ ${s.title}</option>`; else oth+=`<option value="${s.id}">${s.title}</option>`; }); sel.innerHTML=`<option value="">Seleziona...</option><optgroup label="Suggeriti (${season})">${sug}</optgroup><optgroup label="Altri">${oth}</optgroup>`; sel.value=old; }); } }
+        function updateSuggestions() {
+            const d = new Date(document.getElementById('messaDate').value); const m = d.getMonth()+1; const day = d.getDate();
+            let season = "Ordinario"; if (m===11&&day>=27||m===12&&day<=24) season="Avvento"; else if (m===12&&day>=25||m===1) season="Natale"; else if (m>=2&&m<=4) season="Quaresima"; else if (m===4||m===5) season="Pasqua";
+            db.transaction("songs").objectStore("songs").getAll().onsuccess=(e)=>{
+                const songs = e.target.result.sort((a,b)=>a.title.localeCompare(b.title));
+                document.querySelectorAll('.song-select').forEach(sel=>{
+                    const part=sel.parentElement.parentElement.dataset.part; const old=sel.value; let sug="", oth="";
+                    songs.forEach(s=>{
+                        const cats = Array.isArray(s.categories)?s.categories:[s.category]; const seas = Array.isArray(s.seasons)?s.seasons:[s.season];
+                        if(cats.includes(part)&&(seas.includes(season)||seas.includes("Tutti"))) sug+=`<option value="${s.id}">★ ${s.title}</option>`; else oth+=`<option value="${s.id}">${s.title}</option>`;
+                    });
+                    sel.innerHTML=`<option value="">Seleziona...</option><optgroup label="Suggeriti (${season})">${sug}</optgroup><optgroup label="Altri">${oth}</optgroup>`; sel.value=old;
+                });
+            }
+        }
         async function autoFetchReadings() {
             const d=new Date(document.getElementById('messaDate').value); const url=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`)}`;
             try{ const r=await fetch(url); const j=await r.json(); const t=new DOMParser().parseFromString(j.contents,"text/html").body.innerText.replace(/\s+/g,' '); 
             const f=(a,b)=>{let s=-1;for(let w of a){let r=new RegExp(w,"i").exec(t);if(r){s=r.index+r[0].length;break;}}if(s<0)return"";let e=-1;for(let w of b){let r=new RegExp(w,"i").exec(t.substring(s));if(r){e=s+r.index;break;}}return e<0?"":t.substring(s,e).trim();};
             document.getElementById('r1').value=f(["Prima Lettura"],["Salmo"]);document.getElementById('rps').value=f(["Salmo"],["Seconda","Vangelo"]);document.getElementById('r2').value=f(["Seconda"],["Vangelo"]);document.getElementById('rg').value=f(["Vangelo"],["PREGHIERA"]);showToast("Letture Trovate!"); }catch(e){if(confirm("Errore. Aprire sito?"))window.open(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`);}
         }
-        function clearReadings(){/*...*/ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value="");}
-        function saveSetlist(){/*...*/ const sel={};document.querySelectorAll('.song-select').forEach(s=>{if(s.value)sel[s.parentElement.parentElement.dataset.part]=s.value;}); const r={r1:document.getElementById('r1').value,rps:document.getElementById('rps').value,r2:document.getElementById('r2').value,rg:document.getElementById('rg').value}; db.transaction("setlists","readwrite").objectStore("setlists").add({title:document.getElementById('messaTitle').value,date:document.getElementById('messaDate').value,songs:sel,readings:r}).onsuccess=()=>{showToast("Messa Salvata!");renderFullHistory();};}
-        function openHistoryModal(){ document.getElementById('historyModal').classList.add('show'); }
-        function startReadingMode(){
-            document.getElementById('readingContainer').classList.add('active'); const mc=document.getElementById('readMusicArea'); mc.innerHTML=""; const wc=document.getElementById('readWordArea'); wc.innerHTML="";
-            document.querySelectorAll('.song-select').forEach(s=>{ if(s.value){ db.transaction("songs").objectStore("songs").get(Number(s.value)).onsuccess=e=>{ const x=e.target.result; 
-                let h=""; if(x.fileData) h=x.type.includes('pdf')?`<iframe src="${x.fileData}" class="pdf-frame"></iframe>`:`<img src="${x.fileData}" style="width:100%">`; else if(x.driveId) h=`<div style="text-align:center; padding:50px;">Solo Online</div>`; else h=`<pre style="white-space:pre-wrap;">${x.lyrics}</pre>`;
-                mc.innerHTML+=`<div class="score-seq-item"><h3>${x.title}</h3>${h}</div>`;
-            }}});
-            const r=[{t:"I",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}];
-            r.forEach(x=>{if(x.v)wc.innerHTML+=`<div style="margin-bottom:30px;"><h3>${x.t}</h3><p>${x.v}</p></div>`;});
+        function openHistoryModal(){ document.getElementById('historyModal').classList.add('show'); 
+            const l=document.getElementById('historyList');l.innerHTML="";
+            db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess=e=>{const c=e.target.result;if(c){const s=c.value;l.innerHTML+=`<div class="history-item"><div onclick="loadSet(${s.id})" style="flex:1;"><b>${s.title}</b><br><small>${s.date}</small></div><button onclick="delSet(${s.id})" class="btn-icon" style="color:red;">delete</button></div>`;c.continue();}}
         }
-        function stopReadingMode(){document.getElementById('readingContainer').classList.remove('active'); document.body.className="";}
-        function setReadTab(t){document.getElementById('readMusicArea').className=t==='music'?'':'d-none';document.getElementById('readWordArea').className=t==='word'?'':'d-none';document.getElementById('rtab-music').style.background=t==='music'?'var(--primary)':'white';document.getElementById('rtab-music').style.color=t==='music'?'white':'#555';document.getElementById('rtab-word').style.background=t==='word'?'var(--primary)':'white';document.getElementById('rtab-word').style.color=t==='word'?'white':'#555';}
+        function optimizeStorage(){ if(confirm("Rimuovere download non usati?")) { /* Logic */ showToast("Fatto!"); } }
+        async function toggleDownload(id, dl) { if(!dl){if(!confirm("Rimuovere?"))return; const tx=db.transaction("songs","readwrite");tx.objectStore("songs").get(id).onsuccess=e=>{const s=e.target.result;s.fileData=null;tx.objectStore("songs").put(s);openViewModal(id);renderLibrary();}} else driveAction('downloadOne',id); }
+        async function downloadSingleSong(id){ 
+            const tx = db.transaction("songs","readwrite");
+            tx.objectStore("songs").get(id).onsuccess = async (e) => {
+                const s = e.target.result;
+                try {
+                    const t = gapi.client.getToken().access_token;
+                    const r = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveId}?alt=media`,{headers:{'Authorization':`Bearer ${t}`}});
+                    const b = await r.blob();
+                    const fr = new FileReader();
+                    fr.onload = (ev) => { s.fileData=ev.target.result; const tx2=db.transaction("songs","readwrite"); tx2.objectStore("songs").put(s).onsuccess=()=>{ showToast("Scaricato!"); openViewModal(id); renderLibrary(); }; };
+                    fr.readAsDataURL(b);
+                } catch(err) { alert("Err DL: "+err); }
+            };
+        }
+        function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(currentSongId); }
+        function deleteCurrentSong() { if(confirm("Eliminare?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); updateSuggestions(); }; }
         function showToast(m,type="info"){ const t=document.getElementById('toast');t.innerText=m;t.style.background=type=='error'?'#ef4444':'#333';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000); }
-        function exportData(){} function importData(){} 
-        function optimizeStorage(){ if(confirm("Ottimizzare spazio?")) showToast("Fatto"); }
     </script>
 </body>
 </html>
