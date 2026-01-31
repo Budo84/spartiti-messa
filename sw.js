@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v5-mobile-fix'; // NOME CAMBIATO PER FORZARE AGGIORNAMENTO
+const CACHE_NAME = 'spartiti-messa-v6-reborn'; // CAMBIATO NOME PER FORZARE AGGIORNAMENTO
 const ASSETS = [
   './',
   './index.html',
@@ -12,8 +12,8 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
   self.skipWaiting();
+  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
 });
 
 self.addEventListener('activate', (e) => {
