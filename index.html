@@ -17,12 +17,12 @@
     <script src="https://accounts.google.com/gsi/client"></script>
     
     <style>
-        /* --- STILE INTERNO DI BASE (Se style.css non carica) --- */
+        /* --- CORE CSS --- */
         :root { --primary: #673ab7; --bg: #f5f5f5; --white: #ffffff; --text: #333; --border: #ddd; }
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
         
-        /* LAYOUT */
+        /* APP LAYOUT */
         .app-body { flex: 1; overflow-y: auto; position: relative; padding-bottom: 70px; }
         .view-section { display: none; padding: 15px; max-width: 1200px; margin: 0 auto; }
         .view-section.active { display: block; animation: fadeIn 0.3s; }
@@ -376,8 +376,8 @@
         // --- FUNZIONI GOOGLE CRITICHE ---
 
         function initGoogleLibs() {
-            const k = document.getElementById('apiKey').value;
-            const c = document.getElementById('clientId').value;
+            const k = document.getElementById('apiKey').value.trim();
+            const c = document.getElementById('clientId').value.trim();
 
             if(!k || !c) return; 
 
@@ -397,7 +397,10 @@
                         gapiInited = true; 
                         console.log("GAPI OK");
                     }).catch(err => {
-                        showToast("Err Key: " + (err.result?.error?.message || err.message), "error");
+                        let msg = JSON.stringify(err);
+                        if(err.result && err.result.error && err.result.error.message) msg = err.result.error.message;
+                        else if(err.message) msg = err.message;
+                        showToast("Err Key: " + msg, "error");
                     });
                 });
             }
@@ -441,8 +444,8 @@
             }
 
             // 2. Controllo chiavi
-            const k = document.getElementById('apiKey').value;
-            const c = document.getElementById('clientId').value;
+            const k = document.getElementById('apiKey').value.trim();
+            const c = document.getElementById('clientId').value.trim();
             if(!k || !c) return showToast("Vai in Opzioni e inserisci API Key e Client ID", "error");
 
             // 3. Provo a inizializzare se non è fatto
@@ -581,83 +584,6 @@
                     fr.readAsDataURL(b);
                 } catch(err) { alert("Errore download: "+err); }
             };
-        }
-
-        // --- FUNZIONI LIBRERIA & INTERFACCIA ---
-
-        function renderModalChips() {
-            document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip-select" onclick="toggleChip(this)" data-val="${c}">${c}</div>`).join('');
-            document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip-select" onclick="toggleChip(this)" data-val="${s}">${s}</div>`).join('');
-        }
-        function toggleChip(el) { el.classList.toggle('selected'); }
-
-        function go(id, btn) {
-            document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
-            document.getElementById('view-'+id).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
-            if(btn) btn.classList.add('active');
-            if(id==='library') renderLibrary();
-            if(id==='history') renderFullHistory();
-        }
-
-        function filterLib(cat) { filterCatVar=cat; renderLibrary(); }
-        function renderLibrary() {
-            const list = document.getElementById('songList'); list.innerHTML="";
-            const txt = document.getElementById('searchInput').value.toLowerCase();
-            const tx = db.transaction("songs","readonly");
-            tx.objectStore("songs").openCursor().onsuccess = (e) => {
-                const c = e.target.result;
-                if(c) {
-                    const s = c.value;
-                    const cats = Array.isArray(s.categories) ? s.categories : [s.category];
-                    let ok = true;
-                    if(filterCatVar!=='Tutti' && !cats.includes(filterCatVar)) ok=false;
-                    if(txt && !s.title.toLowerCase().includes(txt)) ok=false;
-                    if(ok) {
-                        const icon = s.type && s.type.includes('pdf') ? 'picture_as_pdf' : 'description';
-                        const isOffline = s.fileData ? true : false;
-                        const badge = isOffline ? `<span class="status-badge status-offline">check_circle Offline</span>` : `<span class="status-badge status-online">cloud Online</span>`;
-                        list.innerHTML += `<div class="song-item" onclick="openViewModal(${s.id})"><div><div style="font-weight:bold;">${s.title}</div><div style="margin-top:2px;">${badge} <small style="color:#666;">${cats.join(', ')}</small></div></div><span class="material-icons-round" style="color:#ccc;">${icon}</span></div>`;
-                    }
-                    c.continue();
-                }
-            }
-        }
-
-        function openViewModal(id) {
-            currentSongId = id;
-            db.transaction("songs", "readwrite").objectStore("songs").get(id).onsuccess = (e) => {
-                const s = e.target.result;
-                document.getElementById('viewTitle').innerText = s.title;
-                const b = document.getElementById('viewBody');
-                const f = document.getElementById('viewFooter');
-                if (s.fileData) {
-                    b.innerHTML = s.type.includes('pdf') ? `<iframe src="${s.fileData}" style="width:100%; height:100%; border:none;"></iframe>` : `<img src="${s.fileData}" style="width:100%; height:auto;">`;
-                    f.style.display = s.driveId ? 'flex' : 'none';
-                    f.innerHTML = s.driveId ? `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange;">🗑️ Rimuovi Download</button>` : '';
-                } else if (s.driveId) {
-                    b.innerHTML = `<div style="text-align:center; padding:50px;"><p>File solo Online.</p><button onclick="toggleDownload(${s.id}, true)" class="btn-primary">⬇️ SCARICA ORA</button></div>`;
-                    f.style.display = 'none';
-                } else if (s.lyrics) {
-                    b.innerHTML = `<pre style="padding:20px; white-space:pre-wrap; font-size:1.1rem; font-family:inherit;">${s.lyrics}</pre>`;
-                    f.style.display = 'none';
-                }
-                document.getElementById('viewModal').classList.add('show');
-            }
-        }
-        
-        async function toggleDownload(id, download) {
-            if(download) { 
-                showToast("Scaricamento..."); 
-                driveAction('downloadOne', id); 
-            } else {
-                if(!confirm("Rimuovere il file dal telefono? Rimarrà il link online.")) return;
-                const tx = db.transaction("songs", "readwrite");
-                tx.objectStore("songs").get(id).onsuccess = (e) => {
-                    const s = e.target.result; s.fileData = null; 
-                    tx.objectStore("songs").put(s).onsuccess = () => { showToast("Spazio liberato!"); openViewModal(id); renderLibrary(); };
-                };
-            }
         }
 
         function deleteCurrentSong() { if(confirm("Eliminare definitivamente?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); updateSuggestions(); showToast("Eliminato!"); }; }
