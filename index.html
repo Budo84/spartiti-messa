@@ -342,8 +342,11 @@
 
         window.onload = () => {
             document.getElementById('messaDate').valueAsDate = new Date();
+            // INIT DRIVE CREDENTIALS
             document.getElementById('apiKey').value = localStorage.getItem('g_api')||"";
             document.getElementById('clientId').value = localStorage.getItem('g_client')||"";
+            setTimeout(initGoogleLibs, 1000); // Load Google Libs after startup
+
             const r = indexedDB.open("SpartitiDB_V5", 1);
             r.onupgradeneeded = (e) => {
                 db = e.target.result;
@@ -520,33 +523,77 @@
             tx.oncomplete = () => { document.getElementById('editModal').classList.remove('show'); renderLibrary(); updateSuggestions(); showToast("Salvato!"); };
         }
 
-        // GOOGLE API
-        let tokenClient; let gapiInited=false; let gisInited=false;
-        function saveKeys(){localStorage.setItem('g_api',document.getElementById('apiKey').value);localStorage.setItem('g_client',document.getElementById('clientId').value);showToast("Keys OK");}
-        async function driveAction(action, id) {
-            const k = document.getElementById('apiKey').value; const c = document.getElementById('clientId').value;
-            if(!k||!c) return showToast("Mancano Key", "error");
+        // --- GOOGLE API & DRIVE (VERSIONE DIRECT LOGIN PER SMARTPHONE) ---
+        let tokenClient; 
+        let gapiInited = false; 
+        let gisInited = false;
+
+        function initGoogleLibs() {
+            const k = document.getElementById('apiKey').value || localStorage.getItem('g_api');
+            const c = document.getElementById('clientId').value || localStorage.getItem('g_client');
+            
+            if(k && window.gapi) {
+                gapi.load('client:picker', () => {
+                    gapi.client.init({
+                        apiKey: k,
+                        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+                    }).then(() => { gapiInited = true; });
+                });
+            }
+            if(c && window.google) {
+                tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: c,
+                    scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
+                    callback: '', // Definito dinamicamente al click
+                });
+                gisInited = true;
+            }
+        }
+
+        function saveKeys(){
+            localStorage.setItem('g_api',document.getElementById('apiKey').value);
+            localStorage.setItem('g_client',document.getElementById('clientId').value);
+            showToast("Keys Salvate! Ricarico...");
+            setTimeout(()=>location.reload(), 1000);
+        }
+
+        function driveAction(action, id) {
+            if(!gapiInited || !gisInited) { 
+                if(localStorage.getItem('g_api')) { initGoogleLibs(); return showToast("Inizializzazione... Riprova tra poco."); }
+                return showToast("Mancano API Keys!", "error"); 
+            }
             document.querySelectorAll('.modal-wrap').forEach(m => m.classList.remove('show'));
             if(action === 'sync') document.getElementById('syncModal').classList.add('show');
 
-            if(!gapiInited) { await new Promise(r => gapi.load('client:picker', async()=>{await gapi.client.init({apiKey:k,discoveryDocs:["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"]});gapiInited=true;r()})); }
-            if(!gisInited) { tokenClient=google.accounts.oauth2.initTokenClient({client_id:c,scope:'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',callback:''});gisInited=true; }
-            
-            if(gapi.client.getToken()) { executeDriveAction(action, id); } 
-            else {
-                tokenClient.callback = (r) => { if(r.error) return showToast("Err Auth", "error"); gapi.client.setToken(r); executeDriveAction(action, id); };
-                tokenClient.requestAccessToken({prompt:''});
+            // DIRECT AUTH LOGIC
+            const handleAuth = (resp) => {
+                if(resp && resp.error) return showToast("Login negato", "error");
+                executeDriveAction(action, id);
+            };
+
+            const t = gapi.client.getToken();
+            if(t && Date.now() < t.expires_at) {
+                executeDriveAction(action, id);
+            } else {
+                // FORZA IL POPUP IMMEDIATO (Nessun await prima di questo)
+                tokenClient.callback = handleAuth;
+                tokenClient.requestAccessToken({ prompt: '' });
             }
         }
+
         async function executeDriveAction(action, id) {
-            if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
-            if(action === 'picker') createPicker(gapi.client.getToken().access_token);
-            else if(action === 'upload') performUpload();
-            else if(action === 'download') performDownload();
-            else if(action === 'downloadOne') downloadSingleSong(id);
-            else if(action === 'sync') document.getElementById('syncModal').classList.add('show');
+            try {
+                if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
+                if(action === 'picker') createPicker(gapi.client.getToken().access_token);
+                else if(action === 'upload') await performUpload();
+                else if(action === 'download') await performDownload();
+                else if(action === 'downloadOne') await downloadSingleSong(id);
+            } catch(e) { 
+                document.getElementById('syncStatus').innerText = "Errore: " + e.message; 
+                showToast("Errore Drive", "error");
+            }
         }
-        function openSyncModal() { driveAction('sync'); }
+
         function createPicker(t) {
             const k = document.getElementById('apiKey').value;
             const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
@@ -560,7 +607,6 @@
                 document.getElementById('fileStatus').innerText = "Analisi...";
                 document.getElementById('editModal').classList.add('show');
                 
-                // MULTI-DRIVE FETCH
                 for(let doc of d.docs) {
                     try {
                         const r = await fetch(`https://www.googleapis.com/drive/v3/files/${doc.id}?alt=media`,{headers:{'Authorization':`Bearer ${t}`}});
@@ -573,12 +619,13 @@
                 document.getElementById('driveOptions').classList.remove('d-none');
                 if(tempFilesList.length === 1) {
                     document.getElementById('songTitle').value = tempFilesList[0].name;
-                    driveTempMeta = tempFilesList[0]; // Compatibility for single mode
+                    driveTempMeta = tempFilesList[0]; 
                 } else document.getElementById('songTitle').value = "[Multiplo Drive]";
             }
         }
-        async function performUpload() { /* Same Backup Logic */ document.getElementById('syncStatus').innerText = "Caricamento..."; const tx = db.transaction(["songs","setlists"],"readonly"); const songs = await new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)); const sets = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result)); const fileContent = JSON.stringify({songs, setlists: sets}); const metadata = { name: SYNC_FILE_NAME, mimeType: 'application/json' }; const form = new FormData(); form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'})); form.append('file', new Blob([fileContent], {type:'application/json'})); try { const q = `name = '${SYNC_FILE_NAME}' and trashed = false`; const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'}); if(list.result.files.length > 0) await fetch(`https://www.googleapis.com/upload/drive/v3/files/${list.result.files[0].id}?uploadType=media`, {method:'PATCH', headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`, 'Content-Type':'application/json'}, body:fileContent}); else await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {method:'POST', headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`}, body:form}); document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Backup OK!"); } catch(e) { document.getElementById('syncStatus').innerText = "Err: "+e.message; } }
-        async function performDownload() { /* Same Restore Logic */ document.getElementById('syncStatus').innerText = "Scaricamento..."; try { const q = `name = '${SYNC_FILE_NAME}' and trashed = false`; const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'}); if(list.result.files.length === 0) return document.getElementById('syncStatus').innerText = "Nessun Backup"; const res = await gapi.client.drive.files.get({fileId: list.result.files[0].id, alt: 'media'}); const data = res.result; const tx = db.transaction(["songs","setlists"],"readwrite"); await new Promise(r=>tx.objectStore("songs").clear().onsuccess=r); await new Promise(r=>tx.objectStore("setlists").clear().onsuccess=r); data.songs.forEach(s=>tx.objectStore("songs").put(s)); data.setlists.forEach(s=>tx.objectStore("setlists").put(s)); tx.oncomplete = () => { document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Ripristinato!"); location.reload(); }; } catch(e) { document.getElementById('syncStatus').innerText = "Err: "+e.message; } }
+        
+        async function performUpload() { document.getElementById('syncStatus').innerText = "Caricamento..."; const tx = db.transaction(["songs","setlists"],"readonly"); const songs = await new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)); const sets = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result)); const fileContent = JSON.stringify({songs, setlists: sets}); const metadata = { name: SYNC_FILE_NAME, mimeType: 'application/json' }; const form = new FormData(); form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'})); form.append('file', new Blob([fileContent], {type:'application/json'})); try { const q = `name = '${SYNC_FILE_NAME}' and trashed = false`; const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'}); if(list.result.files.length > 0) await fetch(`https://www.googleapis.com/upload/drive/v3/files/${list.result.files[0].id}?uploadType=media`, {method:'PATCH', headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`, 'Content-Type':'application/json'}, body:fileContent}); else await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {method:'POST', headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`}, body:form}); document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Backup OK!"); } catch(e) { document.getElementById('syncStatus').innerText = "Err: "+e.message; } }
+        async function performDownload() { document.getElementById('syncStatus').innerText = "Scaricamento..."; try { const q = `name = '${SYNC_FILE_NAME}' and trashed = false`; const list = await gapi.client.drive.files.list({q:q, fields:'files(id)'}); if(list.result.files.length === 0) return document.getElementById('syncStatus').innerText = "Nessun Backup"; const res = await gapi.client.drive.files.get({fileId: list.result.files[0].id, alt: 'media'}); const data = res.result; const tx = db.transaction(["songs","setlists"],"readwrite"); await new Promise(r=>tx.objectStore("songs").clear().onsuccess=r); await new Promise(r=>tx.objectStore("setlists").clear().onsuccess=r); data.songs.forEach(s=>tx.objectStore("songs").put(s)); data.setlists.forEach(s=>tx.objectStore("setlists").put(s)); tx.oncomplete = () => { document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Ripristinato!"); location.reload(); }; } catch(e) { document.getElementById('syncStatus').innerText = "Err: "+e.message; } }
 
         // UTILS & SHARE
         function openShareModal(){ document.getElementById('shareModal').classList.add('show'); }
@@ -607,7 +654,7 @@
         function clearReadings(){ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value="");}
         function saveSetlist(){ const sel={};document.querySelectorAll('.song-select').forEach(s=>{if(s.value)sel[s.parentElement.parentElement.dataset.part]=s.value;}); const r={r1:document.getElementById('r1').value,rps:document.getElementById('rps').value,r2:document.getElementById('r2').value,rg:document.getElementById('rg').value}; db.transaction("setlists","readwrite").objectStore("setlists").add({title:document.getElementById('messaTitle').value,date:document.getElementById('messaDate').value,songs:sel,readings:r}).onsuccess=()=>{showToast("Messa Salvata!");renderFullHistory();};}
         
-        // --- FUNZIONI MANCANTI AGGIUNTE ---
+        // --- HISTORY FUNCTIONS ---
         function renderFullHistory() {
             const l=document.getElementById('fullHistoryList');l.innerHTML=""; 
             db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess=e=>{
@@ -633,7 +680,6 @@
         function delSet(id) { 
             if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderFullHistory(); 
         }
-        // ----------------------------------
 
         function startReadingMode(){
             document.getElementById('readingContainer').classList.add('active'); const mc=document.getElementById('readMusicArea'); mc.innerHTML=""; const wc=document.getElementById('readWordArea'); wc.innerHTML="";
@@ -641,7 +687,7 @@
                 let h=""; if(x.fileData) h=x.type.includes('pdf')?`<iframe src="${x.fileData}" class="pdf-frame"></iframe>`:`<img src="${x.fileData}" style="width:100%">`; else if(x.driveId) h=`<div style="text-align:center; padding:50px;">Solo Online</div>`; else h=`<pre style="white-space:pre-wrap;">${x.lyrics}</pre>`;
                 mc.innerHTML+=`<div class="score-seq-item"><h3>${x.title}</h3>${h}</div>`;
             }}});
-            const r=[{t:"I Lettura",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II Lettura",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}];
+            const r=[{t:"I",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}];
             r.forEach(x=>{if(x.v)wc.innerHTML+=`<div style="margin-bottom:30px;"><h3>${x.t}</h3><p>${x.v}</p></div>`;});
         }
         function stopReadingMode(){document.getElementById('readingContainer').classList.remove('active'); document.body.className="";}
