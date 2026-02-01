@@ -641,7 +641,7 @@
                 let h=""; if(x.fileData) h=x.type.includes('pdf')?`<iframe src="${x.fileData}" class="pdf-frame"></iframe>`:`<img src="${x.fileData}" style="width:100%">`; else if(x.driveId) h=`<div style="text-align:center; padding:50px;">Solo Online</div>`; else h=`<pre style="white-space:pre-wrap;">${x.lyrics}</pre>`;
                 mc.innerHTML+=`<div class="score-seq-item"><h3>${x.title}</h3>${h}</div>`;
             }}});
-            const r=[{t:"I",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}];
+            const r=[{t:"I Lettura",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II Lettura",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}];
             r.forEach(x=>{if(x.v)wc.innerHTML+=`<div style="margin-bottom:30px;"><h3>${x.t}</h3><p>${x.v}</p></div>`;});
         }
         function stopReadingMode(){document.getElementById('readingContainer').classList.remove('active'); document.body.className="";}
