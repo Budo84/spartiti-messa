@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v36-pdf-mobile-fix';
+const CACHE_NAME = 'spartiti-messa-v37-stable';
 const ASSETS = [
   './',
   './index.html',
