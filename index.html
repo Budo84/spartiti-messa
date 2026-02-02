@@ -16,9 +16,10 @@
     <script src="https://accounts.google.com/gsi/client" async defer onload="onGisLoad()"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
     
     <style>
-        /* STILE INDEX 15 */
+        /* STILE ORIGINALE INDEX 15 */
         :root { --primary: #673ab7; --bg: #f5f5f5; --white: #ffffff; --text: #333; --border: #ddd; }
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -145,7 +146,10 @@
             <div class="card">
                 <div class="card-header">Connessione Google Drive</div>
                 <div class="card-body">
-                    <button id="btnConnect" onclick="manualLogin()" class="btn-primary" style="width:100%; margin-bottom:15px; background:#4285F4;">1. CONNETTI ACCOUNT</button>
+                    <div style="background:#e3f2fd; padding:10px; border-radius:5px; margin-bottom:15px; text-align:center;">
+                        <p id="loginStatus" style="margin:0 0 5px 0; color:#1565c0; font-weight:bold;">Non connesso</p>
+                        <button id="btnConnect" onclick="manualLogin()" class="btn-primary" style="width:100%; background:#4285F4;">🔗 CONNETTI ACCOUNT GOOGLE</button>
+                    </div>
                     <p style="font-size:0.85rem; color:#666;">API Key</p>
                     <input type="text" id="apiKey" class="form-control" placeholder="API Key">
                     <p style="font-size:0.85rem; color:#666;">Client ID</p>
@@ -169,6 +173,22 @@
         <button class="nav-btn" onclick="go('scaletta', this)"><span class="material-icons-round">playlist_play</span>Messa</button>
         <button class="nav-btn" onclick="go('history', this)"><span class="material-icons-round">history</span>Messe</button>
         <button class="nav-btn" onclick="go('settings', this)"><span class="material-icons-round">settings</span>Opzioni</button>
+    </div>
+
+    <div id="syncModal" class="modal-wrap">
+        <div class="modal-box" style="height:auto;">
+            <div class="card-header"><span>Backup Cloud</span><button onclick="document.getElementById('syncModal').classList.remove('show')" class="btn-icon">×</button></div>
+            <div class="modal-scroll" style="text-align:center;">
+                <p id="syncMsg">Prima fai il login nelle opzioni.</p>
+                <div id="syncBtns" class="d-none">
+                    <div style="display:grid; gap:10px;">
+                        <button onclick="performSync('upload')" class="btn-primary" style="background:#1976d2;">☁️ CARICA SU DRIVE (Backup)</button>
+                        <button onclick="performSync('download')" class="btn-outline" style="border-color:#1976d2; color:#1976d2;">⬇️ SCARICA DA DRIVE (Ripristina)</button>
+                    </div>
+                </div>
+                <p id="syncErr" style="font-size:0.8rem; margin-top:15px; color:red; font-weight:bold;"></p>
+            </div>
+        </div>
     </div>
 
     <div id="viewModal" class="modal-wrap">
@@ -200,7 +220,7 @@
                 <div style="background:#f0f2f5; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;">
                     <p id="fileStatus" style="font-weight:bold; color:var(--primary); margin-top:0;">Nessun file</p>
                     <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                        <button onclick="driveAction('picker')" class="btn-outline" style="background:white;">Drive</button>
+                        <button onclick="driveAction('picker')" class="btn-outline" style="background:white;">Google Drive</button>
                         <button onclick="document.getElementById('localFile').click()" class="btn-outline" style="background:white;">Locale</button>
                     </div>
                     <input type="file" id="localFile" hidden multiple accept="image/*,application/pdf" onchange="handleFile(this)">
@@ -209,22 +229,6 @@
             </div>
             <div class="modal-footer">
                 <button onclick="saveSong()" class="btn-primary" style="width:100%;">SALVA</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="syncModal" class="modal-wrap">
-        <div class="modal-box" style="height:auto;">
-            <div class="card-header"><span>Cloud Drive</span><button onclick="document.getElementById('syncModal').classList.remove('show')" class="btn-icon">×</button></div>
-            <div class="modal-scroll" style="text-align:center;">
-                <p id="syncMsg">Prima fai il login nelle opzioni.</p>
-                <div id="syncBtns" class="d-none">
-                    <div style="display:grid; gap:10px;">
-                        <button onclick="performSync('upload')" class="btn-primary" style="background:#1976d2;">☁️ CARICA (Backup)</button>
-                        <button onclick="performSync('download')" class="btn-outline" style="border-color:#1976d2; color:#1976d2;">⬇️ SCARICA (Ripristina)</button>
-                    </div>
-                </div>
-                <p id="syncErr" style="font-size:0.8rem; margin-top:15px; color:red; font-weight:bold;"></p>
             </div>
         </div>
     </div>
@@ -272,10 +276,7 @@
         let filterCatVar = 'Tutti';
         let tokenClient; let accessToken = null; let gapiReady = false; let gisReady = false;
 
-        // PDF CONFIG
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-        // HELPER PDF & BLOB
+        // PDF CONFIG & HELPER (STEP 2)
         function dataURItoBlob(dataURI) {
             try {
                 if(dataURI.startsWith('blob:')) return dataURI;
@@ -290,7 +291,7 @@
 
         async function renderPdfToCanvas(blob, containerId) {
             const container = document.getElementById(containerId);
-            container.innerHTML = "<div style='padding:20px'>Caricamento PDF...</div>";
+            container.innerHTML = "Caricamento...";
             try {
                 const url = URL.createObjectURL(blob);
                 const loadingTask = pdfjsLib.getDocument(url);
@@ -309,11 +310,10 @@
                     await page.render(renderContext).promise;
                 }
             } catch (error) { 
-                container.innerHTML = `<p style="color:red">Errore PDF. <a href="${URL.createObjectURL(blob)}" target="_blank" class="btn-primary">Apri Esterno</a></p>`; 
+                container.innerHTML = `<p>Errore PDF.</p>`; 
             }
         }
 
-        // INIT
         function onGapiLoad() { gapiReady = true; }
         function onGisLoad() { gisReady = true; }
 
@@ -330,7 +330,13 @@
             r.onsuccess = (e) => { db=e.target.result; renderLibrary(); renderScalettaUI(); renderFullHistory(); renderModalChips(); };
         };
 
-        // --- STEP 1: AUTH ---
+        function renderModalChips() {
+            document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip" onclick="toggleChip(this)" data-val="${c}">${c}</div>`).join('');
+            document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip" onclick="toggleChip(this)" data-val="${s}">${s}</div>`).join('');
+        }
+        function toggleChip(el) { el.classList.toggle('selected'); }
+
+        // --- AUTH & DRIVE (STEP 1 + 3) ---
         function saveKeys(){
             localStorage.setItem('g_api',document.getElementById('apiKey').value.trim());
             localStorage.setItem('g_client',document.getElementById('clientId').value.trim());
@@ -362,10 +368,14 @@
             } else if (action === 'picker') { openPicker(); }
         }
 
-        // --- STEP 3: SYNC, PICKER, DOWNLOAD IMPLEMENTATI ---
+        // --- STEP 3: SYNC, PICKER, DOWNLOAD ---
         async function performSync(mode) {
             document.getElementById('syncErr').innerText = "Attendere...";
             const API_KEY = document.getElementById('apiKey').value.trim();
+            
+            // FIX: Assicuriamoci che drive sia caricato prima di usarlo
+            if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
+
             try {
                 if(mode === 'upload') {
                     const tx = db.transaction(["songs","setlists"],"readonly");
@@ -373,18 +383,32 @@
                     const l = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result));
                     const fileContent = JSON.stringify({songs:s, setlists:l});
                     const meta = {name: 'spartiti_db_master.json', mimeType: 'application/json'};
-                    const form = new FormData();
-                    form.append('metadata', new Blob([JSON.stringify(meta)], {type: 'application/json'}));
-                    form.append('file', new Blob([fileContent], {type: 'application/json'}));
                     
+                    // UPLOAD CON CHIAMATA DIRETTA (PIÙ SICURA SU MOBILE)
+                    // Cerchiamo prima il file
                     const search = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='spartiti_db_master.json' and trashed=false&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
+                    
                     if(search.files && search.files.length > 0) {
-                        await fetch(`https://www.googleapis.com/upload/drive/v3/files/${search.files[0].id}?uploadType=media&key=${API_KEY}`, { method: 'PATCH', headers: {'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json'}, body: fileContent });
+                        // Aggiorna
+                        await fetch(`https://www.googleapis.com/upload/drive/v3/files/${search.files[0].id}?uploadType=media&key=${API_KEY}`, { 
+                            method: 'PATCH', 
+                            headers: {'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json'}, 
+                            body: fileContent 
+                        });
                     } else {
-                        await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&key=${API_KEY}`, { method: 'POST', headers: {'Authorization': `Bearer ${accessToken}`}, body: form });
+                        // Crea nuovo (Multipart)
+                        const form = new FormData();
+                        form.append('metadata', new Blob([JSON.stringify(meta)], {type: 'application/json'}));
+                        form.append('file', new Blob([fileContent], {type: 'application/json'}));
+                        await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&key=${API_KEY}`, { 
+                            method: 'POST', 
+                            headers: {'Authorization': `Bearer ${accessToken}`}, 
+                            body: form 
+                        });
                     }
                     showToast("Backup Completato!");
                 } else {
+                    // DOWNLOAD
                     const search = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='spartiti_db_master.json' and trashed=false&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
                     if(!search.files || search.files.length === 0) throw { message: "Nessun backup trovato" };
                     const data = await fetch(`https://www.googleapis.com/drive/v3/files/${search.files[0].id}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
@@ -396,7 +420,9 @@
                     data.setlists.forEach(x => tx.objectStore("setlists").put(x));
                     alert("Ripristino completato!"); location.reload();
                 }
-            } catch(e) { document.getElementById('syncErr').innerText = "Err: " + (e.message || JSON.stringify(e)); }
+            } catch(e) { 
+                document.getElementById('syncErr').innerText = "Err: " + (e.message || JSON.stringify(e)); 
+            }
         }
 
         function openPicker() {
@@ -415,7 +441,7 @@
             });
         }
 
-        // --- VIEW LOGIC ---
+        // --- VIEW & DOWNLOAD (STEP 3) ---
         async function openViewModal(id) {
             currentSongId = id;
             db.transaction("songs", "readwrite").objectStore("songs").get(id).onsuccess = async (e) => {
@@ -426,7 +452,7 @@
                 b.innerHTML = ""; f.innerHTML = "";
                 const API_KEY = document.getElementById('apiKey').value.trim();
 
-                // 1. OFFLINE
+                // 1. OFFLINE (Priorità)
                 if (s.fileData) {
                     if(s.type && s.type.includes('pdf')) {
                         const blob = dataURItoBlob(s.fileData);
@@ -436,14 +462,16 @@
                         } else b.innerHTML = "Err file";
                     } else b.innerHTML = `<img src="${s.fileData}" style="width:100%">`;
                     
-                    if(s.driveFile || s.driveId) f.innerHTML = `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange;">🗑️ RIMUOVI OFFLINE</button>`;
+                    if(s.driveFile || s.driveId) f.innerHTML = `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange;">🗑️ Rimuovi Offline</button>`;
                 } 
-                // 2. ONLINE
+                // 2. ONLINE (Drive)
                 else if ((s.driveFile && s.driveFile.id) || s.driveId) {
                     const dId = s.driveFile ? s.driveFile.id : s.driveId;
                     f.innerHTML = `<button onclick="toggleDownload(${s.id}, true)" class="btn-primary">⬇️ SCARICA OFFLINE</button>`;
-                    if(!accessToken) b.innerHTML = "<div style='text-align:center; padding:20px;'><p>File protetto.</p><button onclick='manualLogin()' class='btn-primary'>Connetti Ora</button></div>";
-                    else {
+                    
+                    if(!accessToken) {
+                        b.innerHTML = "<div style='text-align:center; padding:20px;'><p>File protetto.</p><button onclick='manualLogin()' class='btn-primary'>Connetti Ora</button></div>";
+                    } else {
                         try {
                             b.innerHTML = "Caricamento...";
                             const r = await fetch(`https://www.googleapis.com/drive/v3/files/${dId}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} });
@@ -511,9 +539,6 @@
         function saveSong(){ const cats=Array.from(document.querySelectorAll('#catChips .selected')).map(c=>c.dataset.val); if(!cats.length)cats.push("Altro"); const seas=Array.from(document.querySelectorAll('#seasonChips .selected')).map(c=>c.dataset.val); if(!seas.length)seas.push("Ordinario"); const lyrics=document.getElementById('songLyrics').value; const editId=document.getElementById('songId').value; const tx=db.transaction("songs","readwrite"); const store=tx.objectStore("songs"); if(driveTempMeta){ const s={title:document.getElementById('songTitle').value,categories:cats,seasons:seas,lyrics:lyrics,driveId:driveTempMeta.id,type:driveTempMeta.mimeType,fileData:null}; if(editId)s.id=Number(editId); store.put(s); } else if(tempFilesList.length>0){ if(tempFilesList.length===1 && editId){ store.put({id:Number(editId),title:document.getElementById('songTitle').value,categories:cats,seasons:seas,lyrics:lyrics,fileData:tempFilesList[0].data,type:tempFilesList[0].type}); } else { tempFilesList.forEach(f=>{ store.add({title:f.name,categories:cats,seasons:seas,lyrics:"",fileData:f.data,type:f.type}); }); } } else if(editId){ store.get(Number(editId)).onsuccess=e=>{const old=e.target.result; store.put({...old,title:document.getElementById('songTitle').value,lyrics:lyrics,categories:cats,seasons:seas});}; } else { store.add({title:document.getElementById('songTitle').value,categories:cats,seasons:seas,lyrics:lyrics,fileData:null,type:null}); } tx.oncomplete=()=>{document.getElementById('editModal').classList.remove('show');renderLibrary();updateSuggestions();}; }
         function deleteCurrentSong() { if(confirm("Eliminare?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); }; }
         function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(currentSongId); }
-        function renderModalChips() { document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip" onclick="toggleChip(this)" data-val="${c}">${c}</div>`).join(''); document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip" onclick="toggleChip(this)" data-val="${s}">${s}</div>`).join(''); }
-        function toggleChip(el) { el.classList.toggle('selected'); }
-        function filterLib(cat, el) { filterCatVar=cat; document.querySelectorAll('.chips-scroll .chip').forEach(c=>c.classList.remove('selected')); if(el) el.classList.add('selected'); renderLibrary(); }
         function renderScalettaUI() { const c = document.getElementById('scalettaContainer'); c.innerHTML=""; CATS.forEach(cat => { if(cat === 'Altro') return; c.innerHTML += `<div style="margin-bottom:10px;" data-part="${cat}"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><div style="display:flex; gap:5px;"><select class="form-control song-select" style="margin:0;"><option value="">Seleziona...</option></select><button onclick="this.previousElementSibling.value=''" class="btn-outline">X</button></div></div>`; }); setTimeout(updateSuggestions, 500); }
         function updateSuggestions() { const d = new Date(document.getElementById('messaDate').value); const m = d.getMonth()+1; const day = d.getDate(); let season = "Ordinario"; if (m===11&&day>=27||m===12&&day<=24) season="Avvento"; else if (m===12&&day>=25||m===1) season="Natale"; else if (m>=2&&m<=4) season="Quaresima"; else if (m===4||m===5) season="Pasqua"; db.transaction("songs").objectStore("songs").getAll().onsuccess=(e)=>{ const songs = e.target.result.sort((a,b)=>a.title.localeCompare(b.title)); document.querySelectorAll('.song-select').forEach(sel=>{ const part=sel.parentElement.parentElement.dataset.part; const old=sel.value; let sug="", oth=""; songs.forEach(s=>{ const cats = Array.isArray(s.categories)?s.categories:[s.category]; const seas = Array.isArray(s.seasons)?s.seasons:[s.season]; if(cats.includes(part)&&(seas.includes(season)||seas.includes("Tutti"))) sug+=`<option value="${s.id}">★ ${s.title}</option>`; else oth+=`<option value="${s.id}">${s.title}</option>`; }); sel.innerHTML=`<option value="">Seleziona...</option><optgroup label="Suggeriti (${season})">${sug}</optgroup><optgroup label="Altri">${oth}</optgroup>`; sel.value=old; }); } }
         async function autoFetchReadings() { const d=new Date(document.getElementById('messaDate').value); const url=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`)}`; showToast("Ricerca..."); try { const r = await fetch(url); const j = await r.json(); const t = new DOMParser().parseFromString(j.contents,"text/html").body.innerText.replace(/\s+/g,' '); const f=(a,b)=>{let s=-1;for(let w of a){let i=t.toLowerCase().indexOf(w.toLowerCase());if(i>-1){s=i+w.length;break;}}if(s<0)return"";let e=-1;for(let w of b){let i=t.toLowerCase().indexOf(w.toLowerCase(),s);if(i>-1){e=i;break;}}return e<0?"":t.substring(s,e).trim();}; document.getElementById('r1').value=f(["Prima Lettura","Dagli Atti","1a Lettura"],["Salmo"]); document.getElementById('rps').value=f(["Salmo","Salmo Responsoriale"],["Seconda","Vangelo","2a Lettura"]); document.getElementById('r2').value=f(["Seconda Lettura","2a Lettura"],["Vangelo","Canto al Vangelo"]); document.getElementById('rg').value=f(["Vangelo","Dal Vangelo"],["PREGHIERA"]); showToast("Fatto!"); } catch(e) { alert("Errore letture"); } }
@@ -534,6 +559,7 @@
         function showToast(m, t="info") { const el=document.getElementById('toast'); el.innerText=m; el.classList.add('show'); if(t=='error')el.classList.add('error'); setTimeout(()=>el.className='', 3000); }
         function exportData(){ const tx=db.transaction(["songs","setlists"],"readonly"); Promise.all([new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)),new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result))]).then(([s,l])=>{const b=new Blob([JSON.stringify({songs:s,setlists:l})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup.json";a.click();}); }
         function importData(inp){ const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");tx.objectStore("songs").clear();tx.objectStore("setlists").clear();d.songs.forEach(s=>tx.objectStore("songs").put(s));d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{showToast("Fatto!");setTimeout(()=>location.reload(),1000);}}catch(x){alert("Errore file");}};r.readAsText(f); }
+        function filterLib(cat, el) { filterCatVar=cat; document.querySelectorAll('.chips-scroll .chip').forEach(c=>c.classList.remove('selected')); if(el) el.classList.add('selected'); renderLibrary(); }
     </script>
 </body>
 </html>
