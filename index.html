@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Spartiti Messa Pro</title>
     
+    <link rel="stylesheet" href="style.css"> 
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="logo192.png">
     <meta name="theme-color" content="#673ab7">
@@ -12,11 +13,11 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="https://apis.google.com/js/api.js" async defer onload="this.onload=function(){};window.gapiLoaded=true;"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer onload="this.onload=function(){};window.gisLoaded=true;"></script>
     
     <style>
-        /* --- CORE CSS --- */
+        /* --- CSS BASE (Per quando style.css non c'è) --- */
         :root { --primary: #673ab7; --bg: #f5f5f5; --white: #ffffff; --text: #333; --border: #ddd; }
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -42,6 +43,7 @@
         .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
         .chip-select { padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.85rem; cursor: pointer; user-select: none; }
         .chip-select.selected { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; }
+        
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
         textarea.form-control { resize: vertical; min-height: 100px; }
 
@@ -52,16 +54,11 @@
         .modal-scroll { flex: 1; overflow-y: auto; padding: 20px; }
         .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; }
 
-        .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .btn-share-opt { padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: white; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .auth-status { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: #f0f2f5; border-radius: 8px; }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; background: #ccc; }
+        .status-dot.connected { background: #4caf50; box-shadow: 0 0 5px #4caf50; }
 
-        #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
-        #readingContainer.active { display: flex; }
-        .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
-        .reading-content { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
-        .score-seq-item { margin-bottom: 40px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); page-break-inside: avoid; }
-        .pdf-frame { width: 100%; height: 80vh; border: none; background: #eee; }
-
+        /* NAVBAR & UTILS */
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--white); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 500; }
         .nav-btn { background: none; border: none; color: #999; font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; width: 100%; cursor: pointer; }
         .nav-btn.active { color: var(--primary); }
@@ -71,19 +68,21 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: transparent; border: 1px solid #ccc; color: #555; }
         .btn-icon { background: none; border: none; font-size: 1.4rem; padding: 5px; cursor: pointer; color: #555; }
-        .workspace { display: grid; gap: 20px; grid-template-columns: 1fr; }
-        @media(min-width: 900px) { .workspace { grid-template-columns: 1fr 1fr; } }
+        
+        #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
+        #readingContainer.active { display: flex; }
+        .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
+        .reading-content { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
+        .score-seq-item { margin-bottom: 40px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); page-break-inside: avoid; }
 
-        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; }
+        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; width: max-content; max-width: 80%; text-align: center; }
         #toast.show { opacity: 1; bottom: 90px; }
         #toast.error { background: #ef4444; }
 
-        /* STATUS INDICATOR */
-        .auth-status { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 10px; background: #f0f2f5; border-radius: 8px; }
-        .status-dot { width: 12px; height: 12px; border-radius: 50%; background: #ccc; }
-        .status-dot.connected { background: #4caf50; box-shadow: 0 0 5px #4caf50; }
-
+        .workspace { display: grid; gap: 20px; grid-template-columns: 1fr; }
+        @media(min-width: 900px) { .workspace { grid-template-columns: 1fr 1fr; } }
         .d-none { display: none !important; }
+        
         @media print {
             .no-print, .nav-bar, .top-bar { display: none !important; }
             .app-body { overflow: visible; height: auto; }
@@ -108,7 +107,7 @@
         
         <div id="view-library" class="view-section active">
             <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="searchInput" class="form-control" placeholder="🔍 Cerca titolo..." onkeyup="renderLibrary()" style="margin-bottom:10px;">
+                <input type="text" id="searchInput" class="form-control" placeholder="🔍 Cerca..." onkeyup="renderLibrary()" style="margin-bottom:10px;">
                 <button onclick="openEditModal()" class="btn-primary" style="white-space:nowrap;">+ Canto</button>
             </div>
             <div style="display:flex; overflow-x:auto; gap:5px; padding-bottom:10px; margin-bottom:10px;">
@@ -128,7 +127,7 @@
                     <input type="text" id="messaTitle" class="form-control" value="Santa Messa" style="font-weight:bold; font-size:1.2rem; border:none; padding:0; margin:0;">
                     <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
                         <input type="date" id="messaDate" class="form-control" style="width:auto; margin:0;" onchange="updateSuggestions()">
-                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.85rem;">⬇️ Scarica Letture</button>
+                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.85rem;">⬇️ Letture</button>
                         <div style="flex:1; text-align:right;">
                             <button onclick="saveSetlist()" class="btn-primary">Salva</button>
                         </div>
@@ -139,10 +138,10 @@
             <div class="workspace">
                 <div class="card">
                     <div class="card-header">
-                        <span>🎵 Scaletta Canti</span>
+                        <span>🎵 Canti</span>
                         <div>
                             <button onclick="go('history')" class="btn-outline" style="padding:2px 8px; font-size:0.8rem;">Storico</button>
-                            <button onclick="openShareModal()" class="btn-outline" style="padding:2px 8px; font-size:0.8rem; background:#e3f2fd; color:#1565c0; border-color:#90caf9;">Condividi</button>
+                            <button onclick="openShareModal()" class="btn-outline" style="padding:2px 8px; font-size:0.8rem; background:#e3f2fd; color:#1565c0;">Condividi</button>
                         </div>
                     </div>
                     <div class="card-body" id="scalettaContainer"></div>
@@ -228,115 +227,39 @@
         </div>
     </div>
 
-    <div id="viewModal" class="modal-wrap">
-        <div class="modal-box" style="height:95vh; width:95vw; max-width:900px;">
-            <div class="card-header">
-                <span id="viewTitle">Titolo</span>
-                <div>
-                    <button onclick="deleteCurrentSong()" class="btn-icon" style="color:red;"><span class="material-icons-round">delete</span></button>
-                    <button onclick="editFromView()" class="btn-icon"><span class="material-icons-round">edit</span></button>
-                    <button onclick="document.getElementById('viewModal').classList.remove('show')" class="btn-icon"><span class="material-icons-round">close</span></button>
-                </div>
-            </div>
-            <div class="modal-scroll" id="viewBody" style="background:#eee; padding:0;"></div>
-            <div class="modal-footer" id="viewFooter" style="display:none; justify-content:center;"></div>
-        </div>
-    </div>
+    <div id="viewModal" class="modal-wrap"><div class="modal-box" style="height:95vh; width:95vw; max-width:900px;"><div class="card-header"><span id="viewTitle">Titolo</span><div><button onclick="deleteCurrentSong()" class="btn-icon" style="color:red;"><span class="material-icons-round">delete</span></button><button onclick="editFromView()" class="btn-icon"><span class="material-icons-round">edit</span></button><button onclick="document.getElementById('viewModal').classList.remove('show')" class="btn-icon"><span class="material-icons-round">close</span></button></div></div><div class="modal-scroll" id="viewBody" style="background:#eee; padding:0;"></div><div class="modal-footer" id="viewFooter" style="display:none; justify-content:center;"></div></div></div>
+    
+    <div id="editModal" class="modal-wrap"><div class="modal-box"><div class="card-header"><span id="editModalTitle">Nuovo Canto</span><button onclick="document.getElementById('editModal').classList.remove('show')" class="btn-icon">×</button></div><div class="modal-scroll"><input type="hidden" id="songId"><label>Titolo</label><input type="text" id="songTitle" class="form-control"><label>Parti</label><div class="chips-container" id="catChips"></div><label>Tempo</label><div class="chips-container" id="seasonChips"></div><div style="background:#f0f2f5; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;"><p id="fileStatus" style="font-weight:bold; color:var(--primary); margin-top:0;">Nessun file</p><div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;"><button onclick="driveAction('picker')" class="btn-outline" style="background:white;">Drive</button><button onclick="document.getElementById('localFile').click()" class="btn-outline" style="background:white;">Locale</button></div><div id="driveOptions" class="d-none" style="margin-top:10px;"><label><input type="radio" name="storeMode" value="link" checked> Link</label><label><input type="radio" name="storeMode" value="full"> Offline</label></div><input type="file" id="localFile" hidden multiple onchange="handleFile(this)"></div><label>Testo</label><textarea id="songLyrics" class="form-control"></textarea></div><div class="modal-footer"><button onclick="saveSong()" class="btn-primary" style="width:100%;">SALVA</button></div></div></div>
 
-    <div id="editModal" class="modal-wrap">
-        <div class="modal-box">
-            <div class="card-header">
-                <span id="editModalTitle">Nuovo Canto</span>
-                <button onclick="document.getElementById('editModal').classList.remove('show')" class="btn-icon">×</button>
-            </div>
-            <div class="modal-scroll">
-                <input type="hidden" id="songId">
-                <label>Titolo</label><input type="text" id="songTitle" class="form-control">
-                <label>Parti della Messa</label><div class="chips-container" id="catChips"></div>
-                <label>Tempo Liturgico</label><div class="chips-container" id="seasonChips"></div>
-                <div style="background:#f0f2f5; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;">
-                    <p id="fileStatus" style="font-weight:bold; color:var(--primary); margin-top:0;">Nessun file</p>
-                    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                        <button onclick="driveAction('picker')" class="btn-outline" style="background:white;">Google Drive</button>
-                        <button onclick="document.getElementById('localFile').click()" class="btn-outline" style="background:white;">Locale</button>
-                    </div>
-                    <div id="driveOptions" class="d-none" style="margin-top:10px; border-top:1px solid #ddd; padding-top:5px;">
-                        <label><input type="radio" name="storeMode" value="link" checked> Link Online</label>
-                        <label><input type="radio" name="storeMode" value="full"> Offline</label>
-                    </div>
-                    <input type="file" id="localFile" hidden multiple accept="image/*,application/pdf" onchange="handleFile(this)">
-                </div>
-                <label>Testo</label><textarea id="songLyrics" class="form-control"></textarea>
-            </div>
-            <div class="modal-footer"><button onclick="saveSong()" class="btn-primary" style="width:100%;">SALVA</button></div>
-        </div>
-    </div>
+    <div id="shareModal" class="modal-wrap"><div class="modal-box" style="height:auto; max-width:400px;"><div class="card-header"><span>Condividi</span><button onclick="document.getElementById('shareModal').classList.remove('show')" class="btn-icon">×</button></div><div class="modal-scroll"><div class="share-grid"><button class="btn-share-opt" onclick="shareText('list')"><span class="material-icons-round">list</span>Scaletta</button><button class="btn-share-opt" onclick="shareText('read')"><span class="material-icons-round">menu_book</span>Letture</button><button class="btn-share-opt" onclick="shareText('all')"><span class="material-icons-round">description</span>Tutto</button></div><hr style="margin:15px 0;"><div class="share-grid"><button class="btn-share-opt" onclick="printMode('all')"><span class="material-icons-round">picture_as_pdf</span>Completo</button><button class="btn-share-opt" onclick="printMode('music')"><span class="material-icons-round">queue_music</span>Canti</button><button class="btn-share-opt" onclick="printMode('read')"><span class="material-icons-round">chrome_reader_mode</span>Letture</button></div></div></div></div>
 
-    <div id="shareModal" class="modal-wrap">
-        <div class="modal-box" style="height:auto; max-width:400px;">
-            <div class="card-header"><span>Condividi</span><button onclick="document.getElementById('shareModal').classList.remove('show')" class="btn-icon">×</button></div>
-            <div class="modal-scroll">
-                <div class="share-grid">
-                    <button class="btn-share-opt" onclick="shareText('list')"><span class="material-icons-round">list</span>Scaletta</button>
-                    <button class="btn-share-opt" onclick="shareText('read')"><span class="material-icons-round">menu_book</span>Letture</button>
-                    <button class="btn-share-opt" onclick="shareText('all')"><span class="material-icons-round">description</span>Tutto</button>
-                </div>
-                <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
-                <div class="share-grid">
-                    <button class="btn-share-opt" onclick="printMode('all')"><span class="material-icons-round">picture_as_pdf</span>Completo</button>
-                    <button class="btn-share-opt" onclick="printMode('music')"><span class="material-icons-round">queue_music</span>Canti</button>
-                    <button class="btn-share-opt" onclick="printMode('read')"><span class="material-icons-round">chrome_reader_mode</span>Letture</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="readingContainer">
-        <div class="reading-nav no-print">
-            <button onclick="stopReadingMode()" class="btn-icon" style="color:red; font-weight:bold;">← ESCI</button>
-            <div style="display:flex; gap:10px;">
-                <button onclick="setReadTab('music')" class="btn-outline" id="rtab-music">Canti</button>
-                <button onclick="setReadTab('word')" class="btn-outline" id="rtab-word">Letture</button>
-            </div>
-            <div style="width:40px;"></div>
-        </div>
-        <div class="reading-content">
-            <div id="readMusicArea"></div>
-            <div id="readWordArea" class="d-none" style="max-width:800px; margin:0 auto; font-size:1.2rem; line-height:1.6;"></div>
-        </div>
-    </div>
+    <div id="readingContainer"><div class="reading-nav no-print"><button onclick="stopReadingMode()" class="btn-icon" style="color:red;">← ESCI</button><div style="display:flex; gap:10px;"><button onclick="setReadTab('music')" class="btn-outline" id="rtab-music">Canti</button><button onclick="setReadTab('word')" class="btn-outline" id="rtab-word">Letture</button></div><div style="width:40px;"></div></div><div class="reading-content"><div id="readMusicArea"></div><div id="readWordArea" class="d-none" style="max-width:800px; margin:0 auto; font-size:1.2rem; line-height:1.6;"></div></div></div>
 
     <script>
-        // --- CONFIGURAZIONE GLOBALE ---
-        let db; 
-        let tempFilesList = []; 
-        let currentSongId = null; 
-        let driveTempMeta = null;
+        // CONFIG
+        let db; let tempFilesList = []; let currentSongId = null; let driveTempMeta = null;
         const CATS = ["Ingresso", "Gloria", "Salmo", "Alleluia", "Offertorio", "Santo", "Comunione", "Finale", "Altro"];
         const SEASONS = ["Ordinario", "Avvento", "Natale", "Quaresima", "Pasqua"];
         const SYNC_FILE_NAME = "spartiti_db_master.json";
         let filterCatVar = 'Tutti';
 
-        // VARIABILI GOOGLE
+        // GOOGLE VARS
         let tokenClient; 
         let gapiInited = false; 
         let gisInited = false;
-        let isGoogleConnected = false; // NUOVO STATO
+        let isGoogleConnected = false;
 
-        // --- INIZIALIZZAZIONE ---
         window.onload = () => {
             document.getElementById('messaDate').valueAsDate = new Date();
             
-            // 1. Carica Chiavi Salvate
+            // 1. Carica Chiavi, ma NON inizializzare subito se mancano
             const savedKey = localStorage.getItem('g_api');
             const savedClient = localStorage.getItem('g_client');
             if(savedKey) document.getElementById('apiKey').value = savedKey;
             if(savedClient) document.getElementById('clientId').value = savedClient;
 
-            // 2. Carica Librerie Google
-            if(savedKey && savedClient) {
-                setTimeout(initGoogleLibs, 500);
-            }
+            // 2. Prova inizializzazione "Lazy" (non blocca se fallisce)
+            if(savedKey && savedClient) setTimeout(initGoogleLibs, 1000);
 
             // 3. Database
             const r = indexedDB.open("SpartitiDB_V5", 1);
@@ -349,25 +272,33 @@
                 db = e.target.result; 
                 renderLibrary(); renderScalettaUI(); renderFullHistory(); 
             };
-            
             renderModalChips();
             updateAuthUI();
         };
 
-        // --- NUOVA LOGICA GOOGLE (SEPARATA) ---
+        // --- GESTIONE ERRORI GOOGLE ---
+        function formatGoogleError(err) {
+            // Cerca di estrarre un messaggio leggibile dall'oggetto errore
+            if (typeof err === 'string') return err;
+            if (err.result && err.result.error && err.result.error.message) return err.result.error.message;
+            if (err.message) return err.message;
+            if (err.error) return JSON.stringify(err.error);
+            return "Errore sconosciuto (controlla console)";
+        }
 
+        // --- LOGICA GOOGLE ---
         function updateAuthUI() {
             const dot = document.getElementById('statusDot');
             const txt = document.getElementById('statusText');
             const btn = document.getElementById('btnLogin');
             if(isGoogleConnected) {
                 dot.classList.add('connected');
-                txt.innerText = "Connesso a Google";
+                txt.innerText = "Connesso";
                 txt.style.color = "green";
-                btn.style.display = "none"; // Nascondi bottone login se connesso
+                btn.style.display = "none";
             } else {
                 dot.classList.remove('connected');
-                txt.innerText = "Non connesso";
+                txt.innerText = "Disconnesso";
                 txt.style.color = "gray";
                 btn.style.display = "block";
             }
@@ -376,11 +307,17 @@
         function initGoogleLibs() {
             const k = document.getElementById('apiKey').value.trim();
             const c = document.getElementById('clientId').value.trim();
+            
+            // Se mancano le chiavi, usciamo silenziosamente (niente errore all'avvio)
             if(!k || !c) return; 
 
-            if(typeof gapi === 'undefined' || typeof google === 'undefined') return;
+            // Controllo se gli script sono caricati
+            if(typeof gapi === 'undefined' || typeof google === 'undefined') {
+                console.warn("Google Scripts not loaded yet");
+                return;
+            }
 
-            // GAPI
+            // Init GAPI
             if(!gapiInited) {
                 gapi.load('client:picker', () => {
                     gapi.client.init({
@@ -388,14 +325,19 @@
                         discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
                     }).then(() => { 
                         gapiInited = true; 
-                        console.log("GAPI OK");
+                        console.log("GAPI Ready");
                     }).catch(err => {
-                        showToast("Err Key: " + (err.result?.error?.message || err.message), "error");
+                        // Mostriamo errore SOLO se l'utente sta cercando di fare qualcosa, qui logghiamo e basta
+                        console.error("GAPI Init Error:", err);
+                        // Se l'errore è grave (es. Key sbagliata), lo mostriamo nel toast
+                        if(formatGoogleError(err).includes("API key not valid")) {
+                            showToast("API Key non valida!", "error");
+                        }
                     });
                 });
             }
 
-            // GIS
+            // Init GIS
             if(!gisInited) {
                 try {
                     tokenClient = google.accounts.oauth2.initTokenClient({
@@ -403,66 +345,60 @@
                         scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
                         callback: (resp) => {
                             if (resp.error) {
-                                showToast("Login fallito o annullato.", "error");
+                                showToast("Login fallito: " + resp.error, "error");
                                 return;
                             }
-                            // SUCCESS LOGIN
                             isGoogleConnected = true;
                             updateAuthUI();
-                            showToast("Login effettuato! Ora puoi sincronizzare.");
+                            showToast("Connesso con successo!");
                         },
                     });
                     gisInited = true;
-                    console.log("GIS OK");
-                } catch(e) { showToast("Err ClientID invalido", "error"); }
+                    console.log("GIS Ready");
+                } catch(e) { console.error(e); }
             }
         }
 
         function saveKeys(){
             const k = document.getElementById('apiKey').value.trim();
             const c = document.getElementById('clientId').value.trim();
-            if(!k || !c) return showToast("Inserisci chiavi!", "error");
+            if(!k || !c) return showToast("Inserisci entrambe le chiavi!", "error");
             localStorage.setItem('g_api', k);
             localStorage.setItem('g_client', c);
             showToast("Salvate! Ricarica la pagina.");
             setTimeout(()=>location.reload(), 1000);
         }
 
-        // AZIONE 1: LOGIN (Pulsante dedicato)
         function loginToGoogle() {
-            if(!tokenClient) {
-                initGoogleLibs(); // Riprova init se mancava
-                return showToast("Attendi caricamento...", "error");
+            // Controllo 1: Script caricati?
+            if(typeof google === 'undefined' || !window.gisLoaded) {
+                 return showToast("Attendi caricamento Google... (Riprova tra 2s)", "error");
             }
-            // Questo apre il popup. Deve essere un click diretto.
+            // Controllo 2: Init fatto?
+            if(!tokenClient) {
+                initGoogleLibs();
+                return showToast("Inizializzazione... Riprova il click.", "error");
+            }
+            // Azione
             tokenClient.requestAccessToken({ prompt: '' });
         }
 
-        // AZIONE 2: SYNC / PICKER (Usa il token esistente)
         function driveAction(action, id) {
-            // Se provo a sincronizzare ma non ho fatto login
-            if(action === 'sync') {
-                openSyncModal();
-                return;
-            }
+            if(action === 'sync') return openSyncModal();
 
             if(!isGoogleConnected) {
                 if(action === 'picker' || action.includes('download')) {
-                     alert("Devi prima connetterti a Google nelle Opzioni!");
+                     alert("Non sei connesso! Vai in Opzioni -> Connetti Account.");
                      go('settings');
                 }
                 return;
             }
-
-            // Esegue l'azione (il token è gestito internamente da gapi client)
             executeDriveAction(action, id);
         }
 
         function openSyncModal() {
             document.querySelectorAll('.modal-wrap').forEach(m => m.classList.remove('show'));
             document.getElementById('syncModal').classList.add('show');
-            
-            // Mostra controlli in base allo stato
             if(isGoogleConnected) {
                 document.getElementById('syncControls').classList.remove('d-none');
                 document.getElementById('loginWarning').classList.add('d-none');
@@ -481,19 +417,19 @@
                 else if(action === 'download') await performDownload();
                 else if(action === 'downloadOne') await downloadSingleSong(id);
             } catch(e) { 
-                document.getElementById('syncStatus').innerText = "Errore: " + e.message; 
+                const msg = formatGoogleError(e);
+                document.getElementById('syncStatus').innerText = "Errore: " + msg;
+                showToast("Errore Drive: " + msg, "error");
             }
         }
 
-        // --- PICKER & SYNC LOGIC ---
-
+        // --- PICKER & SYNC ---
         function createPicker() {
             const t = gapi.client.getToken().access_token;
             const k = document.getElementById('apiKey').value;
             const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
             new google.picker.PickerBuilder().setDeveloperKey(k).setOAuthToken(t).addView(view).enableFeature(google.picker.Feature.MULTISELECT_ENABLED).setCallback(pickerCallback).build().setVisible(true);
         }
-
         async function pickerCallback(d) {
             if(d.action === google.picker.Action.CANCEL) document.getElementById('editModal').classList.add('show');
             if(d.action === google.picker.Action.PICKED) {
@@ -501,21 +437,18 @@
                 const t = gapi.client.getToken().access_token;
                 document.getElementById('fileStatus').innerText = "Analisi...";
                 document.getElementById('editModal').classList.add('show');
-                
                 for(let doc of d.docs) {
                     try {
                         const r = await fetch(`https://www.googleapis.com/drive/v3/files/${doc.id}?alt=media`,{headers:{'Authorization':`Bearer ${t}`}});
                         const b = await r.blob();
                         const base64 = await new Promise(res => { const fr=new FileReader(); fr.onload=e=>res(e.target.result); fr.readAsDataURL(b); });
                         tempFilesList.push({ name: doc.name.replace(/\.[^/.]+$/,""), id: doc.id, type: doc.mimeType, data: base64, source: 'drive' });
-                    } catch(e) { console.error("Skip", e); }
+                    } catch(e) { console.error(e); }
                 }
                 document.getElementById('fileStatus').innerText = `${tempFilesList.length} File Drive ✅`;
                 document.getElementById('driveOptions').classList.remove('d-none');
-                if(tempFilesList.length === 1) {
-                    document.getElementById('songTitle').value = tempFilesList[0].name;
-                    driveTempMeta = tempFilesList[0]; 
-                } else document.getElementById('songTitle').value = "[Multiplo Drive]";
+                if(tempFilesList.length === 1) { document.getElementById('songTitle').value = tempFilesList[0].name; driveTempMeta = tempFilesList[0]; }
+                else document.getElementById('songTitle').value = "[Multiplo Drive]";
             }
         }
 
@@ -536,9 +469,8 @@
                     await fetch(`https://www.googleapis.com/upload/drive/v3/files/${list.result.files[0].id}?uploadType=media`, {method:'PATCH', headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`, 'Content-Type':'application/json'}, body:fileContent}); 
                 else 
                     await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {method:'POST', headers:{'Authorization':`Bearer ${gapi.client.getToken().access_token}`}, body:form}); 
-                document.getElementById('syncStatus').innerText = "Fatto! ✅"; 
-                showToast("Backup OK!"); 
-            } catch(e) { document.getElementById('syncStatus').innerText = "Err: "+e.message; } 
+                document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Backup OK!"); 
+            } catch(e) { document.getElementById('syncStatus').innerText = "Err: "+formatGoogleError(e); } 
         }
 
         async function performDownload() { 
@@ -555,7 +487,7 @@
                 data.songs.forEach(s=>tx.objectStore("songs").put(s)); 
                 data.setlists.forEach(s=>tx.objectStore("setlists").put(s)); 
                 tx.oncomplete = () => { document.getElementById('syncStatus').innerText = "Fatto! ✅"; showToast("Ripristinato!"); setTimeout(()=>location.reload(), 1500); }; 
-            } catch(e) { document.getElementById('syncStatus').innerText = "Err: "+e.message; } 
+            } catch(e) { document.getElementById('syncStatus').innerText = "Err: "+formatGoogleError(e); } 
         }
 
         async function downloadSingleSong(id) {
@@ -573,225 +505,40 @@
                         tx2.objectStore("songs").put(s).onsuccess = () => { showToast("Scaricato!"); openViewModal(id); renderLibrary(); };
                     };
                     fr.readAsDataURL(b);
-                } catch(err) { alert("Errore download: "+err); }
+                } catch(err) { alert("Err DL: "+err); }
             };
         }
 
-        // --- FUNZIONI STANDARD (LIBRERIA, STORICO, ECC.) ---
-
-        function renderModalChips() {
-            document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip-select" onclick="toggleChip(this)" data-val="${c}">${c}</div>`).join('');
-            document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip-select" onclick="toggleChip(this)" data-val="${s}">${s}</div>`).join('');
-        }
+        // --- STANDARD FUNCTIONS ---
+        function renderModalChips() { document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip-select" onclick="toggleChip(this)" data-val="${c}">${c}</div>`).join(''); document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip-select" onclick="toggleChip(this)" data-val="${s}">${s}</div>`).join(''); }
         function toggleChip(el) { el.classList.toggle('selected'); }
-
-        function go(id, btn) {
-            document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
-            document.getElementById('view-'+id).classList.add('active');
-            document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
-            if(btn) btn.classList.add('active');
-            if(id==='library') renderLibrary();
-            if(id==='history') renderFullHistory();
-        }
-
+        function go(id, btn) { document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active')); if(btn) btn.classList.add('active'); if(id==='library') renderLibrary(); if(id==='history') renderFullHistory(); }
         function filterLib(cat) { filterCatVar=cat; renderLibrary(); }
-        function renderLibrary() {
-            const list = document.getElementById('songList'); list.innerHTML="";
-            const txt = document.getElementById('searchInput').value.toLowerCase();
-            const tx = db.transaction("songs","readonly");
-            tx.objectStore("songs").openCursor().onsuccess = (e) => {
-                const c = e.target.result;
-                if(c) {
-                    const s = c.value;
-                    const cats = Array.isArray(s.categories) ? s.categories : [s.category];
-                    let ok = true;
-                    if(filterCatVar!=='Tutti' && !cats.includes(filterCatVar)) ok=false;
-                    if(txt && !s.title.toLowerCase().includes(txt)) ok=false;
-                    if(ok) {
-                        const icon = s.type && s.type.includes('pdf') ? 'picture_as_pdf' : 'description';
-                        const isOffline = s.fileData ? true : false;
-                        const badge = isOffline ? `<span class="status-badge status-offline">check_circle Offline</span>` : `<span class="status-badge status-online">cloud Online</span>`;
-                        list.innerHTML += `<div class="song-item" onclick="openViewModal(${s.id})"><div><div style="font-weight:bold;">${s.title}</div><div style="margin-top:2px;">${badge} <small style="color:#666;">${cats.join(', ')}</small></div></div><span class="material-icons-round" style="color:#ccc;">${icon}</span></div>`;
-                    }
-                    c.continue();
-                }
-            }
-        }
-
-        function openViewModal(id) {
-            currentSongId = id;
-            db.transaction("songs", "readwrite").objectStore("songs").get(id).onsuccess = (e) => {
-                const s = e.target.result;
-                document.getElementById('viewTitle').innerText = s.title;
-                const b = document.getElementById('viewBody');
-                const f = document.getElementById('viewFooter');
-                if (s.fileData) {
-                    b.innerHTML = s.type.includes('pdf') ? `<iframe src="${s.fileData}" style="width:100%; height:100%; border:none;"></iframe>` : `<img src="${s.fileData}" style="width:100%; height:auto;">`;
-                    f.style.display = s.driveId ? 'flex' : 'none';
-                    f.innerHTML = s.driveId ? `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange;">🗑️ Rimuovi Download</button>` : '';
-                } else if (s.driveId) {
-                    b.innerHTML = `<div style="text-align:center; padding:50px;"><p>File solo Online.</p><button onclick="toggleDownload(${s.id}, true)" class="btn-primary">⬇️ SCARICA ORA</button></div>`;
-                    f.style.display = 'none';
-                } else if (s.lyrics) {
-                    b.innerHTML = `<pre style="padding:20px; white-space:pre-wrap; font-size:1.1rem; font-family:inherit;">${s.lyrics}</pre>`;
-                    f.style.display = 'none';
-                }
-                document.getElementById('viewModal').classList.add('show');
-            }
-        }
-        
-        async function toggleDownload(id, download) {
-            if(download) { 
-                showToast("Scaricamento..."); 
-                driveAction('downloadOne', id); 
-            } else {
-                if(!confirm("Rimuovere il file dal telefono? Rimarrà il link online.")) return;
-                const tx = db.transaction("songs", "readwrite");
-                tx.objectStore("songs").get(id).onsuccess = (e) => {
-                    const s = e.target.result; s.fileData = null; 
-                    tx.objectStore("songs").put(s).onsuccess = () => { showToast("Spazio liberato!"); openViewModal(id); renderLibrary(); };
-                };
-            }
-        }
-
+        function renderLibrary() { const list = document.getElementById('songList'); list.innerHTML=""; const txt = document.getElementById('searchInput').value.toLowerCase(); const tx = db.transaction("songs","readonly"); tx.objectStore("songs").openCursor().onsuccess = (e) => { const c = e.target.result; if(c) { const s = c.value; const cats = Array.isArray(s.categories) ? s.categories : [s.category]; let ok = true; if(filterCatVar!=='Tutti' && !cats.includes(filterCatVar)) ok=false; if(txt && !s.title.toLowerCase().includes(txt)) ok=false; if(ok) { const icon = s.type && s.type.includes('pdf') ? 'picture_as_pdf' : 'description'; const isOffline = s.fileData ? true : false; const badge = isOffline ? `<span class="status-badge status-offline">check_circle Offline</span>` : `<span class="status-badge status-online">cloud Online</span>`; list.innerHTML += `<div class="song-item" onclick="openViewModal(${s.id})"><div><div style="font-weight:bold;">${s.title}</div><div style="margin-top:2px;">${badge} <small style="color:#666;">${cats.join(', ')}</small></div></div><span class="material-icons-round" style="color:#ccc;">${icon}</span></div>`; } c.continue(); } } }
+        function openViewModal(id) { currentSongId = id; db.transaction("songs", "readwrite").objectStore("songs").get(id).onsuccess = (e) => { const s = e.target.result; document.getElementById('viewTitle').innerText = s.title; const b = document.getElementById('viewBody'); const f = document.getElementById('viewFooter'); if (s.fileData) { b.innerHTML = s.type.includes('pdf') ? `<iframe src="${s.fileData}" style="width:100%; height:100%; border:none;"></iframe>` : `<img src="${s.fileData}" style="width:100%; height:auto;">`; f.style.display = s.driveId ? 'flex' : 'none'; f.innerHTML = s.driveId ? `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange;">🗑️ Rimuovi Download</button>` : ''; } else if (s.driveId) { b.innerHTML = `<div style="text-align:center; padding:50px;"><p>File solo Online.</p><button onclick="toggleDownload(${s.id}, true)" class="btn-primary">⬇️ SCARICA ORA</button></div>`; f.style.display = 'none'; } else if (s.lyrics) { b.innerHTML = `<pre style="padding:20px; white-space:pre-wrap; font-size:1.1rem; font-family:inherit;">${s.lyrics}</pre>`; f.style.display = 'none'; } document.getElementById('viewModal').classList.add('show'); } }
+        async function toggleDownload(id, download) { if(download) { showToast("Scaricamento..."); driveAction('downloadOne', id); } else { if(!confirm("Rimuovere il file dal telefono?")) return; const tx = db.transaction("songs", "readwrite"); tx.objectStore("songs").get(id).onsuccess = (e) => { const s = e.target.result; s.fileData = null; tx.objectStore("songs").put(s).onsuccess = () => { showToast("Spazio liberato!"); openViewModal(id); renderLibrary(); }; }; } }
         function deleteCurrentSong() { if(confirm("Eliminare definitivamente?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); updateSuggestions(); showToast("Eliminato!"); }; }
         function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(currentSongId); }
-
-        function openEditModal(id=null) {
-            document.getElementById('editModal').classList.add('show');
-            document.getElementById('songId').value = ""; document.getElementById('songTitle').value = ""; document.getElementById('songLyrics').value = ""; document.getElementById('fileStatus').innerText = "Nessun file";
-            tempFilesList=[]; driveTempMeta=null;
-            document.getElementById('driveOptions').classList.add('d-none');
-            document.querySelectorAll('.chip-select').forEach(c => c.classList.remove('selected'));
-            document.getElementById('editModalTitle').innerText = id ? "Modifica Canto" : "Nuovo Canto";
-            if(id) {
-                document.getElementById('songId').value = id;
-                db.transaction("songs").objectStore("songs").get(id).onsuccess = (e) => {
-                    const s = e.target.result;
-                    document.getElementById('songTitle').value = s.title; document.getElementById('songLyrics').value = s.lyrics || "";
-                    if(s.fileData) { tempFilesList=[{data:s.fileData, type:s.type, name:s.title}]; document.getElementById('fileStatus').innerText = "File Presente ✅"; }
-                    else if(s.driveId) document.getElementById('fileStatus').innerText = "File Drive ☁️";
-                    const cats = Array.isArray(s.categories) ? s.categories : [s.category];
-                    const seas = Array.isArray(s.seasons) ? s.seasons : [s.season];
-                    document.querySelectorAll('#catChips .chip-select').forEach(c => { if(cats.includes(c.dataset.val)) c.classList.add('selected'); });
-                    document.querySelectorAll('#seasonChips .chip-select').forEach(c => { if(seas.includes(c.dataset.val)) c.classList.add('selected'); });
-                }
-            }
-        }
-
-        function handleFile(input) {
-            const files = input.files; if(!files.length) return;
-            tempFilesList = []; document.getElementById('fileStatus').innerText = "Lettura...";
-            const readFile = (f) => new Promise(r => { const rd=new FileReader(); rd.onload=e=>r({name:f.name.replace(/\.[^/.]+$/,""), type:f.type, data:e.target.result}); rd.readAsDataURL(f); });
-            Promise.all(Array.from(files).map(f => readFile(f))).then(res => {
-                tempFilesList = res;
-                if(tempFilesList.length===1) { document.getElementById('songTitle').value = tempFilesList[0].name; document.getElementById('fileStatus').innerText = "1 File Locale ✅"; }
-                else { document.getElementById('songTitle').value = "[Multiplo]"; document.getElementById('fileStatus').innerText = `${tempFilesList.length} File Locali ✅`; }
-            });
-        }
-
-        function saveSong() {
-            if(tempFilesList.length===0 && !driveTempMeta && !document.getElementById('songLyrics').value && !document.getElementById('songId').value) return alert("Nessun dato.");
-            const cats = Array.from(document.querySelectorAll('#catChips .selected')).map(c => c.dataset.val);
-            const seas = Array.from(document.querySelectorAll('#seasonChips .selected')).map(c => c.dataset.val);
-            if(cats.length===0) cats.push("Altro"); if(seas.length===0) seas.push("Ordinario");
-            const lyrics = document.getElementById('songLyrics').value; const editId = document.getElementById('songId').value;
-            const tx = db.transaction("songs","readwrite"); const store = tx.objectStore("songs");
-
-            if(driveTempMeta) {
-                const mode = document.querySelector('input[name="storeMode"]:checked').value;
-                const s = { title: document.getElementById('songTitle').value, categories: cats, seasons: seas, lyrics: lyrics, driveId: driveTempMeta.id, type: driveTempMeta.mimeType, fileData: mode==='full' ? driveTempMeta.data : null };
-                if(editId) s.id = Number(editId); store.put(s);
-            } else if (tempFilesList.length > 0) {
-                if(tempFilesList.length===1 && editId) {
-                    store.put({ id: Number(editId), title: document.getElementById('songTitle').value, categories: cats, seasons: seas, lyrics: lyrics, fileData: tempFilesList[0].data, type: tempFilesList[0].type });
-                } else {
-                    tempFilesList.forEach(f => {
-                        const data = f.source === 'drive' ? (document.querySelector('input[name="storeMode"]:checked').value==='full' ? f.data : null) : f.data;
-                        const drvId = f.source === 'drive' ? f.id : null;
-                        store.add({ title: f.name, categories: cats, seasons: seas, lyrics: "", fileData: data, type: f.type, driveId: drvId });
-                    });
-                }
-            } else if (editId) {
-                store.get(Number(editId)).onsuccess = (e) => { const old = e.target.result; const s = { id: Number(editId), title: document.getElementById('songTitle').value, categories: cats, seasons: seas, lyrics: lyrics, fileData: old.fileData, type: old.type, driveId: old.driveId }; store.put(s); };
-            } else { store.add({ title: document.getElementById('songTitle').value, categories: cats, seasons: seas, lyrics: lyrics, fileData: null, type: null }); }
-            tx.oncomplete = () => { document.getElementById('editModal').classList.remove('show'); renderLibrary(); updateSuggestions(); showToast("Salvato!"); };
-        }
-
-        // --- UTILS & SHARE ---
+        function openEditModal(id=null) { document.getElementById('editModal').classList.add('show'); document.getElementById('songId').value = ""; document.getElementById('songTitle').value = ""; document.getElementById('songLyrics').value = ""; document.getElementById('fileStatus').innerText = "Nessun file"; tempFilesList=[]; driveTempMeta=null; document.getElementById('driveOptions').classList.add('d-none'); document.querySelectorAll('.chip-select').forEach(c => c.classList.remove('selected')); document.getElementById('editModalTitle').innerText = id ? "Modifica" : "Nuovo"; if(id) { document.getElementById('songId').value = id; db.transaction("songs").objectStore("songs").get(id).onsuccess = (e) => { const s = e.target.result; document.getElementById('songTitle').value = s.title; document.getElementById('songLyrics').value = s.lyrics || ""; if(s.fileData) { tempFilesList=[{data:s.fileData, type:s.type, name:s.title}]; document.getElementById('fileStatus').innerText = "File Presente ✅"; } else if(s.driveId) document.getElementById('fileStatus').innerText = "File Drive ☁️"; const cats = Array.isArray(s.categories) ? s.categories : [s.category]; const seas = Array.isArray(s.seasons) ? s.seasons : [s.season]; document.querySelectorAll('#catChips .chip-select').forEach(c => { if(cats.includes(c.dataset.val)) c.classList.add('selected'); }); document.querySelectorAll('#seasonChips .chip-select').forEach(c => { if(seas.includes(c.dataset.val)) c.classList.add('selected'); }); } } }
+        function handleFile(input) { const files = input.files; if(!files.length) return; tempFilesList = []; document.getElementById('fileStatus').innerText = "Lettura..."; const readFile = (f) => new Promise(r => { const rd=new FileReader(); rd.onload=e=>r({name:f.name.replace(/\.[^/.]+$/,""), type:f.type, data:e.target.result}); rd.readAsDataURL(f); }); Promise.all(Array.from(files).map(f => readFile(f))).then(res => { tempFilesList = res; if(tempFilesList.length===1) { document.getElementById('songTitle').value = tempFilesList[0].name; document.getElementById('fileStatus').innerText = "1 File Locale ✅"; } else { document.getElementById('songTitle').value = "[Multiplo]"; document.getElementById('fileStatus').innerText = `${tempFilesList.length} File Locali ✅`; } }); }
+        function saveSong() { if(tempFilesList.length===0 && !driveTempMeta && !document.getElementById('songLyrics').value && !document.getElementById('songId').value) return alert("Nessun dato."); const cats = Array.from(document.querySelectorAll('#catChips .selected')).map(c => c.dataset.val); const seas = Array.from(document.querySelectorAll('#seasonChips .selected')).map(c => c.dataset.val); if(cats.length===0) cats.push("Altro"); if(seas.length===0) seas.push("Ordinario"); const lyrics = document.getElementById('songLyrics').value; const editId = document.getElementById('songId').value; const tx = db.transaction("songs","readwrite"); const store = tx.objectStore("songs"); if(driveTempMeta) { const mode = document.querySelector('input[name="storeMode"]:checked').value; const s = { title: document.getElementById('songTitle').value, categories: cats, seasons: seas, lyrics: lyrics, driveId: driveTempMeta.id, type: driveTempMeta.mimeType, fileData: mode==='full' ? driveTempMeta.data : null }; if(editId) s.id = Number(editId); store.put(s); } else if (tempFilesList.length > 0) { if(tempFilesList.length===1 && editId) { store.put({ id: Number(editId), title: document.getElementById('songTitle').value, categories: cats, seasons: seas, lyrics: lyrics, fileData: tempFilesList[0].data, type: tempFilesList[0].type }); } else { tempFilesList.forEach(f => { const data = f.source === 'drive' ? (document.querySelector('input[name="storeMode"]:checked').value==='full' ? f.data : null) : f.data; const drvId = f.source === 'drive' ? f.id : null; store.add({ title: f.name, categories: cats, seasons: seas, lyrics: "", fileData: data, type: f.type, driveId: drvId }); }); } } else if (editId) { store.get(Number(editId)).onsuccess = (e) => { const old = e.target.result; const s = { id: Number(editId), title: document.getElementById('songTitle').value, categories: cats, seasons: seas, lyrics: lyrics, fileData: old.fileData, type: old.type, driveId: old.driveId }; store.put(s); }; } else { store.add({ title: document.getElementById('songTitle').value, categories: cats, seasons: seas, lyrics: lyrics, fileData: null, type: null }); } tx.oncomplete = () => { document.getElementById('editModal').classList.remove('show'); renderLibrary(); updateSuggestions(); showToast("Salvato!"); }; }
         function openShareModal(){ document.getElementById('shareModal').classList.add('show'); }
-        
-        function shareText(mode) {
-            const t=document.getElementById('messaTitle').value; const d=document.getElementById('messaDate').value; let txt=`📅 *${t}* - ${d}\n\n`;
-            if(mode!=='read') document.querySelectorAll('.song-select').forEach(s=>{if(s.selectedIndex>0)txt+=`🎵 ${s.parentElement.parentElement.dataset.part}: ${s.options[s.selectedIndex].text}\n`});
-            if(mode!=='list') txt+=`\n📖 LETTURE:\n${document.getElementById('rg').value.substring(0,100)}...`;
-            window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`);
-        }
-        
-        function printMode(mode){ 
-            document.body.className = ""; if(mode==='music') document.body.classList.add('print-music-only'); if(mode==='read') document.body.classList.add('print-readings-only');
-            startReadingMode(); setTimeout(()=>window.print(),1000); 
-        }
-
-        function renderScalettaUI() {
-            const c = document.getElementById('scalettaContainer'); c.innerHTML = "";
-            CATS.forEach(cat => { if(cat === 'Altro') return; c.innerHTML += `<div style="margin-bottom:10px;" data-part="${cat}"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><div style="display:flex; gap:5px;"><select class="form-control song-select" style="margin:0;"><option value="">Seleziona...</option></select><button onclick="this.previousElementSibling.value=''" class="btn-outline">X</button></div></div>`; });
-            setTimeout(updateSuggestions, 500);
-        }
-
+        function shareText(mode) { const t=document.getElementById('messaTitle').value; const d=document.getElementById('messaDate').value; let txt=`📅 *${t}* - ${d}\n\n`; if(mode!=='read') document.querySelectorAll('.song-select').forEach(s=>{if(s.selectedIndex>0)txt+=`🎵 ${s.parentElement.parentElement.dataset.part}: ${s.options[s.selectedIndex].text}\n`}); if(mode!=='list') txt+=`\n📖 LETTURE:\n${document.getElementById('rg').value.substring(0,100)}...`; window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
+        function printMode(mode){ document.body.className = ""; if(mode==='music') document.body.classList.add('print-music-only'); if(mode==='read') document.body.classList.add('print-readings-only'); startReadingMode(); setTimeout(()=>window.print(),1000); }
+        function renderScalettaUI() { const c = document.getElementById('scalettaContainer'); c.innerHTML = ""; CATS.forEach(cat => { if(cat === 'Altro') return; c.innerHTML += `<div style="margin-bottom:10px;" data-part="${cat}"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><div style="display:flex; gap:5px;"><select class="form-control song-select" style="margin:0;"><option value="">Seleziona...</option></select><button onclick="this.previousElementSibling.value=''" class="btn-outline">X</button></div></div>`; }); setTimeout(updateSuggestions, 500); }
         function updateSuggestions() { const d = new Date(document.getElementById('messaDate').value); const m = d.getMonth()+1; const day = d.getDate(); let season = "Ordinario"; if (m===11&&day>=27||m===12&&day<=24) season="Avvento"; else if (m===12&&day>=25||m===1) season="Natale"; else if (m>=2&&m<=4) season="Quaresima"; else if (m===4||m===5) season="Pasqua"; db.transaction("songs").objectStore("songs").getAll().onsuccess=(e)=>{ const songs = e.target.result.sort((a,b)=>a.title.localeCompare(b.title)); document.querySelectorAll('.song-select').forEach(sel=>{ const part=sel.parentElement.parentElement.dataset.part; const old=sel.value; let sug="", oth=""; songs.forEach(s=>{ const cats = Array.isArray(s.categories)?s.categories:[s.category]; const seas = Array.isArray(s.seasons)?s.seasons:[s.season]; if(cats.includes(part)&&(seas.includes(season)||seas.includes("Tutti"))) sug+=`<option value="${s.id}">★ ${s.title}</option>`; else oth+=`<option value="${s.id}">${s.title}</option>`; }); sel.innerHTML=`<option value="">Seleziona...</option><optgroup label="Suggeriti (${season})">${sug}</optgroup><optgroup label="Altri">${oth}</optgroup>`; sel.value=old; }); } }
-        
-        async function autoFetchReadings() {
-            const d=new Date(document.getElementById('messaDate').value); const url=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`)}`;
-            try{ const r=await fetch(url); const j=await r.json(); const t=new DOMParser().parseFromString(j.contents,"text/html").body.innerText.replace(/\s+/g,' '); 
-            const f=(a,b)=>{let s=-1;for(let w of a){let r=new RegExp(w,"i").exec(t);if(r){s=r.index+r[0].length;break;}}if(s<0)return"";let e=-1;for(let w of b){let r=new RegExp(w,"i").exec(t.substring(s));if(r){e=s+r.index;break;}}return e<0?"":t.substring(s,e).trim();};
-            document.getElementById('r1').value=f(["Prima Lettura"],["Salmo"]);document.getElementById('rps').value=f(["Salmo"],["Seconda","Vangelo"]);document.getElementById('r2').value=f(["Seconda"],["Vangelo"]);document.getElementById('rg').value=f(["Vangelo"],["PREGHIERA"]);showToast("Letture Trovate!"); }catch(e){if(confirm("Errore. Aprire sito?"))window.open(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`);}
-        }
-        
+        async function autoFetchReadings() { const d=new Date(document.getElementById('messaDate').value); const url=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`)}`; try{ const r=await fetch(url); const j=await r.json(); const t=new DOMParser().parseFromString(j.contents,"text/html").body.innerText.replace(/\s+/g,' '); const f=(a,b)=>{let s=-1;for(let w of a){let r=new RegExp(w,"i").exec(t);if(r){s=r.index+r[0].length;break;}}if(s<0)return"";let e=-1;for(let w of b){let r=new RegExp(w,"i").exec(t.substring(s));if(r){e=s+r.index;break;}}return e<0?"":t.substring(s,e).trim();}; document.getElementById('r1').value=f(["Prima Lettura"],["Salmo"]);document.getElementById('rps').value=f(["Salmo"],["Seconda","Vangelo"]);document.getElementById('r2').value=f(["Seconda"],["Vangelo"]);document.getElementById('rg').value=f(["Vangelo"],["PREGHIERA"]);showToast("Letture Trovate!"); }catch(e){if(confirm("Errore. Aprire sito?"))window.open(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`);} }
         function clearReadings(){ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value="");}
         function saveSetlist(){ const sel={};document.querySelectorAll('.song-select').forEach(s=>{if(s.value)sel[s.parentElement.parentElement.dataset.part]=s.value;}); const r={r1:document.getElementById('r1').value,rps:document.getElementById('rps').value,r2:document.getElementById('r2').value,rg:document.getElementById('rg').value}; db.transaction("setlists","readwrite").objectStore("setlists").add({title:document.getElementById('messaTitle').value,date:document.getElementById('messaDate').value,songs:sel,readings:r}).onsuccess=()=>{showToast("Messa Salvata!");renderFullHistory();};}
-        
-        function renderFullHistory() {
-            const l=document.getElementById('fullHistoryList');l.innerHTML=""; 
-            db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess=e=>{
-                const c=e.target.result;
-                if(c){
-                    const s=c.value;
-                    l.innerHTML+=`<div class="history-item"><div onclick="loadSet(${s.id})" style="flex:1;"><b>${s.title}</b><br><small>${s.date}</small></div><span class="material-icons-round" onclick="delSet(${s.id})" style="color:red; cursor:pointer;">delete</span></div>`;
-                    c.continue();
-                } else if(l.innerHTML==="") l.innerHTML="<div style='padding:20px; text-align:center;'>Nessuna Messa salvata</div>";
-            }
-        }
-        function loadSet(id) { 
-            db.transaction("setlists").objectStore("setlists").get(id).onsuccess=e=>{ 
-                const s=e.target.result;
-                document.getElementById('messaTitle').value=s.title;
-                document.getElementById('messaDate').value=s.date; 
-                if(s.readings){document.getElementById('r1').value=s.readings.r1||"";document.getElementById('rps').value=s.readings.rps||"";document.getElementById('r2').value=s.readings.r2||"";document.getElementById('rg').value=s.readings.rg||"";} 
-                document.querySelectorAll('.song-select').forEach(sel=>sel.value=""); 
-                if(s.songs) for(let[k,v]of Object.entries(s.songs)){const el=document.querySelector(`div[data-part="${k}"] select`);if(el)el.value=v;} 
-                go('scaletta'); 
-            } 
-        }
-        function delSet(id) { 
-            if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderFullHistory(); 
-        }
-
-        function startReadingMode(){
-            document.getElementById('readingContainer').classList.add('active'); const mc=document.getElementById('readMusicArea'); mc.innerHTML=""; const wc=document.getElementById('readWordArea'); wc.innerHTML="";
-            document.querySelectorAll('.song-select').forEach(s=>{ if(s.value){ db.transaction("songs").objectStore("songs").get(Number(s.value)).onsuccess=e=>{ const x=e.target.result; 
-                let h=""; if(x.fileData) h=x.type.includes('pdf')?`<iframe src="${x.fileData}" class="pdf-frame"></iframe>`:`<img src="${x.fileData}" style="width:100%">`; else if(x.driveId) h=`<div style="text-align:center; padding:50px;">Solo Online</div>`; else h=`<pre style="white-space:pre-wrap;">${x.lyrics}</pre>`;
-                mc.innerHTML+=`<div class="score-seq-item"><h3>${x.title}</h3>${h}</div>`;
-            }}});
-            const r=[{t:"I",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}];
-            r.forEach(x=>{if(x.v)wc.innerHTML+=`<div style="margin-bottom:30px;"><h3>${x.t}</h3><p>${x.v}</p></div>`;});
-        }
+        function renderFullHistory() { const l=document.getElementById('fullHistoryList');l.innerHTML=""; db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess=e=>{ const c=e.target.result; if(c){ const s=c.value; l.innerHTML+=`<div class="history-item"><div onclick="loadSet(${s.id})" style="flex:1;"><b>${s.title}</b><br><small>${s.date}</small></div><span class="material-icons-round" onclick="delSet(${s.id})" style="color:red; cursor:pointer;">delete</span></div>`; c.continue(); } else if(l.innerHTML==="") l.innerHTML="<div style='padding:20px; text-align:center;'>Nessuna Messa salvata</div>"; } }
+        function loadSet(id) { db.transaction("setlists").objectStore("setlists").get(id).onsuccess=e=>{ const s=e.target.result; document.getElementById('messaTitle').value=s.title; document.getElementById('messaDate').value=s.date; if(s.readings){document.getElementById('r1').value=s.readings.r1||"";document.getElementById('rps').value=s.readings.rps||"";document.getElementById('r2').value=s.readings.r2||"";document.getElementById('rg').value=s.readings.rg||"";} document.querySelectorAll('.song-select').forEach(sel=>sel.value=""); if(s.songs) for(let[k,v]of Object.entries(s.songs)){const el=document.querySelector(`div[data-part="${k}"] select`);if(el)el.value=v;} go('scaletta'); } }
+        function delSet(id) { if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderFullHistory(); }
+        function startReadingMode(){ document.getElementById('readingContainer').classList.add('active'); const mc=document.getElementById('readMusicArea'); mc.innerHTML=""; const wc=document.getElementById('readWordArea'); wc.innerHTML=""; document.querySelectorAll('.song-select').forEach(s=>{ if(s.value){ db.transaction("songs").objectStore("songs").get(Number(s.value)).onsuccess=e=>{ const x=e.target.result; let h=""; if(x.fileData) h=x.type.includes('pdf')?`<iframe src="${x.fileData}" class="pdf-frame"></iframe>`:`<img src="${x.fileData}" style="width:100%">`; else if(x.driveId) h=`<div style="text-align:center; padding:50px;">Solo Online</div>`; else h=`<pre style="white-space:pre-wrap;">${x.lyrics}</pre>`; mc.innerHTML+=`<div class="score-seq-item"><h3>${x.title}</h3>${h}</div>`; }}}); const r=[{t:"I",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}]; r.forEach(x=>{if(x.v)wc.innerHTML+=`<div style="margin-bottom:30px;"><h3>${x.t}</h3><p>${x.v}</p></div>`;}); }
         function stopReadingMode(){document.getElementById('readingContainer').classList.remove('active'); document.body.className="";}
         function setReadTab(t){document.getElementById('readMusicArea').className=t==='music'?'':'d-none';document.getElementById('readWordArea').className=t==='word'?'':'d-none';document.getElementById('rtab-music').style.background=t==='music'?'var(--primary)':'white';document.getElementById('rtab-music').style.color=t==='music'?'white':'#555';document.getElementById('rtab-word').style.background=t==='word'?'var(--primary)':'white';document.getElementById('rtab-word').style.color=t==='word'?'white':'#555';}
         function showToast(m,type="info"){ const t=document.getElementById('toast');t.innerText=m;t.style.background=type=='error'?'#ef4444':'#333';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000); }
         function exportData(){ const tx=db.transaction(["songs","setlists"],"readonly"); Promise.all([new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)),new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result))]).then(([s,l])=>{const b=new Blob([JSON.stringify({songs:s,setlists:l})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup.json";a.click();}); }
         function importData(inp){ const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");tx.objectStore("songs").clear();tx.objectStore("setlists").clear();d.songs.forEach(s=>tx.objectStore("songs").put(s));d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{showToast("Fatto!");setTimeout(()=>location.reload(),1000);}}catch(x){alert("Errore file");}};r.readAsText(f); }
-        function optimizeStorage(){ if(confirm("Ottimizzare spazio?")) showToast("Fatto"); }
     </script>
 </body>
 </html>
