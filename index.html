@@ -57,7 +57,7 @@
 
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; width: max-content; max-width: 80%; text-align: center; }
         #toast.show { opacity: 1; bottom: 90px; }
-        #toast.error { background: #d32f2f; }
+        #toast.error { background: #ef4444; }
 
         .chips-container { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
         .chip-select { padding: 5px 10px; border: 1px solid #ccc; border-radius: 15px; font-size: 0.8rem; cursor:pointer; }
@@ -87,9 +87,10 @@
     </div>
 
     <div class="app-body">
+        
         <div id="view-library" class="view-section active">
             <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="searchInput" class="form-control" placeholder="🔍 Cerca..." onkeyup="renderLibrary()" style="margin:0;">
+                <input type="text" id="searchInput" class="form-control" placeholder="🔍 Cerca titolo..." onkeyup="renderLibrary()" style="margin-bottom:10px;">
                 <button onclick="openEditModal()" class="btn-primary" style="white-space:nowrap;">+ Canto</button>
             </div>
             <div style="display:flex; overflow-x:auto; gap:5px; padding-bottom:10px; margin-bottom:10px;">
@@ -107,9 +108,9 @@
             <div class="card">
                 <div class="card-body">
                     <input type="text" id="messaTitle" class="form-control" value="Santa Messa" style="font-weight:bold; font-size:1.2rem; border:none; padding:0; margin:0;">
-                    <div style="display:flex; gap:10px; margin:10px 0;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
                         <input type="date" id="messaDate" class="form-control" style="width:auto; margin:0;" onchange="updateSuggestions()">
-                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.85rem;">⬇️ Letture</button>
+                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.85rem;">⬇️ Scarica Letture</button>
                         <div style="flex:1; text-align:right;">
                             <button onclick="saveSetlist()" class="btn-primary">Salva</button>
                         </div>
@@ -117,18 +118,29 @@
                     <button onclick="startReadingMode()" class="btn-primary" style="background:#2e7d32; width:100%; margin-top:10px;">▶ AVVIA LETTURA</button>
                 </div>
             </div>
+
             <div class="workspace">
                 <div class="card">
-                    <div class="card-header"><span>🎵 Canti</span><div><button onclick="go('history')" class="btn-outline" style="padding:2px 8px; font-size:0.8rem;">Storico</button><button onclick="openShareModal()" class="btn-outline" style="padding:2px 8px; font-size:0.8rem; background:#e3f2fd; color:#1565c0;">Condividi</button></div></div>
+                    <div class="card-header">
+                        <span>🎵 Scaletta Canti</span>
+                        <div>
+                            <button onclick="go('history')" class="btn-outline" style="padding:2px 8px; font-size:0.8rem;">Storico</button>
+                            <button onclick="openShareModal()" class="btn-outline" style="padding:2px 8px; font-size:0.8rem; background:#e3f2fd; color:#1565c0; border-color:#90caf9;">Condividi</button>
+                        </div>
+                    </div>
                     <div class="card-body" id="scalettaContainer"></div>
                 </div>
+
                 <div class="card">
-                    <div class="card-header"><span>📖 Liturgia</span><button onclick="clearReadings()" class="btn-outline" style="padding:4px 8px; font-size:0.8rem; color:red;">Pulisci</button></div>
+                    <div class="card-header">
+                        <span>📖 Liturgia</span>
+                        <button onclick="clearReadings()" class="btn-outline" style="padding:4px 8px; font-size:0.8rem; color:red;">Pulisci</button>
+                    </div>
                     <div class="card-body">
-                        <label style="font-size:0.8rem; color:#666;">I Lettura</label><textarea id="r1" class="form-control"></textarea>
-                        <label style="font-size:0.8rem; color:#666;">Salmo</label><textarea id="rps" class="form-control"></textarea>
-                        <label style="font-size:0.8rem; color:#666;">II Lettura</label><textarea id="r2" class="form-control"></textarea>
-                        <label style="font-size:0.8rem; color:#666;">Vangelo</label><textarea id="rg" class="form-control" style="height:150px;"></textarea>
+                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">I Lettura</label><textarea id="r1" class="form-control"></textarea>
+                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">Salmo</label><textarea id="rps" class="form-control"></textarea>
+                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">II Lettura</label><textarea id="r2" class="form-control"></textarea>
+                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">Vangelo</label><textarea id="rg" class="form-control" style="height:150px;"></textarea>
                     </div>
                 </div>
             </div>
@@ -144,16 +156,19 @@
                 <div class="card-header">Connessione Google Drive</div>
                 <div class="card-body">
                     <button id="btnConnect" onclick="manualLogin()" class="btn-primary" style="width:100%; margin-bottom:15px; background:#4285F4;">🔑 CONNETTI ACCOUNT GOOGLE</button>
-                    <p style="font-size:0.85rem; color:#666;">API Key</p><input type="text" id="apiKey" class="form-control">
-                    <p style="font-size:0.85rem; color:#666;">Client ID</p><input type="text" id="clientId" class="form-control">
+                    <p style="font-size:0.85rem; color:#666;">API Key</p>
+                    <input type="text" id="apiKey" class="form-control" placeholder="API Key">
+                    <p style="font-size:0.85rem; color:#666;">Client ID</p>
+                    <input type="text" id="clientId" class="form-control" placeholder="Client ID">
                     <button onclick="saveKeys()" class="btn-outline" style="width:100%;">Salva Chiavi</button>
                 </div>
             </div>
+            
             <div class="card">
-                <div class="card-header">Dati Locali</div>
+                <div class="card-header">Backup Locale</div>
                 <div class="card-body" style="display:flex; gap:10px;">
-                    <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica Backup</button>
-                    <button onclick="document.getElementById('impFile').click()" class="btn-outline" style="flex:1;">Carica Backup</button>
+                    <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica</button>
+                    <button onclick="document.getElementById('impFile').click()" class="btn-outline" style="flex:1;">Carica</button>
                     <input type="file" id="impFile" hidden onchange="importData(this)">
                 </div>
             </div>
@@ -169,7 +184,14 @@
 
     <div id="viewModal" class="modal-wrap">
         <div class="modal-box" style="height:95vh; width:95vw; max-width:900px;">
-            <div class="card-header"><span id="viewTitle">Titolo</span><div><button onclick="deleteCurrentSong()" class="btn-icon" style="color:red;"><span class="material-icons-round">delete</span></button><button onclick="editFromView()" class="btn-icon"><span class="material-icons-round">edit</span></button><button onclick="document.getElementById('viewModal').classList.remove('show')" class="btn-icon"><span class="material-icons-round">close</span></button></div></div>
+            <div class="card-header">
+                <span id="viewTitle">Titolo</span>
+                <div>
+                    <button onclick="deleteCurrentSong()" class="btn-icon" style="color:red;"><span class="material-icons-round">delete</span></button>
+                    <button onclick="editFromView()" class="btn-icon"><span class="material-icons-round">edit</span></button>
+                    <button onclick="document.getElementById('viewModal').classList.remove('show')" class="btn-icon"><span class="material-icons-round">close</span></button>
+                </div>
+            </div>
             <div class="modal-scroll" id="viewBody" style="background:#eee; padding:0; display:flex; flex-direction:column; align-items:center;"></div>
             <div class="modal-footer" id="viewFooter"></div>
         </div>
@@ -177,11 +199,20 @@
 
     <div id="editModal" class="modal-wrap">
         <div class="modal-box">
-            <div class="card-header"><span id="editModalTitle">Nuovo Canto</span><button onclick="document.getElementById('editModal').classList.remove('show')" class="btn-icon">×</button></div>
+            <div class="card-header">
+                <span id="editModalTitle">Nuovo Canto</span>
+                <button onclick="document.getElementById('editModal').classList.remove('show')" class="btn-icon">×</button>
+            </div>
             <div class="modal-scroll">
-                <input type="hidden" id="songId"><label>Titolo</label><input type="text" id="songTitle" class="form-control">
-                <label>Parti della Messa</label><div class="chips-container" id="catChips"></div>
-                <label>Tempo Liturgico</label><div class="chips-container" id="seasonChips"></div>
+                <input type="hidden" id="songId">
+                <label>Titolo</label><input type="text" id="songTitle" class="form-control">
+                
+                <label>Parti della Messa</label>
+                <div class="chips-container" id="catChips"></div>
+                
+                <label>Tempo Liturgico</label>
+                <div class="chips-container" id="seasonChips"></div>
+                
                 <div style="background:#f0f2f5; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;">
                     <p id="fileStatus" style="font-weight:bold; color:var(--primary); margin-top:0;">Nessun file</p>
                     <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
@@ -190,9 +221,13 @@
                     </div>
                     <input type="file" id="localFile" hidden multiple accept="image/*,application/pdf" onchange="handleFile(this)">
                 </div>
-                <label>Testo</label><textarea id="songLyrics" class="form-control"></textarea>
+
+                <label>Testo (Opzionale)</label>
+                <textarea id="songLyrics" class="form-control"></textarea>
             </div>
-            <div class="modal-footer"><button onclick="saveSong()" class="btn-primary" style="width:100%;">SALVA</button></div>
+            <div class="modal-footer">
+                <button onclick="saveSong()" class="btn-primary" style="width:100%;">SALVA</button>
+            </div>
         </div>
     </div>
 
@@ -214,9 +249,17 @@
         <div class="modal-box" style="height:auto; max-width:400px;">
             <div class="card-header"><span>Condividi</span><button onclick="document.getElementById('shareModal').classList.remove('show')" class="btn-icon">×</button></div>
             <div class="modal-scroll">
-                <div class="share-grid"><button class="btn-share-opt" onclick="shareText('list')"><span class="material-icons-round">list</span>Scaletta</button><button class="btn-share-opt" onclick="shareText('read')"><span class="material-icons-round">menu_book</span>Letture</button><button class="btn-share-opt" onclick="shareText('all')"><span class="material-icons-round">description</span>Tutto</button></div>
+                <div class="share-grid">
+                    <button class="btn-share-opt" onclick="shareText('list')"><span class="material-icons-round">list</span>Scaletta</button>
+                    <button class="btn-share-opt" onclick="shareText('read')"><span class="material-icons-round">menu_book</span>Letture</button>
+                    <button class="btn-share-opt" onclick="shareText('all')"><span class="material-icons-round">description</span>Tutto</button>
+                </div>
                 <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
-                <div class="share-grid"><button class="btn-share-opt" onclick="printMode('all')"><span class="material-icons-round">picture_as_pdf</span>Completo</button><button class="btn-share-opt" onclick="printMode('music')"><span class="material-icons-round">queue_music</span>Solo Canti</button><button class="btn-share-opt" onclick="printMode('read')"><span class="material-icons-round">chrome_reader_mode</span>Solo Letture</button></div>
+                <div class="share-grid">
+                    <button class="btn-share-opt" onclick="printMode('all')"><span class="material-icons-round">picture_as_pdf</span>Completo</button>
+                    <button class="btn-share-opt" onclick="printMode('music')"><span class="material-icons-round">queue_music</span>Solo Canti</button>
+                    <button class="btn-share-opt" onclick="printMode('read')"><span class="material-icons-round">chrome_reader_mode</span>Solo Letture</button>
+                </div>
             </div>
         </div>
     </div>
@@ -224,7 +267,11 @@
     <div id="readingContainer">
         <div class="reading-nav no-print">
             <button onclick="stopReadingMode()" class="btn-icon" style="color:red; font-weight:bold; display:flex; align-items:center; font-size:1rem;"><span class="material-icons-round" style="margin-right:5px;">arrow_back</span> ESCI</button>
-            <div style="display:flex; gap:10px;"><button onclick="setReadTab('music')" class="btn-outline" id="rtab-music">Canti</button><button onclick="setReadTab('word')" class="btn-outline" id="rtab-word">Letture</button></div><div style="width:40px;"></div>
+            <div style="display:flex; gap:10px;">
+                <button onclick="setReadTab('music')" class="btn-outline" id="rtab-music">Canti</button>
+                <button onclick="setReadTab('word')" class="btn-outline" id="rtab-word">Letture</button>
+            </div>
+            <div style="width:40px;"></div>
         </div>
         <div class="reading-content">
             <div id="readMusicArea"></div>
@@ -241,10 +288,10 @@
         let filterCatVar = 'Tutti';
         let tokenClient; let accessToken = null; let gapiReady = false; let gisReady = false;
 
-        // PDF CONFIG
+        // PDF WORKER CONFIG
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        // HELPER PDF & BLOB
+        // HELPER
         function dataURItoBlob(dataURI) {
             try {
                 if(dataURI.startsWith('blob:')) return dataURI;
@@ -291,6 +338,7 @@
             document.getElementById('messaDate').valueAsDate = new Date();
             document.getElementById('apiKey').value = localStorage.getItem('g_api') || "";
             document.getElementById('clientId').value = localStorage.getItem('g_client') || "";
+            
             const r = indexedDB.open("SpartitiDB_V6", 1);
             r.onupgradeneeded = (e) => {
                 db = e.target.result;
@@ -307,7 +355,17 @@
         }
         function toggleChip(el) { el.classList.toggle('selected'); }
 
-        // --- AUTH & DRIVE ---
+        // BUTTONS & NAV
+        function go(id, btn) { 
+            document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active'));
+            document.getElementById('view-'+id).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            if(id==='library') renderLibrary();
+            if(id==='history') renderFullHistory();
+        }
+
+        // AUTH & DRIVE
         function saveKeys(){
             localStorage.setItem('g_api',document.getElementById('apiKey').value.trim());
             localStorage.setItem('g_client',document.getElementById('clientId').value.trim());
@@ -364,7 +422,6 @@
                     const search = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='spartiti_db_master.json' and trashed=false&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
                     if(!search.files || search.files.length === 0) throw { message: "Nessun backup trovato" };
                     const data = await fetch(`https://www.googleapis.com/drive/v3/files/${search.files[0].id}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
-                    
                     const tx = db.transaction(["songs","setlists"],"readwrite");
                     await new Promise(r=>tx.objectStore("songs").clear().onsuccess=r);
                     await new Promise(r=>tx.objectStore("setlists").clear().onsuccess=r);
@@ -391,7 +448,7 @@
             });
         }
 
-        // --- VIEW LOGIC (PDFJS ENABLED) ---
+        // --- VIEW & DOWNLOAD ---
         async function openViewModal(id) {
             currentSongId = id;
             db.transaction("songs", "readwrite").objectStore("songs").get(id).onsuccess = async (e) => {
@@ -402,19 +459,19 @@
                 b.innerHTML = ""; f.innerHTML = "";
                 const API_KEY = document.getElementById('apiKey').value.trim();
 
-                // 1. OFFLINE
+                // OFFLINE
                 if (s.fileData) {
                     if(s.type && s.type.includes('pdf')) {
                         const blob = dataURItoBlob(s.fileData);
                         if(blob) {
                             b.innerHTML = `<div id="pdf-view-container" style="width:100%"></div>`;
                             renderPdfToCanvas(blob, 'pdf-view-container');
-                        } else b.innerHTML = "Err lettura file.";
+                        } else b.innerHTML = "Err file";
                     } else b.innerHTML = `<img src="${s.fileData}" style="width:100%">`;
                     
                     if(s.driveFile) f.innerHTML = `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange;">🗑️ Rimuovi Offline</button>`;
                 } 
-                // 2. ONLINE
+                // ONLINE
                 else if ((s.driveFile && s.driveFile.id) || s.driveId) {
                     const dId = s.driveFile ? s.driveFile.id : s.driveId;
                     f.innerHTML = `<button onclick="toggleDownload(${s.id}, true)" class="btn-primary">⬇️ SCARICA OFFLINE</button>`;
@@ -437,10 +494,7 @@
                         } catch(err) { b.innerText = "Err: " + err; }
                     }
                 } 
-                // 3. TESTO
-                else {
-                    b.innerHTML = `<pre style="padding:20px; white-space:pre-wrap; font-family:inherit;">${s.lyrics || 'Nessun testo'}</pre>`;
-                }
+                else b.innerHTML = `<pre style="padding:20px; white-space:pre-wrap; font-family:inherit;">${s.lyrics || ''}</pre>`;
                 
                 f.style.display = f.innerHTML ? 'flex' : 'none';
                 document.getElementById('viewModal').classList.add('show');
@@ -474,8 +528,7 @@
             };
         }
 
-        // STANDARD APP FUNCTIONS
-        function go(id, btn) { document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active')); if(btn) btn.classList.add('active'); if(id==='library') renderLibrary(); if(id==='history') renderFullHistory(); }
+        // LIBRARY & EDIT
         function renderLibrary() { 
             const list = document.getElementById('songList'); list.innerHTML=""; const txt = document.getElementById('searchInput').value.toLowerCase(); 
             db.transaction("songs").objectStore("songs").getAll().onsuccess = e => { 
@@ -498,6 +551,9 @@
         }
         function deleteCurrentSong() { if(confirm("Eliminare?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); }; }
         function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(); }
+        
+        // STANDARD UI
+        function filterLib(cat) { filterCatVar=cat; renderLibrary(); }
         function renderScalettaUI() { const c = document.getElementById('scalettaContainer'); c.innerHTML=""; CATS.forEach(cat => { c.innerHTML += `<div style="margin-bottom:10px;"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><div style="display:flex; gap:5px;"><select class="form-control song-select" data-part="${cat}"><option value="">Seleziona...</option></select><button onclick="this.previousElementSibling.value=''" class="btn-outline">X</button></div></div>`; }); setTimeout(fillSelects, 500); }
         function fillSelects() { db.transaction("songs").objectStore("songs").getAll().onsuccess = e => { const songs = e.target.result; document.querySelectorAll('.song-select').forEach(sel => { const part = sel.dataset.part; let html = '<option value="">Seleziona...</option>'; songs.forEach(s => { html += `<option value="${s.id}">${s.title}</option>`; }); sel.innerHTML = html; }); }; }
         function saveSetlist() { const sel = {}; document.querySelectorAll('.song-select').forEach(s => { if(s.value) sel[s.dataset.part] = s.value; }); const r={r1:document.getElementById('r1').value, rps:document.getElementById('rps').value, r2:document.getElementById('r2').value, rg:document.getElementById('rg').value}; db.transaction("setlists","readwrite").objectStore("setlists").add({ title: document.getElementById('messaTitle').value, date: document.getElementById('messaDate').value, songs: sel, readings: r }).onsuccess = () => alert("Messa salvata!"); }
@@ -521,14 +577,19 @@
                 };
                 
                 if(s.fileData) { 
-                    if(s.type && s.type.includes('pdf')) { await renderBlob(dataURItoBlob(s.fileData)); return; } 
-                    else content=`<img src="${s.fileData}" style="width:100%">`; 
+                    if(s.type && s.type.includes('pdf')) { 
+                        await renderBlob(dataURItoBlob(s.fileData)); return; 
+                    } else content=`<img src="${s.fileData}" style="width:100%">`; 
                 } else if((s.driveFile || s.driveId) && accessToken) { 
                     const dId = s.driveFile ? s.driveFile.id : s.driveId;
                     const res = await fetch(`https://www.googleapis.com/drive/v3/files/${dId}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }); 
                     const blob = await res.blob(); 
-                    if(blob.type.includes('image')) content = `<img src="${URL.createObjectURL(blob)}" style="width:100%">`; 
-                    else { await renderBlob(blob); return; }
+                    if(blob.type.includes('image')) {
+                        const url = URL.createObjectURL(blob);
+                        content = `<img src="${url}" style="width:100%">`;
+                    } else {
+                        await renderBlob(blob); return;
+                    }
                 } 
                 c.innerHTML += `<div class="score-seq-item"><h3>${s.title}</h3>${content}</div>`; }; } });
         }
@@ -541,7 +602,6 @@
         function clearReadings(){ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value="");}
         function exportData(){ const tx=db.transaction(["songs","setlists"],"readonly"); Promise.all([new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)),new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result))]).then(([s,l])=>{const b=new Blob([JSON.stringify({songs:s,setlists:l})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup.json";a.click();}); }
         function importData(inp){ const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");tx.objectStore("songs").clear();tx.objectStore("setlists").clear();d.songs.forEach(s=>tx.objectStore("songs").put(s));d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{alert("Fatto!");setTimeout(()=>location.reload(),1000);}}catch(x){alert("Errore file");}};r.readAsText(f); }
-        function filterLib(cat) { filterCatVar=cat; renderLibrary(); }
         function showToast(m, t) { const el=document.getElementById('toast'); el.innerText=m; el.classList.add('show'); if(t)el.classList.add('error'); setTimeout(()=>el.className='', 3000); }
     </script>
 </body>
