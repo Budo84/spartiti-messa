@@ -1,5 +1,5 @@
-const CACHE_NAME = 'spartiti-messa-v35-pdf-render';
-const ASSETS_TO_CACHE = [
+const CACHE_NAME = 'spartiti-messa-v36-pdf-mobile-fix';
+const ASSETS = [
   './',
   './index.html',
   './manifest.json',
@@ -7,12 +7,13 @@ const ASSETS_TO_CACHE = [
   './logo512.png',
   'https://fonts.googleapis.com/icon?family=Material+Icons+Round',
   'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap',
-  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js' /* NUOVA LIBRERIA */
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js'
 ];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE)));
+  e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
 });
 
 self.addEventListener('activate', (e) => {
