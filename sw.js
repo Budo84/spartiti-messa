@@ -1,5 +1,5 @@
-const CACHE_NAME = 'spartiti-messa-v31-buttons-restored';
-const ASSETS = [
+const CACHE_NAME = 'spartiti-messa-v32-hybrid-gold';
+const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
@@ -11,7 +11,7 @@ const ASSETS = [
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
+  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE)));
 });
 
 self.addEventListener('activate', (e) => {
@@ -23,6 +23,7 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = e.request.url;
+  // Esclude Google per evitare errori di Auth su mobile
   if (url.includes('google') || url.includes('googleapis') || url.includes('gstatic')) return;
   e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
 });
