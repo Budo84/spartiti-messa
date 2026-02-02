@@ -16,59 +16,80 @@
     <script src="https://accounts.google.com/gsi/client" async defer onload="onGisLoad()"></script>
     
     <style>
+        /* --- STILE ORIGINALE INDEX 13 --- */
         :root { --primary: #673ab7; --bg: #f5f5f5; --white: #ffffff; --text: #333; --border: #ddd; }
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        .app-body { flex: 1; overflow-y: auto; padding-bottom: 80px; }
-        .view-section { display: none; padding: 15px; max-width: 900px; margin: 0 auto; }
+        
+        .app-body { flex: 1; overflow-y: auto; position: relative; padding-bottom: 70px; }
+        .view-section { display: none; padding: 15px; max-width: 1200px; margin: 0 auto; }
         .view-section.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .top-bar { background: var(--white); padding: 10px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         
-        .top-bar { background: var(--white); padding: 10px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
         .card { background: var(--white); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid var(--border); overflow: hidden; }
         .card-header { background: #f9fafb; padding: 10px 15px; border-bottom: 1px solid var(--border); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .card-body { padding: 15px; }
-        .song-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; background: white; }
+
+        .song-item, .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; background: white; }
+        .song-item:last-child, .history-item:last-child { border-bottom: none; }
+        .song-item:active { background: #f0f0f0; }
+
+        .status-badge { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; margin-right: 5px; }
+        .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+
+        .chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; }
+        .chip-select { padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.85rem; cursor: pointer; user-select: none; }
+        .chip-select.selected { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; box-shadow: 0 2px 5px rgba(103, 58, 183, 0.3); }
+
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
         textarea.form-control { resize: vertical; min-height: 100px; }
-        
+
         .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .modal-wrap.show { display: flex; }
-        .modal-box { background: var(--white); width: 95%; max-width: 800px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; }
+        .modal-box { background: var(--white); width: 95%; max-width: 900px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
+        .modal-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
         .modal-scroll { flex: 1; overflow-y: auto; padding: 20px; }
-        .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-        
+        .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; display:flex; justify-content:center; gap:10px; }
+
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--white); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 500; }
         .nav-btn { background: none; border: none; color: #999; font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; width: 100%; cursor: pointer; }
         .nav-btn.active { color: var(--primary); }
         .nav-btn span { font-size: 26px; margin-bottom: 2px; }
-        
-        .btn-primary { background: var(--primary); color: white; border:none; padding:10px 15px; border-radius:6px; font-weight:bold; cursor:pointer; }
-        .btn-outline { background: transparent; border: 1px solid #ccc; color: #555; padding:8px 15px; border-radius:6px; font-weight:bold; cursor:pointer; }
+
+        .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; justify-content:center; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: transparent; border: 1px solid #ccc; color: #555; }
         .btn-icon { background: none; border: none; font-size: 1.4rem; padding: 5px; cursor: pointer; color: #555; }
-        
-        .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 5px; font-weight: bold; display: inline-flex; align-items: center; gap: 3px; }
-        .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-        .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
 
-        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; width: max-content; max-width: 80%; text-align: center; }
-        #toast.show { opacity: 1; bottom: 90px; }
-        #toast.error { background: #d32f2f; }
+        .workspace { display: grid; gap: 20px; grid-template-columns: 1fr; }
+        @media(min-width: 900px) { .workspace { grid-template-columns: 1fr 1fr; } }
 
-        .chips-container { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-        .chip-select { padding: 5px 10px; border: 1px solid #ccc; border-radius: 15px; font-size: 0.8rem; cursor:pointer; }
-        .chip-select.selected { background: var(--primary); color: white; }
-
+        /* MODALITA LETTURA */
         #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
         #readingContainer.active { display: flex; }
         .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
-        .reading-content { flex: 1; overflow-y: auto; padding: 20px; }
-        .score-seq-item { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
-        
+        .reading-content { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
+        .score-seq-item { margin-bottom: 40px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); page-break-inside: avoid; }
+        .pdf-frame { width: 100%; height: 75vh; border: none; background: #eee; }
+
+        /* TOAST */
+        #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; }
+        #toast.show { opacity: 1; bottom: 90px; }
+        #toast.error { background: #ef4444; }
+
         .d-none { display: none !important; }
-        .workspace { display: grid; gap: 20px; grid-template-columns: 1fr; }
-        @media(min-width: 900px) { .workspace { grid-template-columns: 1fr 1fr; } }
-        @media print { .no-print, .nav-bar, .top-bar { display: none !important; } #readingContainer { position: static; display: block; } body.print-text-only .score-seq-item img, body.print-text-only .score-seq-item iframe { display: none; } body.print-music-only #readWordArea { display: none; } body.print-readings-only #readMusicArea { display: none; } }
+        @media print {
+            .no-print, .nav-bar, .top-bar { display: none !important; }
+            .app-body { overflow: visible; height: auto; }
+            #readingContainer { position: static; display: block; height: auto; overflow: visible; }
+            .reading-content { overflow: visible; height: auto; padding: 0; }
+            body.print-text-only .score-seq-item img, body.print-text-only .score-seq-item iframe { display: none; }
+            body.print-music-only #readWordArea { display: none; }
+            body.print-readings-only #readMusicArea { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -76,16 +97,16 @@
     <div id="toast">Messaggio</div>
 
     <div class="top-bar no-print">
-        <h3>Spartiti Messa</h3>
-        <button onclick="openSyncModal()" class="btn-icon"><span class="material-icons-round">cloud_sync</span></button>
+        <h3 style="font-size:1.2rem; font-weight:800; color:var(--primary); margin:0;">Spartiti Messa</h3>
+        <button onclick="driveAction('sync')" class="btn-icon" style="color:#2e7d32;" title="Cloud Backup"><span class="material-icons-round">cloud_sync</span></button>
     </div>
 
     <div class="app-body">
         
         <div id="view-library" class="view-section active">
             <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="searchInput" class="form-control" placeholder="Cerca..." onkeyup="renderLibrary()" style="margin:0;">
-                <button onclick="openEditModal()" class="btn-primary">+ Canto</button>
+                <input type="text" id="searchInput" class="form-control" placeholder="🔍 Cerca titolo..." onkeyup="renderLibrary()" style="margin-bottom:10px;">
+                <button onclick="openEditModal()" class="btn-primary" style="white-space:nowrap;">+ Canto</button>
             </div>
             <div style="display:flex; overflow-x:auto; gap:5px; padding-bottom:10px; margin-bottom:10px;">
                 <button onclick="filterLib('Tutti')" class="btn-outline" style="padding:5px 10px; font-size:0.8rem;">Tutti</button>
@@ -101,40 +122,40 @@
         <div id="view-scaletta" class="view-section">
             <div class="card">
                 <div class="card-body">
-                    <input type="text" id="messaTitle" class="form-control" value="Santa Messa" style="font-weight:bold; font-size:1.2rem; border:none; padding:0;">
-                    <div style="display:flex; gap:10px; margin:10px 0;">
-                        <input type="date" id="messaDate" class="form-control" style="margin:0;">
-                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.9rem;">⬇️ Letture</button>
+                    <input type="text" id="messaTitle" class="form-control" value="Santa Messa" style="font-weight:bold; font-size:1.2rem; border:none; padding:0; margin:0;">
+                    <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
+                        <input type="date" id="messaDate" class="form-control" style="width:auto; margin:0;" onchange="updateSuggestions()">
+                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.85rem;">⬇️ Scarica Letture</button>
                         <div style="flex:1; text-align:right;">
                             <button onclick="saveSetlist()" class="btn-primary">Salva</button>
                         </div>
                     </div>
-                    <button onclick="startReadingMode()" class="btn-primary" style="width:100%; background:#2e7d32;">▶ AVVIA LETTURA</button>
+                    <button onclick="startReadingMode()" class="btn-primary" style="background:#2e7d32; width:100%; margin-top:10px;">▶ AVVIA LETTURA</button>
                 </div>
             </div>
-            
+
             <div class="workspace">
                 <div class="card">
                     <div class="card-header">
-                        <span>🎵 Canti</span>
+                        <span>🎵 Scaletta Canti</span>
                         <div>
                             <button onclick="go('history')" class="btn-outline" style="padding:2px 8px; font-size:0.8rem;">Storico</button>
-                            <button onclick="openShareModal()" class="btn-outline" style="padding:2px 8px; font-size:0.8rem; background:#e3f2fd; color:#1565c0;">Condividi</button>
+                            <button onclick="openShareModal()" class="btn-outline" style="padding:2px 8px; font-size:0.8rem; background:#e3f2fd; color:#1565c0; border-color:#90caf9;">Condividi</button>
                         </div>
                     </div>
                     <div class="card-body" id="scalettaContainer"></div>
                 </div>
-                
+
                 <div class="card">
                     <div class="card-header">
                         <span>📖 Liturgia</span>
                         <button onclick="clearReadings()" class="btn-outline" style="padding:4px 8px; font-size:0.8rem; color:red;">Pulisci</button>
                     </div>
                     <div class="card-body">
-                        <label style="font-size:0.8rem; color:#666;">I Lettura</label><textarea id="r1" class="form-control"></textarea>
-                        <label style="font-size:0.8rem; color:#666;">Salmo</label><textarea id="rps" class="form-control"></textarea>
-                        <label style="font-size:0.8rem; color:#666;">II Lettura</label><textarea id="r2" class="form-control"></textarea>
-                        <label style="font-size:0.8rem; color:#666;">Vangelo</label><textarea id="rg" class="form-control" style="height:150px;"></textarea>
+                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">I Lettura</label><textarea id="r1" class="form-control"></textarea>
+                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">Salmo</label><textarea id="rps" class="form-control"></textarea>
+                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">II Lettura</label><textarea id="r2" class="form-control"></textarea>
+                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">Vangelo</label><textarea id="rg" class="form-control" style="height:150px;"></textarea>
                     </div>
                 </div>
             </div>
@@ -149,20 +170,20 @@
             <div class="card">
                 <div class="card-header">Connessione Google Drive</div>
                 <div class="card-body">
-                    <button id="btnConnect" onclick="manualLogin()" class="btn-primary" style="width:100%; margin-bottom:15px; background:#4285F4;">1. CONNETTI ACCOUNT</button>
-                    <p style="font-size:0.8rem; color:#666;">API Key</p>
-                    <input type="text" id="apiKey" class="form-control">
-                    <p style="font-size:0.8rem; color:#666;">Client ID</p>
-                    <input type="text" id="clientId" class="form-control">
+                    <button id="btnConnect" onclick="manualLogin()" class="btn-primary" style="width:100%; margin-bottom:15px; background:#4285F4;">🔑 CONNETTI ACCOUNT GOOGLE</button>
+                    <p style="font-size:0.85rem; color:#666;">Per scaricare i PDF e Backup.</p>
+                    <input type="text" id="apiKey" class="form-control" placeholder="API Key">
+                    <input type="text" id="clientId" class="form-control" placeholder="Client ID">
                     <button onclick="saveKeys()" class="btn-outline" style="width:100%;">Salva Chiavi</button>
                 </div>
             </div>
+            
             <div class="card">
-                <div class="card-header">Dati Locali</div>
-                <div class="card-body">
-                    <button onclick="exportData()" class="btn-outline" style="width:100%; margin-bottom:10px;">Backup Locale</button>
+                <div class="card-header">Backup Locale</div>
+                <div class="card-body" style="display:flex; gap:10px;">
+                    <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica</button>
+                    <button onclick="document.getElementById('impFile').click()" class="btn-outline" style="flex:1;">Carica</button>
                     <input type="file" id="impFile" hidden onchange="importData(this)">
-                    <button onclick="document.getElementById('impFile').click()" class="btn-outline" style="width:100%;">Ripristino Locale</button>
                 </div>
             </div>
         </div>
@@ -175,35 +196,114 @@
         <button class="nav-btn" onclick="go('settings', this)"><span class="material-icons-round">settings</span>Opzioni</button>
     </div>
 
-    <div id="syncModal" class="modal-wrap">
-        <div class="modal-box" style="height:auto;">
-            <div class="card-header"><span>Cloud Drive</span><button class="btn-icon" onclick="document.getElementById('syncModal').classList.remove('show')">close</button></div>
-            <div class="modal-scroll" style="text-align:center;">
-                <p id="syncMsg" style="margin-bottom:15px;">Premi Connetti in Opzioni prima di usare il Cloud.</p>
-                <div id="syncBtns" class="d-none">
-                    <button onclick="performSync('upload')" class="btn-primary" style="width:100%; margin-bottom:10px;">☁️ CARICA (Backup)</button>
-                    <button onclick="performSync('download')" class="btn-outline" style="width:100%;">⬇️ SCARICA (Ripristina)</button>
+    <div id="viewModal" class="modal-wrap">
+        <div class="modal-box" style="height:95vh; width:95vw; max-width:900px;">
+            <div class="card-header">
+                <span id="viewTitle">Titolo</span>
+                <div>
+                    <button onclick="deleteCurrentSong()" class="btn-icon" style="color:red;"><span class="material-icons-round">delete</span></button>
+                    <button onclick="editFromView()" class="btn-icon"><span class="material-icons-round">edit</span></button>
+                    <button onclick="document.getElementById('viewModal').classList.remove('show')" class="btn-icon"><span class="material-icons-round">close</span></button>
                 </div>
-                <div id="syncErr" style="color:red; font-size:0.8rem; margin-top:10px; word-break:break-all;"></div>
+            </div>
+            <div class="modal-scroll" id="viewBody" style="background:#eee; padding:0;"></div>
+            <div class="modal-footer" id="viewFooter"></div>
+        </div>
+    </div>
+
+    <div id="editModal" class="modal-wrap">
+        <div class="modal-box">
+            <div class="card-header">
+                <span id="editModalTitle">Nuovo Canto</span>
+                <button onclick="document.getElementById('editModal').classList.remove('show')" class="btn-icon">×</button>
+            </div>
+            <div class="modal-scroll">
+                <input type="hidden" id="songId">
+                <label>Titolo</label><input type="text" id="songTitle" class="form-control">
+                
+                <label>Parti della Messa</label>
+                <div class="chips-container" id="catChips"></div>
+                
+                <label>Tempo Liturgico</label>
+                <div class="chips-container" id="seasonChips"></div>
+                
+                <div style="background:#f0f2f5; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;">
+                    <p id="fileStatus" style="font-weight:bold; color:var(--primary); margin-top:0;">Nessun file</p>
+                    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                        <button onclick="driveAction('picker')" class="btn-outline" style="background:white;">Google Drive</button>
+                        <button onclick="document.getElementById('localFile').click()" class="btn-outline" style="background:white;">Locale (Multi)</button>
+                    </div>
+                    <input type="file" id="localFile" hidden multiple accept="image/*,application/pdf" onchange="handleFile(this)">
+                </div>
+
+                <label>Testo (Opzionale)</label>
+                <textarea id="songLyrics" class="form-control"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button onclick="saveSong()" class="btn-primary" style="width:100%;">SALVA</button>
             </div>
         </div>
     </div>
 
-    <div id="editModal" class="modal-wrap"><div class="modal-box"><div class="card-header"><span>Canto</span><button class="btn-icon" onclick="document.getElementById('editModal').classList.remove('show')">close</button></div><div class="modal-scroll"><input type="hidden" id="songId"><input type="text" id="songTitle" class="form-control" placeholder="Titolo"><div class="chips-container" id="catChips"></div><div class="chips-container" id="seasonChips"></div><div style="text-align:center; padding:15px; background:#f5f5f5; border-radius:8px; margin:10px 0;"><button onclick="openPicker()" class="btn-outline" style="background:white;">📂 Seleziona da Drive</button><button onclick="document.getElementById('localFile').click()" class="btn-outline" style="background:white; margin-left:5px;">📁 Locale</button><p id="fileStatus" style="margin:5px 0; font-size:0.8rem;">Nessun file</p></div><input type="file" id="localFile" hidden multiple onchange="handleFile(this)"><textarea id="songLyrics" class="form-control" placeholder="Testo..."></textarea></div><div class="modal-footer"><button onclick="saveSong()" class="btn-primary" style="width:100%;">SALVA</button></div></div></div>
-    
-    <div id="viewModal" class="modal-wrap"><div class="modal-box" style="height:90vh;"><div class="card-header"><span id="viewTitle"></span><button class="btn-icon" onclick="document.getElementById('viewModal').classList.remove('show')">close</button></div><div class="modal-scroll" id="viewBody"></div><div class="modal-footer" id="viewFooter"></div></div></div>
-    
-    <div id="readingContainer"><div class="reading-nav no-print"><button onclick="stopReadingMode()" class="btn-icon" style="color:red;">arrow_back</button><div style="display:flex; gap:10px;"><button onclick="setReadTab('music')" class="btn-outline" id="rtab-music">Canti</button><button onclick="setReadTab('word')" class="btn-outline" id="rtab-word">Letture</button></div><div style="width:40px;"></div></div><div class="reading-content"><div id="readMusicArea"></div><div id="readWordArea" class="d-none" style="max-width:800px; margin:0 auto; font-size:1.2rem; line-height:1.6;"></div></div></div>
-    
-    <div id="shareModal" class="modal-wrap"><div class="modal-box" style="height:auto; max-width:400px;"><div class="card-header"><span>Condividi</span><button onclick="document.getElementById('shareModal').classList.remove('show')" class="btn-icon">×</button></div><div class="modal-scroll"><div style="display:grid;gap:10px;"><button class="btn-outline" onclick="shareText('list')">Copia Scaletta</button><button class="btn-outline" onclick="shareText('all')">Copia Tutto</button><hr><button class="btn-primary" onclick="printMode('all')">Genera PDF Completo</button></div></div></div></div>
+    <div id="syncModal" class="modal-wrap">
+        <div class="modal-box" style="height:auto;">
+            <div class="card-header"><span>Backup Cloud</span><button onclick="document.getElementById('syncModal').classList.remove('show')" class="btn-icon">×</button></div>
+            <div class="modal-scroll" style="text-align:center;">
+                <p id="syncMsg">Prima di sincronizzare, premi "CONNETTI ACCOUNT GOOGLE" nelle Opzioni.</p>
+                <div id="syncBtns" class="d-none">
+                    <button onclick="performSync('upload')" class="btn-primary" style="background:#1976d2; width:100%; margin-bottom:10px;">☁️ CARICA (Backup)</button>
+                    <button onclick="performSync('download')" class="btn-outline" style="border-color:#1976d2; color:#1976d2; width:100%;">⬇️ SCARICA (Ripristina)</button>
+                </div>
+                <p id="syncErr" style="font-size:0.8rem; margin-top:15px; color:red; font-weight:bold;"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="shareModal" class="modal-wrap">
+        <div class="modal-box" style="height:auto; max-width:400px;">
+            <div class="card-header"><span>Condividi</span><button onclick="document.getElementById('shareModal').classList.remove('show')" class="btn-icon">×</button></div>
+            <div class="modal-scroll">
+                <div class="share-grid">
+                    <button class="btn-share-opt" onclick="shareText('list')"><span class="material-icons-round">list</span>Scaletta</button>
+                    <button class="btn-share-opt" onclick="shareText('read')"><span class="material-icons-round">menu_book</span>Letture</button>
+                    <button class="btn-share-opt" onclick="shareText('all')"><span class="material-icons-round">description</span>Tutto</button>
+                </div>
+                <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+                <div class="share-grid">
+                    <button class="btn-share-opt" onclick="printMode('all')"><span class="material-icons-round">picture_as_pdf</span>Completo</button>
+                    <button class="btn-share-opt" onclick="printMode('music')"><span class="material-icons-round">queue_music</span>Solo Canti</button>
+                    <button class="btn-share-opt" onclick="printMode('read')"><span class="material-icons-round">chrome_reader_mode</span>Solo Letture</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="readingContainer">
+        <div class="reading-nav no-print">
+            <button onclick="stopReadingMode()" class="btn-icon" style="color:red; font-weight:bold; display:flex; align-items:center; font-size:1rem;"><span class="material-icons-round" style="margin-right:5px;">arrow_back</span> ESCI</button>
+            <div style="display:flex; gap:10px;">
+                <button onclick="setReadTab('music')" class="btn-outline" id="rtab-music">Canti</button>
+                <button onclick="setReadTab('word')" class="btn-outline" id="rtab-word">Letture</button>
+            </div>
+            <div style="width:40px;"></div>
+        </div>
+        <div class="reading-content">
+            <div id="readMusicArea"></div>
+            <div id="readWordArea" class="d-none" style="max-width:800px; margin:0 auto; font-size:1.2rem; line-height:1.6;"></div>
+        </div>
+    </div>
 
     <script>
+        // CONFIG
         let db; let tempFilesList = []; let currentSongId = null; let driveTempMeta = null;
         const CATS = ["Ingresso", "Gloria", "Salmo", "Alleluia", "Offertorio", "Santo", "Comunione", "Finale", "Altro"];
         const SEASONS = ["Ordinario", "Avvento", "Natale", "Quaresima", "Pasqua"];
+        const SYNC_FILE_NAME = "spartiti_db_master.json";
         let filterCatVar = 'Tutti';
+        
         let tokenClient; let accessToken = null; let gapiReady = false; let gisReady = false;
 
+        // --- HELPER BLOB (CRUCIALE PER MOBILE) ---
         function dataURItoBlob(dataURI) {
             try {
                 if(dataURI.startsWith('blob:')) return dataURI;
@@ -225,32 +325,40 @@
             document.getElementById('clientId').value = localStorage.getItem('g_client') || "";
             
             const r = indexedDB.open("SpartitiDB_V6", 1);
-            r.onupgradeneeded = e => {
+            r.onupgradeneeded = (e) => {
                 db = e.target.result;
                 if(!db.objectStoreNames.contains("songs")) db.createObjectStore("songs", {keyPath:"id", autoIncrement:true});
                 if(!db.objectStoreNames.contains("setlists")) db.createObjectStore("setlists", {keyPath:"id", autoIncrement:true});
             };
-            r.onsuccess = e => { db = e.target.result; renderLibrary(); renderScalettaUI(); renderHistory(); };
-            document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip-select" onclick="this.classList.toggle('selected')" data-val="${c}">${c}</div>`).join('');
-            document.getElementById('seasonChips').innerHTML = SEASONS.map(c => `<div class="chip-select" onclick="this.classList.toggle('selected')" data-val="${c}">${c}</div>`).join('');
+            r.onsuccess = (e) => { 
+                db = e.target.result; 
+                renderLibrary(); renderScalettaUI(); renderFullHistory(); 
+            };
+            
+            document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip-select" onclick="toggleChip(this)" data-val="${c}">${c}</div>`).join('');
+            document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip-select" onclick="toggleChip(this)" data-val="${s}">${s}</div>`).join('');
         };
 
-        function saveKeys() {
-            localStorage.setItem('g_api', document.getElementById('apiKey').value.trim());
-            localStorage.setItem('g_client', document.getElementById('clientId').value.trim());
+        function toggleChip(el) { el.classList.toggle('selected'); }
+
+        // --- AUTH & DRIVE ---
+        function saveKeys(){
+            localStorage.setItem('g_api',document.getElementById('apiKey').value.trim());
+            localStorage.setItem('g_client',document.getElementById('clientId').value.trim());
             alert("Salvate.");
         }
 
         function manualLogin() {
             const client_id = document.getElementById('clientId').value.trim();
-            if(!client_id || typeof google === 'undefined') return alert("Attendi caricamento o inserisci Client ID");
+            if(!client_id || !gisReady) return alert("Attendi caricamento o inserisci Client ID");
+            
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: client_id,
                 scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
                 callback: (resp) => {
-                    if (resp.error) return alert("Err Auth");
+                    if (resp.error) return alert("Err Auth: " + JSON.stringify(resp));
                     accessToken = resp.access_token;
-                    document.getElementById('btnConnect').innerText = "CONNESSO";
+                    document.getElementById('btnConnect').innerText = "CONNESSO ✅";
                     document.getElementById('syncBtns').classList.remove('d-none');
                     document.getElementById('syncMsg').innerText = "Pronto.";
                     showToast("Connesso!");
@@ -259,9 +367,13 @@
             tokenClient.requestAccessToken({prompt: ''});
         }
 
-        function openSyncModal() {
-            document.getElementById('syncModal').classList.add('show');
-            if(accessToken) { document.getElementById('syncBtns').classList.remove('d-none'); document.getElementById('syncMsg').innerText = "Pronto."; }
+        function driveAction(action) {
+            if(action === 'sync') {
+                document.getElementById('syncModal').classList.add('show');
+                if(accessToken) { document.getElementById('syncBtns').classList.remove('d-none'); document.getElementById('syncMsg').innerText = "Pronto."; }
+            } else if (action === 'picker') {
+                openPicker();
+            }
         }
 
         async function performSync(mode) {
@@ -272,36 +384,37 @@
                     const tx = db.transaction(["songs","setlists"],"readonly");
                     const s = await new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result));
                     const l = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result));
-                    const file = new Blob([JSON.stringify({songs:s, setlists:l})], {type: 'application/json'});
+                    const fileContent = JSON.stringify({songs:s, setlists:l});
                     const meta = {name: 'spartiti_db_master.json', mimeType: 'application/json'};
                     const form = new FormData();
                     form.append('metadata', new Blob([JSON.stringify(meta)], {type: 'application/json'}));
-                    form.append('file', file);
+                    form.append('file', new Blob([fileContent], {type: 'application/json'}));
+                    
                     const search = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='spartiti_db_master.json' and trashed=false&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
                     if(search.files && search.files.length > 0) {
-                        await fetch(`https://www.googleapis.com/upload/drive/v3/files/${search.files[0].id}?uploadType=media&key=${API_KEY}`, { method: 'PATCH', headers: {'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json'}, body: JSON.stringify({songs:s, setlists:l}) });
+                        await fetch(`https://www.googleapis.com/upload/drive/v3/files/${search.files[0].id}?uploadType=media&key=${API_KEY}`, { method: 'PATCH', headers: {'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json'}, body: fileContent });
                     } else {
                         await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&key=${API_KEY}`, { method: 'POST', headers: {'Authorization': `Bearer ${accessToken}`}, body: form });
                     }
-                    showToast("Backup completato!");
+                    showToast("Backup Completato!");
                 } else {
                     const search = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='spartiti_db_master.json' and trashed=false&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
                     if(!search.files || search.files.length === 0) throw { message: "Nessun backup trovato" };
                     const data = await fetch(`https://www.googleapis.com/drive/v3/files/${search.files[0].id}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
+                    
                     const tx = db.transaction(["songs","setlists"],"readwrite");
                     await new Promise(r=>tx.objectStore("songs").clear().onsuccess=r);
                     await new Promise(r=>tx.objectStore("setlists").clear().onsuccess=r);
                     data.songs.forEach(x => tx.objectStore("songs").put(x));
                     data.setlists.forEach(x => tx.objectStore("setlists").put(x));
-                    alert("Ripristino completato!");
-                    location.reload();
+                    alert("Ripristino completato!"); location.reload();
                 }
             } catch(e) { document.getElementById('syncErr').innerText = "Err: " + (e.message || JSON.stringify(e)); }
         }
 
         function openPicker() {
-            if(!accessToken) return alert("Fai Login prima!");
-            const k = document.getElementById('apiKey').value;
+            if(!accessToken) return alert("Premi 'Connetti Account' nelle opzioni prima!");
+            const k = document.getElementById('apiKey').value.trim();
             gapi.load('client:picker', () => {
                 const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
                 new google.picker.PickerBuilder().setDeveloperKey(k).setOAuthToken(accessToken).addView(view).setCallback((data) => {
@@ -309,60 +422,55 @@
                         const file = data.docs[0];
                         tempDriveFile = { id: file.id, name: file.name, mime: file.mimeType };
                         document.getElementById('songTitle').value = file.name.replace(/\.[^/.]+$/, "");
-                        document.getElementById('fileStatus').innerText = "File: " + file.name;
+                        document.getElementById('fileStatus').innerText = "Drive: " + file.name;
                     }
                 }).build().setVisible(true);
             });
         }
 
-        async function openView(id) {
-            db.transaction("songs").objectStore("songs").get(id).onsuccess = async e => {
+        // --- VIEW LOGIC ---
+        async function openViewModal(id) {
+            currentSongId = id;
+            db.transaction("songs", "readwrite").objectStore("songs").get(id).onsuccess = async (e) => {
                 const s = e.target.result;
-                currentSongId = id;
                 document.getElementById('viewTitle').innerText = s.title;
                 const b = document.getElementById('viewBody');
                 const f = document.getElementById('viewFooter');
                 b.innerHTML = ""; f.innerHTML = "";
                 const API_KEY = document.getElementById('apiKey').value.trim();
-                
-                // OFFLINE
+
+                // 1. OFFLINE
                 if (s.fileData) {
                     if(s.type && s.type.includes('pdf')) {
                         const blob = dataURItoBlob(s.fileData);
                         if(blob) {
                             const url = URL.createObjectURL(blob);
-                            b.innerHTML = `<iframe src="${url}" style="width:100%; height:75vh; border:none;"></iframe>`;
-                            b.innerHTML += `<div style="text-align:center; margin-top:10px;"><a href="${url}" target="_blank" class="btn-outline">📄 APRI PDF ESTERNO</a></div>`;
-                        } else b.innerHTML = "Errore visualizzazione file offline.";
+                            b.innerHTML = `<iframe src="${url}" class="pdf-frame"></iframe><div style="text-align:center;margin-top:5px;"><a href="${url}" target="_blank" class="btn-outline">📄 Apri PDF Esterno</a></div>`;
+                        } else b.innerHTML = "Err lettura file.";
                     } else b.innerHTML = `<img src="${s.fileData}" style="width:100%">`;
-                    
                     if(s.driveFile) f.innerHTML = `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange;">🗑️ Rimuovi Offline</button>`;
                 } 
-                // ONLINE
+                // 2. ONLINE
                 else if (s.driveFile && s.driveFile.id) {
                     f.innerHTML = `<button onclick="toggleDownload(${s.id}, true)" class="btn-primary">⬇️ SCARICA OFFLINE</button>`;
-                    if(!accessToken) {
-                        b.innerHTML = "<div style='text-align:center; padding:20px;'><p>File Online.</p><button onclick='document.getElementById(\"viewModal\").classList.remove(\"show\");go(\"settings\")' class='btn-primary'>Connetti Google</button></div>";
-                    } else {
+                    if(!accessToken) b.innerHTML = "<div style='text-align:center; padding:20px;'><p>File protetto.</p><button onclick='document.getElementById(\"viewModal\").classList.remove(\"show\");go(\"settings\")' class='btn-primary'>Connetti Google</button></div>";
+                    else {
                         try {
                             b.innerHTML = "Caricamento...";
                             const r = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveFile.id}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} });
                             const blob = await r.blob();
                             const url = URL.createObjectURL(blob);
                             if(s.driveFile.mime.includes('image')) b.innerHTML = `<img src="${url}" style="width:100%">`;
-                            else {
-                                b.innerHTML = `<iframe src="${url}" style="width:100%; height:75vh; border:none;"></iframe>`;
-                                b.innerHTML += `<div style="text-align:center; margin-top:10px;"><a href="${url}" target="_blank" class="btn-outline">📄 APRI PDF ESTERNO</a></div>`;
-                            }
-                        } catch(err) { b.innerText = "Errore: " + err; }
+                            else b.innerHTML = `<iframe src="${url}" class="pdf-frame"></iframe><div style="text-align:center;margin-top:5px;"><a href="${url}" target="_blank" class="btn-outline">📄 Apri PDF Esterno</a></div>`;
+                        } catch(err) { b.innerText = "Err: " + err; }
                     }
                 } 
-                // TESTO
-                else {
-                    b.innerHTML = `<pre style="padding:15px; white-space:pre-wrap;">${s.lyrics || 'Nessun testo'}</pre>`;
-                }
+                // 3. TEXT
+                else b.innerHTML = `<pre style="padding:20px; white-space:pre-wrap; font-family:inherit;">${s.lyrics || ''}</pre>`;
+                
+                f.style.display = f.innerHTML ? 'flex' : 'none';
                 document.getElementById('viewModal').classList.add('show');
-            };
+            }
         }
 
         async function toggleDownload(id, download) {
@@ -370,7 +478,7 @@
             db.transaction("songs","readwrite").objectStore("songs").get(id).onsuccess = async e => {
                 const s = e.target.result;
                 if(download) {
-                    if(!accessToken) return alert("Connettiti a Google!");
+                    if(!accessToken) return alert("Connettiti prima!");
                     showToast("Scaricamento...");
                     try {
                         const r = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveFile.id}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} });
@@ -379,43 +487,53 @@
                         reader.onloadend = () => {
                             s.fileData = reader.result;
                             s.type = s.driveFile.mime;
-                            db.transaction("songs","readwrite").objectStore("songs").put(s).onsuccess = () => { showToast("Scaricato!"); openView(id); renderLibrary(); };
+                            db.transaction("songs","readwrite").objectStore("songs").put(s).onsuccess = () => { showToast("Scaricato!"); openViewModal(id); renderLibrary(); };
                         };
                         reader.readAsDataURL(blob);
                     } catch(err) { alert("Err: "+err); }
                 } else {
                     if(!confirm("Rimuovere file locale?")) return;
                     s.fileData = null;
-                    db.transaction("songs","readwrite").objectStore("songs").put(s).onsuccess = () => { showToast("Rimosso!"); openView(id); renderLibrary(); };
+                    db.transaction("songs","readwrite").objectStore("songs").put(s).onsuccess = () => { showToast("Rimosso!"); openViewModal(id); renderLibrary(); };
                 }
             };
         }
 
-        function go(id, btn) { document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active')); if(btn) btn.classList.add('active'); if(id==='library') renderLibrary(); if(id==='history') renderHistory(); }
+        // APP LOGIC
+        function go(id, btn) { document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active')); if(btn) btn.classList.add('active'); if(id==='library') renderLibrary(); if(id==='history') renderFullHistory(); }
         function renderLibrary() { 
             const list = document.getElementById('songList'); list.innerHTML=""; const txt = document.getElementById('searchInput').value.toLowerCase(); 
             db.transaction("songs").objectStore("songs").getAll().onsuccess = e => { 
                 e.target.result.forEach(s => { 
                     if(txt && !s.title.toLowerCase().includes(txt)) return; 
                     const badge = s.fileData ? `<span class="status-badge status-offline">OFFLINE</span>` : (s.driveFile ? `<span class="status-badge status-online">DRIVE</span>` : '');
-                    list.innerHTML += `<div class="song-item" onclick="openView(${s.id})"><div><b>${s.title}</b><div style="margin-top:2px;">${badge} <small style="color:#666;">${s.categories?s.categories.join(', '):''}</small></div></div><span class="material-icons-round" style="color:#ccc">description</span></div>`; 
+                    list.innerHTML += `<div class="song-item" onclick="openViewModal(${s.id})"><div><b>${s.title}</b><div style="margin-top:2px;">${badge} <small style="color:#666;">${s.categories?s.categories.join(', '):''}</small></div></div><span class="material-icons-round" style="color:#ccc">description</span></div>`; 
                 }); 
             }; 
         }
-        function openEditModal() { document.getElementById('editModal').classList.add('show'); document.getElementById('songId').value=""; document.getElementById('songTitle').value=""; document.getElementById('songLyrics').value=""; tempDriveFile=null; document.getElementById('fileStatus').innerText="Nessun file"; }
+        function openEditModal(id=null) { document.getElementById('editModal').classList.add('show'); document.getElementById('songId').value=""; document.getElementById('songTitle').value=""; document.getElementById('songLyrics').value=""; tempDriveFile=null; document.getElementById('fileStatus').innerText="Nessun file"; }
         function handleFile(input) { const f=input.files; if(!f.length) return; tempFilesList=[]; const r=(file)=>new Promise(res=>{const fr=new FileReader(); fr.onload=e=>res({name:file.name.replace(/\.[^/.]+$/,""), type:file.type, data:e.target.result}); fr.readAsDataURL(file);}); Promise.all(Array.from(f).map(r)).then(res=>{tempFilesList=res; if(res.length===1)document.getElementById('songTitle').value=res[0].name; document.getElementById('fileStatus').innerText="File Locale OK";}); }
         function saveSong() { const s = { title: document.getElementById('songTitle').value, lyrics: document.getElementById('songLyrics').value, categories: Array.from(document.querySelectorAll('#catChips .selected')).map(c=>c.dataset.val), seasons: Array.from(document.querySelectorAll('#seasonChips .selected')).map(c=>c.dataset.val), driveFile: tempDriveFile }; if(tempFilesList.length>0){s.fileData=tempFilesList[0].data; s.type=tempFilesList[0].type;} const id=document.getElementById('songId').value; if(id)s.id=Number(id); db.transaction("songs","readwrite").objectStore("songs").put(s).onsuccess=()=>{document.getElementById('editModal').classList.remove('show'); renderLibrary(); renderScalettaUI();}; }
         function deleteCurrentSong() { if(confirm("Eliminare?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); }; }
         function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(); }
-        function renderScalettaUI() { const c = document.getElementById('scalettaContainer'); c.innerHTML=""; CATS.forEach(cat => { c.innerHTML += `<div style="margin-bottom:10px;"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><select class="form-control song-select" data-part="${cat}"><option value="">Seleziona...</option></select></div>`; }); setTimeout(fillSelects, 500); }
+        
+        function renderScalettaUI() { const c = document.getElementById('scalettaContainer'); c.innerHTML=""; CATS.forEach(cat => { c.innerHTML += `<div style="margin-bottom:10px;"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><div style="display:flex; gap:5px;"><select class="form-control song-select" data-part="${cat}"><option value="">Seleziona...</option></select><button onclick="this.previousElementSibling.value=''" class="btn-outline">X</button></div></div>`; }); setTimeout(fillSelects, 500); }
         function fillSelects() { db.transaction("songs").objectStore("songs").getAll().onsuccess = e => { const songs = e.target.result; document.querySelectorAll('.song-select').forEach(sel => { const part = sel.dataset.part; let html = '<option value="">Seleziona...</option>'; songs.forEach(s => { html += `<option value="${s.id}">${s.title}</option>`; }); sel.innerHTML = html; }); }; }
         function saveSetlist() { const sel = {}; document.querySelectorAll('.song-select').forEach(s => { if(s.value) sel[s.dataset.part] = s.value; }); const r={r1:document.getElementById('r1').value, rps:document.getElementById('rps').value, r2:document.getElementById('r2').value, rg:document.getElementById('rg').value}; db.transaction("setlists","readwrite").objectStore("setlists").add({ title: document.getElementById('messaTitle').value, date: document.getElementById('messaDate').value, songs: sel, readings: r }).onsuccess = () => alert("Messa salvata!"); }
-        function renderHistory() { const l = document.getElementById('fullHistoryList'); l.innerHTML=""; db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess = e => { const c = e.target.result; if(c) { l.innerHTML += `<div class="song-item" onclick="loadSet(${c.value.id})"><div><b>${c.value.title}</b><br><small>${c.value.date}</small></div><button onclick="deleteSet(${c.value.id})" class="btn-icon" style="color:red; margin-left:auto;">delete</button></div>`; c.continue(); } }; }
-        function deleteSet(id) { if(confirm("Eliminare messa?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess=()=>renderHistory(); }
+        
+        function renderFullHistory() { const l = document.getElementById('fullHistoryList'); l.innerHTML=""; db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess = e => { const c = e.target.result; if(c) { l.innerHTML += `<div class="history-item"><div onclick="loadSet(${c.value.id})" style="flex:1;"><b>${c.value.title}</b><br><small>${c.value.date}</small></div><span class="material-icons-round" onclick="delSet(${c.value.id})" style="color:red; cursor:pointer;">delete</span></div>`; c.continue(); } }; }
+        function delSet(id) { if(confirm("Eliminare?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess = () => renderFullHistory(); }
         function loadSet(id) { db.transaction("setlists").objectStore("setlists").get(id).onsuccess = e => { const s = e.target.result; document.getElementById('messaTitle').value = s.title; document.getElementById('messaDate').value = s.date; if(s.readings){document.getElementById('r1').value=s.readings.r1||"";document.getElementById('rps').value=s.readings.rps||"";document.getElementById('r2').value=s.readings.r2||"";document.getElementById('rg').value=s.readings.rg||"";} document.querySelectorAll('.song-select').forEach(sel => { sel.value=""; }); if(s.songs) { for(let [part, songId] of Object.entries(s.songs)) { const el = document.querySelector(`.song-select[data-part="${part}"]`); if(el) el.value = songId; } } go('scaletta'); }; }
-        function startReadingMode() { document.getElementById('readingContainer').classList.add('active'); const c = document.getElementById('readMusicArea'); c.innerHTML=""; const wc = document.getElementById('readWordArea'); wc.innerHTML=""; const API_KEY = document.getElementById('apiKey').value.trim(); const r=[{t:"I Lettura",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II Lettura",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}]; r.forEach(x=>{if(x.v)wc.innerHTML+=`<div style="margin-bottom:30px;"><h3>${x.t}</h3><p style="font-size:1.2rem;">${x.v}</p></div>`;}); document.querySelectorAll('.song-select').forEach(sel => { if(sel.value) { db.transaction("songs").objectStore("songs").get(Number(sel.value)).onsuccess = async e => { const s = e.target.result; let content = `<pre>${s.lyrics || ''}</pre>`; if(s.fileData) { if(s.type && s.type.includes('pdf')) { const blob = dataURItoBlob(s.fileData); const url = URL.createObjectURL(blob); content=`<iframe src="${url}" style="width:100%; height:75vh; border:none;"></iframe><div style="text-align:center; margin-top:5px;"><a href="${url}" target="_blank" class="btn-outline">Apri PDF</a></div>`; } else content=`<img src="${s.fileData}" style="width:100%">`; } else if(s.driveFile && accessToken) { const res = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveFile.id}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }); const blob = await res.blob(); const url = URL.createObjectURL(blob); if(s.driveFile.mime.includes('image')) content = `<img src="${url}" style="width:100%">`; else content = `<iframe src="${url}" style="width:100%; height:75vh; border:none;"></iframe><div style="text-align:center; margin-top:5px;"><a href="${url}" target="_blank" class="btn-outline">Apri PDF</a></div>`; } c.innerHTML += `<div class="score-seq-item"><h3>${s.title}</h3>${content}</div>`; }; } }); }
+
+        function startReadingMode() {
+            document.getElementById('readingContainer').classList.add('active'); const c = document.getElementById('readMusicArea'); c.innerHTML=""; const wc = document.getElementById('readWordArea'); wc.innerHTML="";
+            const API_KEY = document.getElementById('apiKey').value.trim();
+            const r=[{t:"I Lettura",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II Lettura",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}];
+            r.forEach(x=>{if(x.v)wc.innerHTML+=`<div style="margin-bottom:30px;"><h3>${x.t}</h3><p style="font-size:1.2rem;">${x.v}</p></div>`;});
+            document.querySelectorAll('.song-select').forEach(sel => { if(sel.value) { db.transaction("songs").objectStore("songs").get(Number(sel.value)).onsuccess = async e => { const s = e.target.result; let content = `<pre>${s.lyrics || ''}</pre>`; if(s.fileData) { if(s.type && s.type.includes('pdf')) { const blob = dataURItoBlob(s.fileData); const url = URL.createObjectURL(blob); content=`<iframe src="${url}" class="pdf-frame"></iframe><div style="text-align:center;margin-top:5px;"><a href="${url}" target="_blank" class="btn-outline">Apri PDF Esterno</a></div>`; } else content=`<img src="${s.fileData}" style="width:100%">`; } else if(s.driveFile && accessToken) { const res = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveFile.id}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }); const blob = await res.blob(); const url = URL.createObjectURL(blob); if(s.driveFile.mime.includes('image')) content = `<img src="${url}" style="width:100%">`; else content = `<iframe src="${url}" class="pdf-frame"></iframe><div style="text-align:center;margin-top:5px;"><a href="${url}" target="_blank" class="btn-outline">Apri PDF Esterno</a></div>`; } c.innerHTML += `<div class="score-seq-item"><h3>${s.title}</h3>${content}</div>`; }; } });
+        }
         function stopReadingMode(){document.getElementById('readingContainer').classList.remove('active');}
-        function setReadTab(t){document.getElementById('readMusicArea').className=t==='music'?'':'d-none';document.getElementById('readWordArea').className=t==='word'?'':'d-none';}
+        function setReadTab(t){document.getElementById('readMusicArea').className=t==='music'?'':'d-none';document.getElementById('readWordArea').className=t==='word'?'':'d-none';document.getElementById('rtab-music').style.background=t==='music'?'var(--primary)':'white';document.getElementById('rtab-music').style.color=t==='music'?'white':'#555';document.getElementById('rtab-word').style.background=t==='word'?'var(--primary)':'white';document.getElementById('rtab-word').style.color=t==='word'?'white':'#555';}
         function openShareModal(){ document.getElementById('shareModal').classList.add('show'); }
         function shareText(mode) { const t=document.getElementById('messaTitle').value; const d=document.getElementById('messaDate').value; let txt=`📅 *${t}* - ${d}\n\n`; if(mode!=='read') document.querySelectorAll('.song-select').forEach(s=>{if(s.selectedIndex>0)txt+=`🎵 ${s.parentElement.parentElement.dataset.part}: ${s.options[s.selectedIndex].text}\n`}); if(mode!=='list') txt+=`\n📖 LETTURE:\n${document.getElementById('rg').value.substring(0,100)}...`; window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
         function printMode(mode){ document.body.className = ""; if(mode==='music') document.body.classList.add('print-music-only'); if(mode==='read') document.body.classList.add('print-readings-only'); startReadingMode(); setTimeout(()=>window.print(),1000); }
