@@ -1,19 +1,17 @@
-const CACHE_NAME = 'spartiti-messa-v38-fixed-buttons';
-const ASSETS = [
+const CACHE_NAME = 'spartiti-messa-v39-graphic-restore';
+const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './logo192.png',
   './logo512.png',
   'https://fonts.googleapis.com/icon?family=Material+Icons+Round',
-  'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap',
-  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js'
+  'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap'
 ];
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
+  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE)));
 });
 
 self.addEventListener('activate', (e) => {
@@ -25,6 +23,7 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = e.request.url;
+  // Escludi Google per evitare problemi di Auth
   if (url.includes('google') || url.includes('googleapis') || url.includes('gstatic')) return;
   e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
 });
