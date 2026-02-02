@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v29-offline-fix';
+const CACHE_NAME = 'spartiti-messa-v30-mobile-pdf-fix';
 const ASSETS = [
   './',
   './index.html',
@@ -23,7 +23,6 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = e.request.url;
-  // Escludi Google Auth/API dalla cache per evitare blocchi su mobile
   if (url.includes('google') || url.includes('googleapis') || url.includes('gstatic')) return;
   e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
 });
