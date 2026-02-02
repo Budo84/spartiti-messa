@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v40-step2-pdf';
+const CACHE_NAME = 'spartiti-messa-v41-offline-manager';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -7,7 +7,6 @@ const ASSETS_TO_CACHE = [
   './logo512.png',
   'https://fonts.googleapis.com/icon?family=Material+Icons+Round',
   'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap',
-  // Librerie PDF necessarie per lo Step 2
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js'
 ];
