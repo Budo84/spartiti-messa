@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v30-mobile-pdf-fix';
+const CACHE_NAME = 'spartiti-messa-v31-buttons-restored';
 const ASSETS = [
   './',
   './index.html',
