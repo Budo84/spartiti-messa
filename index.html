@@ -36,7 +36,7 @@
         .modal-wrap.show { display: flex; }
         .modal-box { background: var(--white); width: 95%; max-width: 800px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; }
         .modal-scroll { flex: 1; overflow-y: auto; padding: 20px; }
-        .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; display: flex; gap: 10px; justify-content: flex-end; }
+        .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
         
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--white); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 500; }
         .nav-btn { background: none; border: none; color: #999; font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; width: 100%; cursor: pointer; }
@@ -47,7 +47,6 @@
         .btn-outline { background: transparent; border: 1px solid #ccc; color: #555; padding:8px 15px; border-radius:6px; font-weight:bold; cursor:pointer; }
         .btn-icon { background: none; border: none; font-size: 1.4rem; padding: 5px; cursor: pointer; color: #555; }
         
-        /* STATUS BADGES */
         .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 5px; font-weight: bold; display: inline-flex; align-items: center; gap: 3px; }
         .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
         .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
@@ -60,19 +59,16 @@
         .chip-select { padding: 5px 10px; border: 1px solid #ccc; border-radius: 15px; font-size: 0.8rem; cursor:pointer; }
         .chip-select.selected { background: var(--primary); color: white; }
 
-        /* Reading Mode */
         #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
         #readingContainer.active { display: flex; }
         .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
         .reading-content { flex: 1; overflow-y: auto; padding: 20px; }
         .score-seq-item { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
         
-        .pdf-embed { width: 100%; height: 75vh; border: 1px solid #eee; background: #f5f5f5; display: block; }
-        
         .d-none { display: none !important; }
         .workspace { display: grid; gap: 20px; grid-template-columns: 1fr; }
         @media(min-width: 900px) { .workspace { grid-template-columns: 1fr 1fr; } }
-        @media print { .no-print, .nav-bar, .top-bar { display: none !important; } #readingContainer { position: static; display: block; } body.print-text-only .score-seq-item img, body.print-text-only .score-seq-item embed { display: none; } body.print-music-only #readWordArea { display: none; } body.print-readings-only #readMusicArea { display: none; } }
+        @media print { .no-print, .nav-bar, .top-bar { display: none !important; } #readingContainer { position: static; display: block; } body.print-text-only .score-seq-item img, body.print-text-only .score-seq-item iframe { display: none; } body.print-music-only #readWordArea { display: none; } body.print-readings-only #readMusicArea { display: none; } }
     </style>
 </head>
 <body>
@@ -108,7 +104,7 @@
                     <input type="text" id="messaTitle" class="form-control" value="Santa Messa" style="font-weight:bold; font-size:1.2rem; border:none; padding:0;">
                     <div style="display:flex; gap:10px; margin:10px 0;">
                         <input type="date" id="messaDate" class="form-control" style="margin:0;">
-                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.9rem;">⬇️ Scarica Letture</button>
+                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.9rem;">⬇️ Letture</button>
                         <div style="flex:1; text-align:right;">
                             <button onclick="saveSetlist()" class="btn-primary">Salva</button>
                         </div>
@@ -154,10 +150,9 @@
                 <div class="card-header">Connessione Google Drive</div>
                 <div class="card-body">
                     <button id="btnConnect" onclick="manualLogin()" class="btn-primary" style="width:100%; margin-bottom:15px; background:#4285F4;">1. CONNETTI ACCOUNT</button>
-                    
-                    <p style="font-size:0.8rem; color:#666;">API Key (Necessaria)</p>
+                    <p style="font-size:0.8rem; color:#666;">API Key</p>
                     <input type="text" id="apiKey" class="form-control">
-                    <p style="font-size:0.8rem; color:#666;">Client ID (Necessario)</p>
+                    <p style="font-size:0.8rem; color:#666;">Client ID</p>
                     <input type="text" id="clientId" class="form-control">
                     <button onclick="saveKeys()" class="btn-outline" style="width:100%;">Salva Chiavi</button>
                 </div>
@@ -203,32 +198,24 @@
     <div id="shareModal" class="modal-wrap"><div class="modal-box" style="height:auto; max-width:400px;"><div class="card-header"><span>Condividi</span><button onclick="document.getElementById('shareModal').classList.remove('show')" class="btn-icon">×</button></div><div class="modal-scroll"><div style="display:grid;gap:10px;"><button class="btn-outline" onclick="shareText('list')">Copia Scaletta</button><button class="btn-outline" onclick="shareText('all')">Copia Tutto</button><hr><button class="btn-primary" onclick="printMode('all')">Genera PDF Completo</button></div></div></div></div>
 
     <script>
-        // CONFIG
         let db; let tempFilesList = []; let currentSongId = null; let driveTempMeta = null;
         const CATS = ["Ingresso", "Gloria", "Salmo", "Alleluia", "Offertorio", "Santo", "Comunione", "Finale", "Altro"];
         const SEASONS = ["Ordinario", "Avvento", "Natale", "Quaresima", "Pasqua"];
         let filterCatVar = 'Tutti';
-        
         let tokenClient; let accessToken = null; let gapiReady = false; let gisReady = false;
 
-        // HELPER PER OFFLINE BLOB
         function dataURItoBlob(dataURI) {
             try {
-                // Se è già un blob URL, ritornalo
                 if(dataURI.startsWith('blob:')) return dataURI;
-                
                 const byteString = atob(dataURI.split(',')[1]);
                 const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
                 const ab = new ArrayBuffer(byteString.length);
                 const ia = new Uint8Array(ab);
-                for (let i = 0; i < byteString.length; i++) {
-                    ia[i] = byteString.charCodeAt(i);
-                }
+                for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
                 return new Blob([ab], {type: mimeString});
             } catch(e) { return null; }
         }
 
-        // INIT
         function onGapiLoad() { gapiReady = true; }
         function onGisLoad() { gisReady = true; }
 
@@ -244,12 +231,10 @@
                 if(!db.objectStoreNames.contains("setlists")) db.createObjectStore("setlists", {keyPath:"id", autoIncrement:true});
             };
             r.onsuccess = e => { db = e.target.result; renderLibrary(); renderScalettaUI(); renderHistory(); };
-            
             document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip-select" onclick="this.classList.toggle('selected')" data-val="${c}">${c}</div>`).join('');
             document.getElementById('seasonChips').innerHTML = SEASONS.map(c => `<div class="chip-select" onclick="this.classList.toggle('selected')" data-val="${c}">${c}</div>`).join('');
         };
 
-        // AUTH & DRIVE
         function saveKeys() {
             localStorage.setItem('g_api', document.getElementById('apiKey').value.trim());
             localStorage.setItem('g_client', document.getElementById('clientId').value.trim());
@@ -330,7 +315,6 @@
             });
         }
 
-        // VIEW & DOWNLOAD LOGIC (SMART MOBILE RENDER)
         async function openView(id) {
             db.transaction("songs").objectStore("songs").get(id).onsuccess = async e => {
                 const s = e.target.result;
@@ -341,58 +325,53 @@
                 b.innerHTML = ""; f.innerHTML = "";
                 const API_KEY = document.getElementById('apiKey').value.trim();
                 
-                // 1. FILE OFFLINE (Blob URL Fix)
+                // OFFLINE
                 if (s.fileData) {
                     if(s.type && s.type.includes('pdf')) {
-                        // FIX PER MOBILE: Usa BLOB URL invece di Base64 diretto
                         const blob = dataURItoBlob(s.fileData);
                         if(blob) {
-                            const blobUrl = URL.createObjectURL(blob);
-                            b.innerHTML = `<embed src="${blobUrl}" type="application/pdf" class="pdf-embed">`;
-                            // Fallback link se embed fallisce
-                            b.innerHTML += `<div style="text-align:center; margin-top:10px;"><a href="${blobUrl}" target="_blank" class="btn-outline">Apri PDF Esterno</a></div>`;
-                        } else {
-                            b.innerHTML = "Errore conversione file.";
-                        }
-                    } else {
-                        b.innerHTML = `<img src="${s.fileData}" style="width:100%">`;
-                    }
-                    if(s.driveFile) f.innerHTML = `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange; width:100%;">🗑️ Rimuovi Offline</button>`;
+                            const url = URL.createObjectURL(blob);
+                            b.innerHTML = `<iframe src="${url}" style="width:100%; height:75vh; border:none;"></iframe>`;
+                            b.innerHTML += `<div style="text-align:center; margin-top:10px;"><a href="${url}" target="_blank" class="btn-outline">📄 APRI PDF ESTERNO</a></div>`;
+                        } else b.innerHTML = "Errore visualizzazione file offline.";
+                    } else b.innerHTML = `<img src="${s.fileData}" style="width:100%">`;
+                    
+                    if(s.driveFile) f.innerHTML = `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange;">🗑️ Rimuovi Offline</button>`;
                 } 
-                // 2. FILE ONLINE (Google Drive)
+                // ONLINE
                 else if (s.driveFile && s.driveFile.id) {
-                    f.innerHTML = `<button onclick="toggleDownload(${s.id}, true)" class="btn-primary" style="width:100%;">⬇️ SCARICA OFFLINE</button>`;
+                    f.innerHTML = `<button onclick="toggleDownload(${s.id}, true)" class="btn-primary">⬇️ SCARICA OFFLINE</button>`;
                     if(!accessToken) {
                         b.innerHTML = "<div style='text-align:center; padding:20px;'><p>File Online.</p><button onclick='document.getElementById(\"viewModal\").classList.remove(\"show\");go(\"settings\")' class='btn-primary'>Connetti Google</button></div>";
                     } else {
                         try {
-                            b.innerHTML = "Caricamento da Drive...";
+                            b.innerHTML = "Caricamento...";
                             const r = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveFile.id}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} });
                             const blob = await r.blob();
                             const url = URL.createObjectURL(blob);
                             if(s.driveFile.mime.includes('image')) b.innerHTML = `<img src="${url}" style="width:100%">`;
                             else {
-                                b.innerHTML = `<embed src="${url}" type="application/pdf" class="pdf-embed">`;
-                                b.innerHTML += `<div style="text-align:center; margin-top:10px;"><a href="${url}" target="_blank" class="btn-outline">Apri PDF Esterno</a></div>`;
+                                b.innerHTML = `<iframe src="${url}" style="width:100%; height:75vh; border:none;"></iframe>`;
+                                b.innerHTML += `<div style="text-align:center; margin-top:10px;"><a href="${url}" target="_blank" class="btn-outline">📄 APRI PDF ESTERNO</a></div>`;
                             }
                         } catch(err) { b.innerText = "Errore: " + err; }
                     }
                 } 
-                // 3. SOLO TESTO
+                // TESTO
                 else {
-                    b.innerHTML = `<pre style="padding:15px; white-space:pre-wrap; font-family:inherit;">${s.lyrics || 'Nessun testo'}</pre>`;
+                    b.innerHTML = `<pre style="padding:15px; white-space:pre-wrap;">${s.lyrics || 'Nessun testo'}</pre>`;
                 }
                 document.getElementById('viewModal').classList.add('show');
             };
         }
 
         async function toggleDownload(id, download) {
-            if(download) {
-                if(!accessToken) return alert("Connettiti a Google prima!");
-                const API_KEY = document.getElementById('apiKey').value.trim();
-                showToast("Scaricamento...");
-                db.transaction("songs").objectStore("songs").get(id).onsuccess = async e => {
-                    const s = e.target.result;
+            const API_KEY = document.getElementById('apiKey').value.trim();
+            db.transaction("songs","readwrite").objectStore("songs").get(id).onsuccess = async e => {
+                const s = e.target.result;
+                if(download) {
+                    if(!accessToken) return alert("Connettiti a Google!");
+                    showToast("Scaricamento...");
                     try {
                         const r = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveFile.id}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} });
                         const blob = await r.blob();
@@ -404,18 +383,14 @@
                         };
                         reader.readAsDataURL(blob);
                     } catch(err) { alert("Err: "+err); }
-                };
-            } else {
-                if(!confirm("Rimuovere file locale?")) return;
-                db.transaction("songs","readwrite").objectStore("songs").get(id).onsuccess = e => {
-                    const s = e.target.result;
+                } else {
+                    if(!confirm("Rimuovere file locale?")) return;
                     s.fileData = null;
                     db.transaction("songs","readwrite").objectStore("songs").put(s).onsuccess = () => { showToast("Rimosso!"); openView(id); renderLibrary(); };
-                };
-            }
+                }
+            };
         }
 
-        // APP LOGIC STANDARD
         function go(id, btn) { document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active')); if(btn) btn.classList.add('active'); if(id==='library') renderLibrary(); if(id==='history') renderHistory(); }
         function renderLibrary() { 
             const list = document.getElementById('songList'); list.innerHTML=""; const txt = document.getElementById('searchInput').value.toLowerCase(); 
@@ -432,40 +407,19 @@
         function saveSong() { const s = { title: document.getElementById('songTitle').value, lyrics: document.getElementById('songLyrics').value, categories: Array.from(document.querySelectorAll('#catChips .selected')).map(c=>c.dataset.val), seasons: Array.from(document.querySelectorAll('#seasonChips .selected')).map(c=>c.dataset.val), driveFile: tempDriveFile }; if(tempFilesList.length>0){s.fileData=tempFilesList[0].data; s.type=tempFilesList[0].type;} const id=document.getElementById('songId').value; if(id)s.id=Number(id); db.transaction("songs","readwrite").objectStore("songs").put(s).onsuccess=()=>{document.getElementById('editModal').classList.remove('show'); renderLibrary(); renderScalettaUI();}; }
         function deleteCurrentSong() { if(confirm("Eliminare?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); }; }
         function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(); }
-        
         function renderScalettaUI() { const c = document.getElementById('scalettaContainer'); c.innerHTML=""; CATS.forEach(cat => { c.innerHTML += `<div style="margin-bottom:10px;"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><select class="form-control song-select" data-part="${cat}"><option value="">Seleziona...</option></select></div>`; }); setTimeout(fillSelects, 500); }
         function fillSelects() { db.transaction("songs").objectStore("songs").getAll().onsuccess = e => { const songs = e.target.result; document.querySelectorAll('.song-select').forEach(sel => { const part = sel.dataset.part; let html = '<option value="">Seleziona...</option>'; songs.forEach(s => { html += `<option value="${s.id}">${s.title}</option>`; }); sel.innerHTML = html; }); }; }
         function saveSetlist() { const sel = {}; document.querySelectorAll('.song-select').forEach(s => { if(s.value) sel[s.dataset.part] = s.value; }); const r={r1:document.getElementById('r1').value, rps:document.getElementById('rps').value, r2:document.getElementById('r2').value, rg:document.getElementById('rg').value}; db.transaction("setlists","readwrite").objectStore("setlists").add({ title: document.getElementById('messaTitle').value, date: document.getElementById('messaDate').value, songs: sel, readings: r }).onsuccess = () => alert("Messa salvata!"); }
-        
-        function renderHistory() { const l = document.getElementById('fullHistoryList'); l.innerHTML=""; db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess = e => { const c = e.target.result; if(c) { l.innerHTML += `<div class="song-item" onclick="loadSet(${c.value.id})"><div><b>${c.value.title}</b><br><small>${c.value.date}</small></div></div>`; c.continue(); } }; }
+        function renderHistory() { const l = document.getElementById('fullHistoryList'); l.innerHTML=""; db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess = e => { const c = e.target.result; if(c) { l.innerHTML += `<div class="song-item" onclick="loadSet(${c.value.id})"><div><b>${c.value.title}</b><br><small>${c.value.date}</small></div><button onclick="deleteSet(${c.value.id})" class="btn-icon" style="color:red; margin-left:auto;">delete</button></div>`; c.continue(); } }; }
+        function deleteSet(id) { if(confirm("Eliminare messa?")) db.transaction("setlists","readwrite").objectStore("setlists").delete(id).onsuccess=()=>renderHistory(); }
         function loadSet(id) { db.transaction("setlists").objectStore("setlists").get(id).onsuccess = e => { const s = e.target.result; document.getElementById('messaTitle').value = s.title; document.getElementById('messaDate').value = s.date; if(s.readings){document.getElementById('r1').value=s.readings.r1||"";document.getElementById('rps').value=s.readings.rps||"";document.getElementById('r2').value=s.readings.r2||"";document.getElementById('rg').value=s.readings.rg||"";} document.querySelectorAll('.song-select').forEach(sel => { sel.value=""; }); if(s.songs) { for(let [part, songId] of Object.entries(s.songs)) { const el = document.querySelector(`.song-select[data-part="${part}"]`); if(el) el.value = songId; } } go('scaletta'); }; }
-
-        function startReadingMode() {
-            document.getElementById('readingContainer').classList.add('active'); const c = document.getElementById('readMusicArea'); c.innerHTML=""; const wc = document.getElementById('readWordArea'); wc.innerHTML="";
-            const API_KEY = document.getElementById('apiKey').value.trim();
-            // Letture
-            const r=[{t:"I Lettura",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II Lettura",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}];
-            r.forEach(x=>{if(x.v)wc.innerHTML+=`<div style="margin-bottom:30px;"><h3>${x.t}</h3><p style="font-size:1.2rem;">${x.v}</p></div>`;});
-            // Canti
-            document.querySelectorAll('.song-select').forEach(sel => { if(sel.value) { db.transaction("songs").objectStore("songs").get(Number(sel.value)).onsuccess = async e => { const s = e.target.result; let content = `<pre>${s.lyrics || ''}</pre>`; 
-            if(s.fileData) { 
-                if(s.type && s.type.includes('pdf')) {
-                    const blob = dataURItoBlob(s.fileData);
-                    const url = URL.createObjectURL(blob);
-                    content=`<embed src="${url}" type="application/pdf" class="pdf-embed">`; 
-                } else content=`<img src="${s.fileData}" style="width:100%">`; 
-            } else if(s.driveFile && accessToken) { 
-                const res = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveFile.id}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }); const blob = await res.blob(); const url = URL.createObjectURL(blob); 
-                if(s.driveFile.mime.includes('image')) content = `<img src="${url}" style="width:100%">`;
-                else content = `<embed src="${url}" type="application/pdf" class="pdf-embed">`;
-            } c.innerHTML += `<div class="score-seq-item"><h3>${s.title}</h3>${content}</div>`; }; } });
-        }
+        function startReadingMode() { document.getElementById('readingContainer').classList.add('active'); const c = document.getElementById('readMusicArea'); c.innerHTML=""; const wc = document.getElementById('readWordArea'); wc.innerHTML=""; const API_KEY = document.getElementById('apiKey').value.trim(); const r=[{t:"I Lettura",v:document.getElementById('r1').value},{t:"Salmo",v:document.getElementById('rps').value},{t:"II Lettura",v:document.getElementById('r2').value},{t:"Vangelo",v:document.getElementById('rg').value}]; r.forEach(x=>{if(x.v)wc.innerHTML+=`<div style="margin-bottom:30px;"><h3>${x.t}</h3><p style="font-size:1.2rem;">${x.v}</p></div>`;}); document.querySelectorAll('.song-select').forEach(sel => { if(sel.value) { db.transaction("songs").objectStore("songs").get(Number(sel.value)).onsuccess = async e => { const s = e.target.result; let content = `<pre>${s.lyrics || ''}</pre>`; if(s.fileData) { if(s.type && s.type.includes('pdf')) { const blob = dataURItoBlob(s.fileData); const url = URL.createObjectURL(blob); content=`<iframe src="${url}" style="width:100%; height:75vh; border:none;"></iframe><div style="text-align:center; margin-top:5px;"><a href="${url}" target="_blank" class="btn-outline">Apri PDF</a></div>`; } else content=`<img src="${s.fileData}" style="width:100%">`; } else if(s.driveFile && accessToken) { const res = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveFile.id}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }); const blob = await res.blob(); const url = URL.createObjectURL(blob); if(s.driveFile.mime.includes('image')) content = `<img src="${url}" style="width:100%">`; else content = `<iframe src="${url}" style="width:100%; height:75vh; border:none;"></iframe><div style="text-align:center; margin-top:5px;"><a href="${url}" target="_blank" class="btn-outline">Apri PDF</a></div>`; } c.innerHTML += `<div class="score-seq-item"><h3>${s.title}</h3>${content}</div>`; }; } }); }
         function stopReadingMode(){document.getElementById('readingContainer').classList.remove('active');}
         function setReadTab(t){document.getElementById('readMusicArea').className=t==='music'?'':'d-none';document.getElementById('readWordArea').className=t==='word'?'':'d-none';}
         function openShareModal(){ document.getElementById('shareModal').classList.add('show'); }
         function shareText(mode) { const t=document.getElementById('messaTitle').value; const d=document.getElementById('messaDate').value; let txt=`📅 *${t}* - ${d}\n\n`; if(mode!=='read') document.querySelectorAll('.song-select').forEach(s=>{if(s.selectedIndex>0)txt+=`🎵 ${s.parentElement.parentElement.dataset.part}: ${s.options[s.selectedIndex].text}\n`}); if(mode!=='list') txt+=`\n📖 LETTURE:\n${document.getElementById('rg').value.substring(0,100)}...`; window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`); }
         function printMode(mode){ document.body.className = ""; if(mode==='music') document.body.classList.add('print-music-only'); if(mode==='read') document.body.classList.add('print-readings-only'); startReadingMode(); setTimeout(()=>window.print(),1000); }
-        async function autoFetchReadings() { const d=new Date(document.getElementById('messaDate').value); const url=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`)}`; try{ const r=await fetch(url); const j=await r.json(); const t=new DOMParser().parseFromString(j.contents,"text/html").body.innerText.replace(/\s+/g,' '); const f=(a,b)=>{let s=-1;for(let w of a){let r=new RegExp(w,"i").exec(t);if(r){s=r.index+r[0].length;break;}}if(s<0)return"";let e=-1;for(let w of b){let r=new RegExp(w,"i").exec(t.substring(s));if(r){e=s+r.index;break;}}return e<0?"":t.substring(s,e).trim();}; document.getElementById('r1').value=f(["Prima Lettura"],["Salmo"]);document.getElementById('rps').value=f(["Salmo"],["Seconda","Vangelo"]);document.getElementById('r2').value=f(["Seconda"],["Vangelo"]);document.getElementById('rg').value=f(["Vangelo"],["PREGHIERA"]);alert("Letture Trovate!"); }catch(e){if(confirm("Errore. Aprire sito?"))window.open(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`);} }
+        async function autoFetchReadings() { const d=new Date(document.getElementById('messaDate').value); const url=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`)}`; try{ const r=await fetch(url); const j=await r.json(); const t=new DOMParser().parseFromString(j.contents,"text/html").body.innerText.replace(/\s+/g,' '); const f=(a,b)=>{let s=-1;for(let w of a){let r=new RegExp(w,"i").exec(t);if(r){s=r.index+r[0].length;break;}}if(s<0)return"";let e=-1;for(let w of b){let r=new RegExp(w,"i").exec(t.substring(s));if(r){e=s+r.index;break;}}return e<0?"":t.substring(s,e).trim();}; document.getElementById('r1').value=f(["Prima Lettura"],["Salmo"]);document.getElementById('rps').value=f(["Salmo"],["Seconda","Vangelo"]);document.getElementById('r2').value=f(["Seconda"],["Vangelo"]);document.getElementById('rg').value=f(["Vangelo"],["PREGHIERA"]);showToast("Letture Trovate!"); }catch(e){if(confirm("Errore. Aprire sito?"))window.open(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`);} }
         function clearReadings(){ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value="");}
         function exportData(){ const tx=db.transaction(["songs","setlists"],"readonly"); Promise.all([new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)),new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result))]).then(([s,l])=>{const b=new Blob([JSON.stringify({songs:s,setlists:l})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup.json";a.click();}); }
         function importData(inp){ const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");tx.objectStore("songs").clear();tx.objectStore("setlists").clear();d.songs.forEach(s=>tx.objectStore("songs").put(s));d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{alert("Fatto!");setTimeout(()=>location.reload(),1000);}}catch(x){alert("Errore file");}};r.readAsText(f); }
