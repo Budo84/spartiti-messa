@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v41-offline-manager';
+const CACHE_NAME = 'spartiti-messa-v41-step3-drive';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
