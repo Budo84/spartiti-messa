@@ -16,55 +16,73 @@
     <script src="https://accounts.google.com/gsi/client" async defer onload="onGisLoad()"></script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';</script>
     
     <style>
-        /* STILE ORIGINALE INDEX 15 */
         :root { --primary: #673ab7; --bg: #f5f5f5; --white: #ffffff; --text: #333; --border: #ddd; }
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
         .app-body { flex: 1; overflow-y: auto; position: relative; padding-bottom: 70px; }
         .view-section { display: none; padding: 15px; max-width: 1200px; margin: 0 auto; }
         .view-section.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
         .top-bar { background: var(--white); padding: 10px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         .card { background: var(--white); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid var(--border); overflow: hidden; }
         .card-header { background: #f9fafb; padding: 10px 15px; border-bottom: 1px solid var(--border); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .card-body { padding: 15px; }
-        .song-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; background: white; }
-        .song-item:active { background: #f0f0f0; }
+        .song-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; background: white; }
+        
+        /* Chips Scroll (Index 15 Style) */
         .chips-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; }
         .chip { padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.85rem; cursor: pointer; white-space: nowrap; user-select: none; }
-        .chip.selected { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; box-shadow: 0 2px 5px rgba(103, 58, 183, 0.3); }
+        .chip.selected { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; }
+
         .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .modal-wrap.show { display: flex; }
-        .modal-box { background: var(--white); width: 95%; max-width: 900px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
-        .modal-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .modal-box { background: var(--white); width: 95%; max-width: 900px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; }
         .modal-scroll { flex: 1; overflow-y: auto; padding: 20px; }
-        .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; display: flex; justify-content: flex-end; gap: 10px; }
+        .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
         textarea.form-control { resize: vertical; min-height: 100px; }
+        
         .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; justify-content: center; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: transparent; border: 1px solid #ccc; color: #555; }
         .btn-icon { background: none; border: none; font-size: 1.4rem; padding: 5px; cursor: pointer; color: #555; }
+        
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--white); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 500; }
         .nav-btn { background: none; border: none; color: #999; font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; width: 100%; cursor: pointer; }
         .nav-btn.active { color: var(--primary); }
         .nav-btn span { font-size: 26px; margin-bottom: 2px; }
+        
+        .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 5px; font-weight: bold; display: inline-flex; align-items: center; gap: 3px; }
+        .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+
+        /* Chips Container for Edit Modal */
+        .chips-container { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+        .chip-select { padding: 5px 10px; border: 1px solid #ccc; border-radius: 15px; font-size: 0.8rem; cursor:pointer; }
+        .chip-select.selected { background: var(--primary); color: white; }
+
+        /* Reading Mode */
         #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
         #readingContainer.active { display: flex; }
         .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
         .reading-content { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
         .score-seq-item { margin-bottom: 40px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); page-break-inside: avoid; }
-        .pdf-canvas { width: 100%; height: auto; display: block; border-bottom: 1px solid #eee; margin-bottom: 10px; }
+        
+        .pdf-canvas { width: 100%; height: auto; border: 1px solid #eee; margin-bottom: 10px; display: block; background: white; }
+
         .workspace { display: grid; gap: 20px; grid-template-columns: 1fr; }
         @media(min-width: 900px) { .workspace { grid-template-columns: 1fr 1fr; } }
+        
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; }
         #toast.show { opacity: 1; bottom: 90px; }
         #toast.error { background: #ef4444; }
         .d-none { display: none !important; }
-        @media print { .no-print, .nav-bar, .top-bar { display: none !important; } #readingContainer { position: static; display: block; height: auto; } body.print-text-only canvas, body.print-text-only img { display: none; } }
+        @media print { .no-print, .nav-bar, .top-bar { display: none !important; } #readingContainer { position: static; display: block; } body.print-text-only canvas, body.print-text-only img { display: none; } }
     </style>
 </head>
 <body>
@@ -80,7 +98,7 @@
         
         <div id="view-library" class="view-section active">
             <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="searchInput" class="form-control" placeholder="🔍 Cerca titolo..." onkeyup="renderLibrary()" style="margin-bottom:10px;">
+                <input type="text" id="searchInput" class="form-control" placeholder="🔍 Cerca..." onkeyup="renderLibrary()" style="margin-bottom:10px;">
                 <button onclick="openEditModal()" class="btn-primary" style="white-space:nowrap;">+ Canto</button>
             </div>
             <div class="chips-scroll">
@@ -103,7 +121,7 @@
                     <input type="text" id="messaTitle" class="form-control" value="Santa Messa" style="font-weight:bold; font-size:1.2rem; border:none; padding:0; margin:0;">
                     <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
                         <input type="date" id="messaDate" class="form-control" style="width:auto; margin:0;" onchange="updateSuggestions()">
-                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.85rem;">⬇️ Scarica Letture</button>
+                        <button onclick="autoFetchReadings()" class="btn-outline" style="font-size:0.85rem;">⬇️ Letture</button>
                         <div style="flex:1; text-align:right;">
                             <button onclick="saveSetlist()" class="btn-primary">Salva</button>
                         </div>
@@ -114,10 +132,10 @@
             <div class="workspace">
                 <div class="card">
                     <div class="card-header">
-                        <span>🎵 Scaletta Canti</span>
+                        <span>🎵 Canti</span>
                         <div>
                             <button onclick="go('history')" class="btn-outline" style="padding:2px 8px; font-size:0.8rem;">Storico</button>
-                            <button onclick="openShareModal()" class="btn-outline" style="padding:2px 8px; font-size:0.8rem; background:#e3f2fd; color:#1565c0; border-color:#90caf9;">Condividi</button>
+                            <button onclick="openShareModal()" class="btn-outline" style="padding:2px 8px; font-size:0.8rem; background:#e3f2fd; color:#1565c0;">Condividi</button>
                         </div>
                     </div>
                     <div class="card-body" id="scalettaContainer"></div>
@@ -128,10 +146,10 @@
                         <button onclick="clearReadings()" class="btn-outline" style="padding:4px 8px; font-size:0.8rem; color:red;">Pulisci</button>
                     </div>
                     <div class="card-body">
-                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">I Lettura</label><textarea id="r1" class="form-control"></textarea>
-                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">Salmo</label><textarea id="rps" class="form-control"></textarea>
-                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">II Lettura</label><textarea id="r2" class="form-control"></textarea>
-                        <label style="font-size:0.8rem; font-weight:bold; color:#666;">Vangelo</label><textarea id="rg" class="form-control" style="height:150px;"></textarea>
+                        <label style="font-size:0.8rem; color:#666;">I Lettura</label><textarea id="r1" class="form-control"></textarea>
+                        <label style="font-size:0.8rem; color:#666;">Salmo</label><textarea id="rps" class="form-control"></textarea>
+                        <label style="font-size:0.8rem; color:#666;">II Lettura</label><textarea id="r2" class="form-control"></textarea>
+                        <label style="font-size:0.8rem; color:#666;">Vangelo</label><textarea id="rg" class="form-control" style="height:150px;"></textarea>
                     </div>
                 </div>
             </div>
@@ -146,10 +164,7 @@
             <div class="card">
                 <div class="card-header">Connessione Google Drive</div>
                 <div class="card-body">
-                    <div style="background:#e3f2fd; padding:10px; border-radius:5px; margin-bottom:15px; text-align:center;">
-                        <p id="loginStatus" style="margin:0 0 5px 0; color:#1565c0; font-weight:bold;">Non connesso</p>
-                        <button id="btnConnect" onclick="manualLogin()" class="btn-primary" style="width:100%; background:#4285F4;">🔗 CONNETTI ACCOUNT GOOGLE</button>
-                    </div>
+                    <button id="btnConnect" onclick="manualLogin()" class="btn-primary" style="width:100%; margin-bottom:15px; background:#4285F4;">1. CONNETTI ACCOUNT</button>
                     <p style="font-size:0.85rem; color:#666;">API Key</p>
                     <input type="text" id="apiKey" class="form-control" placeholder="API Key">
                     <p style="font-size:0.85rem; color:#666;">Client ID</p>
@@ -173,22 +188,6 @@
         <button class="nav-btn" onclick="go('scaletta', this)"><span class="material-icons-round">playlist_play</span>Messa</button>
         <button class="nav-btn" onclick="go('history', this)"><span class="material-icons-round">history</span>Messe</button>
         <button class="nav-btn" onclick="go('settings', this)"><span class="material-icons-round">settings</span>Opzioni</button>
-    </div>
-
-    <div id="syncModal" class="modal-wrap">
-        <div class="modal-box" style="height:auto;">
-            <div class="card-header"><span>Backup Cloud</span><button onclick="document.getElementById('syncModal').classList.remove('show')" class="btn-icon">×</button></div>
-            <div class="modal-scroll" style="text-align:center;">
-                <p id="syncMsg">Prima fai il login nelle opzioni.</p>
-                <div id="syncBtns" class="d-none">
-                    <div style="display:grid; gap:10px;">
-                        <button onclick="performSync('upload')" class="btn-primary" style="background:#1976d2;">☁️ CARICA SU DRIVE (Backup)</button>
-                        <button onclick="performSync('download')" class="btn-outline" style="border-color:#1976d2; color:#1976d2;">⬇️ SCARICA DA DRIVE (Ripristina)</button>
-                    </div>
-                </div>
-                <p id="syncErr" style="font-size:0.8rem; margin-top:15px; color:red; font-weight:bold;"></p>
-            </div>
-        </div>
     </div>
 
     <div id="viewModal" class="modal-wrap">
@@ -220,15 +219,27 @@
                 <div style="background:#f0f2f5; padding:15px; border-radius:8px; text-align:center; margin-bottom:15px;">
                     <p id="fileStatus" style="font-weight:bold; color:var(--primary); margin-top:0;">Nessun file</p>
                     <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                        <button onclick="driveAction('picker')" class="btn-outline" style="background:white;">Google Drive</button>
+                        <button onclick="driveAction('picker')" class="btn-outline" style="background:white;">Drive</button>
                         <button onclick="document.getElementById('localFile').click()" class="btn-outline" style="background:white;">Locale</button>
                     </div>
                     <input type="file" id="localFile" hidden multiple accept="image/*,application/pdf" onchange="handleFile(this)">
                 </div>
                 <label>Testo</label><textarea id="songLyrics" class="form-control"></textarea>
             </div>
-            <div class="modal-footer">
-                <button onclick="saveSong()" class="btn-primary" style="width:100%;">SALVA</button>
+            <div class="modal-footer"><button onclick="saveSong()" class="btn-primary" style="width:100%;">SALVA</button></div>
+        </div>
+    </div>
+
+    <div id="syncModal" class="modal-wrap">
+        <div class="modal-box" style="height:auto;">
+            <div class="card-header"><span>Cloud Drive</span><button onclick="document.getElementById('syncModal').classList.remove('show')" class="btn-icon">×</button></div>
+            <div class="modal-scroll" style="text-align:center;">
+                <p id="syncMsg">Prima fai il login nelle opzioni.</p>
+                <div id="syncBtns" class="d-none">
+                    <button onclick="performSync('upload')" class="btn-primary" style="width:100%; margin-bottom:10px; background:#1976d2;">☁️ CARICA (Backup)</button>
+                    <button onclick="performSync('download')" class="btn-outline" style="width:100%; border-color:#1976d2; color:#1976d2;">⬇️ SCARICA (Ripristina)</button>
+                </div>
+                <p id="syncErr" style="font-size:0.8rem; margin-top:15px; color:red; font-weight:bold;"></p>
             </div>
         </div>
     </div>
@@ -274,9 +285,12 @@
         const SEASONS = ["Ordinario", "Avvento", "Natale", "Quaresima", "Pasqua"];
         const SYNC_FILE_NAME = "spartiti_db_master.json";
         let filterCatVar = 'Tutti';
+        
         let tokenClient; let accessToken = null; let gapiReady = false; let gisReady = false;
 
-        // PDF CONFIG & HELPER (STEP 2)
+        // PDF CONFIG & HELPER
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
         function dataURItoBlob(dataURI) {
             try {
                 if(dataURI.startsWith('blob:')) return dataURI;
@@ -291,7 +305,7 @@
 
         async function renderPdfToCanvas(blob, containerId) {
             const container = document.getElementById(containerId);
-            container.innerHTML = "Caricamento...";
+            container.innerHTML = "<div style='padding:20px'>Caricamento PDF...</div>";
             try {
                 const url = URL.createObjectURL(blob);
                 const loadingTask = pdfjsLib.getDocument(url);
@@ -310,10 +324,11 @@
                     await page.render(renderContext).promise;
                 }
             } catch (error) { 
-                container.innerHTML = `<p>Errore PDF.</p>`; 
+                container.innerHTML = `<p style="color:red">Errore PDF. <a href="${URL.createObjectURL(blob)}" target="_blank" class="btn-primary">Apri Esterno</a></p>`; 
             }
         }
 
+        // INIT
         function onGapiLoad() { gapiReady = true; }
         function onGisLoad() { gisReady = true; }
 
@@ -331,8 +346,8 @@
         };
 
         function renderModalChips() {
-            document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip" onclick="toggleChip(this)" data-val="${c}">${c}</div>`).join('');
-            document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip" onclick="toggleChip(this)" data-val="${s}">${s}</div>`).join('');
+            document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip-select" onclick="toggleChip(this)" data-val="${c}">${c}</div>`).join('');
+            document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip-select" onclick="toggleChip(this)" data-val="${s}">${s}</div>`).join('');
         }
         function toggleChip(el) { el.classList.toggle('selected'); }
 
@@ -368,12 +383,12 @@
             } else if (action === 'picker') { openPicker(); }
         }
 
-        // --- STEP 3: SYNC, PICKER, DOWNLOAD ---
+        // --- STEP 3 IMPLEMENTATO CORRETTAMENTE ---
         async function performSync(mode) {
             document.getElementById('syncErr').innerText = "Attendere...";
             const API_KEY = document.getElementById('apiKey').value.trim();
             
-            // FIX: Assicuriamoci che drive sia caricato prima di usarlo
+            // FIX CRUCIALE: Carica Drive API se manca
             if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
 
             try {
@@ -384,19 +399,16 @@
                     const fileContent = JSON.stringify({songs:s, setlists:l});
                     const meta = {name: 'spartiti_db_master.json', mimeType: 'application/json'};
                     
-                    // UPLOAD CON CHIAMATA DIRETTA (PIÙ SICURA SU MOBILE)
-                    // Cerchiamo prima il file
+                    // FIX: Usa API Key esplicita per evitare errore "API Key invalid"
                     const search = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='spartiti_db_master.json' and trashed=false&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
                     
                     if(search.files && search.files.length > 0) {
-                        // Aggiorna
                         await fetch(`https://www.googleapis.com/upload/drive/v3/files/${search.files[0].id}?uploadType=media&key=${API_KEY}`, { 
                             method: 'PATCH', 
                             headers: {'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json'}, 
                             body: fileContent 
                         });
                     } else {
-                        // Crea nuovo (Multipart)
                         const form = new FormData();
                         form.append('metadata', new Blob([JSON.stringify(meta)], {type: 'application/json'}));
                         form.append('file', new Blob([fileContent], {type: 'application/json'}));
@@ -408,7 +420,6 @@
                     }
                     showToast("Backup Completato!");
                 } else {
-                    // DOWNLOAD
                     const search = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='spartiti_db_master.json' and trashed=false&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
                     if(!search.files || search.files.length === 0) throw { message: "Nessun backup trovato" };
                     const data = await fetch(`https://www.googleapis.com/drive/v3/files/${search.files[0].id}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
@@ -420,9 +431,7 @@
                     data.setlists.forEach(x => tx.objectStore("setlists").put(x));
                     alert("Ripristino completato!"); location.reload();
                 }
-            } catch(e) { 
-                document.getElementById('syncErr').innerText = "Err: " + (e.message || JSON.stringify(e)); 
-            }
+            } catch(e) { document.getElementById('syncErr').innerText = "Err: " + (e.message || JSON.stringify(e)); }
         }
 
         function openPicker() {
@@ -452,7 +461,7 @@
                 b.innerHTML = ""; f.innerHTML = "";
                 const API_KEY = document.getElementById('apiKey').value.trim();
 
-                // 1. OFFLINE (Priorità)
+                // 1. OFFLINE
                 if (s.fileData) {
                     if(s.type && s.type.includes('pdf')) {
                         const blob = dataURItoBlob(s.fileData);
@@ -464,7 +473,7 @@
                     
                     if(s.driveFile || s.driveId) f.innerHTML = `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange;">🗑️ Rimuovi Offline</button>`;
                 } 
-                // 2. ONLINE (Drive)
+                // 2. ONLINE
                 else if ((s.driveFile && s.driveFile.id) || s.driveId) {
                     const dId = s.driveFile ? s.driveFile.id : s.driveId;
                     f.innerHTML = `<button onclick="toggleDownload(${s.id}, true)" class="btn-primary">⬇️ SCARICA OFFLINE</button>`;
@@ -487,7 +496,6 @@
                         } catch(err) { b.innerText = "Err: " + err; }
                     }
                 } 
-                // 3. TESTO
                 else b.innerHTML = `<pre style="padding:20px; white-space:pre-wrap; font-family:inherit;">${s.lyrics || ''}</pre>`;
                 
                 f.style.display = f.innerHTML ? 'flex' : 'none';
