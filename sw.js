@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v41-step3-drive';
+const CACHE_NAME = 'spartiti-messa-v42-step3-fixed';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -25,6 +25,7 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = e.request.url;
+  // Esclude Google per evitare errori di Auth su mobile
   if (url.includes('google') || url.includes('googleapis') || url.includes('gstatic')) return;
   e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
 });
