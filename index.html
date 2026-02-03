@@ -21,7 +21,7 @@
     </script>
     
     <style>
-        /* STILE BASE */
+        /* STILE BASE (Index 15) */
         :root { --primary: #673ab7; --bg: #f5f5f5; --white: #ffffff; --text: #333; --border: #ddd; }
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -37,10 +37,7 @@
         .song-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; background: white; }
         .song-item:active { background: #f0f0f0; }
 
-        .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 5px; font-weight: bold; display: inline-flex; align-items: center; gap: 3px; }
-        .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-        .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
-        
+        /* Chips */
         .chips-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; }
         .chip { padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.85rem; cursor: pointer; white-space: nowrap; user-select: none; }
         .chip.selected { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; box-shadow: 0 2px 5px rgba(103, 58, 183, 0.3); }
@@ -68,11 +65,14 @@
         .nav-btn.active { color: var(--primary); }
         .nav-btn span { font-size: 26px; margin-bottom: 2px; }
         
-        /* FIX Z-INDEX PICKER */
-        .picker-dialog-bg { z-index: 20000 !important; }
-        .picker-dialog { z-index: 20001 !important; }
+        .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 5px; font-weight: bold; display: inline-flex; align-items: center; gap: 3px; }
+        .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+
+        /* FIX Z-INDEX AGGRESSIVO PER GOOGLE PICKER */
+        .picker-dialog-bg { z-index: 99999 !important; }
+        .picker-dialog { z-index: 100000 !important; }
         
-        /* PDF CANVAS */
         .pdf-canvas { width: 100%; height: auto; display: block; border-bottom: 1px solid #eee; margin-bottom: 10px; background: white; }
         
         #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
@@ -170,7 +170,10 @@
             <div class="card">
                 <div class="card-header">Connessione Google Drive</div>
                 <div class="card-body">
-                    <button id="btnConnect" onclick="manualLogin()" class="btn-primary" style="width:100%; margin-bottom:15px; background:#4285F4;">1. CONNETTI ACCOUNT GOOGLE</button>
+                    <div style="margin-bottom:15px; padding:10px; background:#e3f2fd; border-radius:5px; text-align:center;">
+                        <p id="loginStatus" style="font-weight:bold; color:#1565c0; margin:0 0 10px 0;">Stato: Non Connesso</p>
+                        <button id="btnConnect" onclick="manualLogin()" class="btn-primary" style="width:100%; background:#4285F4;">1. CONNETTI ACCOUNT</button>
+                    </div>
                     <p style="font-size:0.85rem; color:#666;">API Key</p>
                     <input type="text" id="apiKey" class="form-control" placeholder="API Key">
                     <p style="font-size:0.85rem; color:#666;">Client ID</p>
@@ -316,13 +319,13 @@
             }
         }
 
-        // INIT
-        function onGapiLoad() { gapiReady = true; }
-        function onGisLoad() { gisReady = true; }
+        // INIT & RESTORE SESSION
+        function onGapiLoad() { gapiReady = true; tryAutoLogin(); }
+        function onGisLoad() { gisReady = true; tryAutoLogin(); }
 
         window.onload = () => {
             document.getElementById('messaDate').valueAsDate = new Date();
-            // INIT INPUTS FROM STORAGE IF AVAILABLE
+            // Carica API Key salvate nel campo
             if(localStorage.getItem('g_api')) document.getElementById('apiKey').value = localStorage.getItem('g_api');
             if(localStorage.getItem('g_client')) document.getElementById('clientId').value = localStorage.getItem('g_client');
             
@@ -333,7 +336,23 @@
                 if(!db.objectStoreNames.contains("setlists")) db.createObjectStore("setlists", {keyPath:"id", autoIncrement:true});
             };
             r.onsuccess = (e) => { db=e.target.result; renderLibrary(); renderScalettaUI(); renderFullHistory(); renderModalChips(); };
+            
+            tryAutoLogin();
         };
+
+        function tryAutoLogin() {
+            // Tenta di ripristinare il token se valido
+            const t = localStorage.getItem('g_token');
+            const e = localStorage.getItem('g_expiry');
+            if(t && e && Date.now() < parseInt(e)) {
+                accessToken = t;
+                document.getElementById('loginStatus').innerText = "Stato: Connesso (Auto)";
+                document.getElementById('loginStatus').style.color = "green";
+                document.getElementById('btnConnect').innerText = "CONNESSO ✅";
+                document.getElementById('syncBtns').classList.remove('d-none');
+                document.getElementById('syncMsg').innerText = "Pronto.";
+            }
+        }
 
         function renderModalChips() {
             document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip-select" onclick="toggleChip(this)" data-val="${c}">${c}</div>`).join('');
@@ -341,7 +360,7 @@
         }
         function toggleChip(el) { el.classList.toggle('selected'); }
 
-        // --- AUTH (CORRETTO PER MOBILE) ---
+        // --- AUTH ---
         function saveKeys(){
             localStorage.setItem('g_api',document.getElementById('apiKey').value.trim());
             localStorage.setItem('g_client',document.getElementById('clientId').value.trim());
@@ -349,12 +368,10 @@
         }
 
         function manualLogin() {
-            // FIX: Recupera ID anche se l'input è vuoto visivamente
-            let client_id = document.getElementById('clientId').value.trim();
-            if(!client_id) client_id = localStorage.getItem('g_client');
-
+            const client_id = document.getElementById('clientId').value.trim() || localStorage.getItem('g_client');
+            
             if(!client_id) return alert("Inserisci il Client ID nelle Opzioni");
-            if(!gisReady) return alert("Attendere... Librerie Google in caricamento (Riprova tra poco)");
+            if(!gisReady) return alert("Attendere... Librerie Google in caricamento (Riprova tra 5 secondi)");
 
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: client_id,
@@ -362,6 +379,14 @@
                 callback: (resp) => {
                     if (resp.error) return alert("Err Auth: " + JSON.stringify(resp));
                     accessToken = resp.access_token;
+                    
+                    // SAVE SESSION (1 hour expiry usually)
+                    const expiresIn = resp.expires_in || 3599; 
+                    localStorage.setItem('g_token', accessToken);
+                    localStorage.setItem('g_expiry', Date.now() + (expiresIn * 1000));
+
+                    document.getElementById('loginStatus').innerText = "Stato: Connesso";
+                    document.getElementById('loginStatus').style.color = "green";
                     document.getElementById('btnConnect').innerText = "CONNESSO ✅";
                     document.getElementById('syncBtns').classList.remove('d-none');
                     document.getElementById('syncMsg').innerText = "Pronto.";
@@ -378,14 +403,11 @@
             } else if (action === 'picker') { openPicker(); }
         }
 
-        // --- SYNC (FIXED KEY) ---
+        // --- SYNC ---
         async function performSync(mode) {
             document.getElementById('syncErr').innerText = "Attendere...";
-            
-            // FIX: Recupera key sicura
-            let API_KEY = document.getElementById('apiKey').value.trim();
-            if(!API_KEY) API_KEY = localStorage.getItem('g_api');
-            if(!API_KEY) return alert("API Key Mancante! Controlla Opzioni.");
+            const API_KEY = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
+            if(!API_KEY) return alert("API Key Mancante!");
 
             if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
 
@@ -426,14 +448,11 @@
             } catch(e) { document.getElementById('syncErr').innerText = "Err: " + (e.message || JSON.stringify(e)); }
         }
 
-        // --- PICKER (FIXED KEY + MULTI) ---
+        // --- PICKER ---
         function openPicker() {
             if(!accessToken) return alert("Premi 'Connetti Account' nelle opzioni prima!");
-            
-            // FIX: Recupera key sicura
-            let k = document.getElementById('apiKey').value.trim();
-            if(!k) k = localStorage.getItem('g_api');
-            if(!k) return alert("API Key mancante! Controlla Opzioni.");
+            const k = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
+            if(!k) return alert("API Key mancante!");
 
             gapi.load('client:picker', () => {
                 const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
@@ -442,7 +461,6 @@
                     .setOAuthToken(accessToken)
                     .addView(view)
                     .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
-                    .setOrigin(window.location.protocol + '//' + window.location.host) // Fix Mobile Origin
                     .setCallback((data) => {
                         if (data.action === google.picker.Action.PICKED) {
                             tempFilesList = data.docs.map(doc => ({
@@ -476,8 +494,7 @@
                 const f = document.getElementById('viewFooter');
                 b.innerHTML = ""; f.innerHTML = "";
                 
-                let API_KEY = document.getElementById('apiKey').value.trim();
-                if(!API_KEY) API_KEY = localStorage.getItem('g_api');
+                const API_KEY = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
 
                 // OFFLINE
                 if (s.fileData) {
@@ -514,9 +531,7 @@
         }
 
         async function toggleDownload(id, download) {
-            let API_KEY = document.getElementById('apiKey').value.trim();
-            if(!API_KEY) API_KEY = localStorage.getItem('g_api');
-            
+            const API_KEY = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
             db.transaction("songs","readwrite").objectStore("songs").get(id).onsuccess = async e => {
                 const s = e.target.result;
                 if(download) {
@@ -540,7 +555,7 @@
             };
         }
 
-        // CARICAMENTO LOCALE MULTIPLO
+        // MULTI UPLOAD
         function handleFile(input){ 
             const files = input.files; 
             if(!files.length) return; 
@@ -607,7 +622,7 @@
             setTimeout(()=>{document.getElementById('editModal').classList.remove('show'); renderLibrary(); updateSuggestions();}, 500); 
         }
 
-        // APP LOGIC STANDARD
+        // STANDARD APP LOGIC
         function go(id, btn) { document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active')); if(btn) btn.classList.add('active'); if(id==='library') renderLibrary(); if(id==='history') renderFullHistory(); }
         function renderLibrary() { const list = document.getElementById('songList'); list.innerHTML=""; const txt = document.getElementById('searchInput').value.toLowerCase(); db.transaction("songs").objectStore("songs").getAll().onsuccess = e => { e.target.result.forEach(s => { if(txt && !s.title.toLowerCase().includes(txt)) return; const badge = s.fileData ? `<span class="status-badge status-offline">OFFLINE</span>` : (s.driveId ? `<span class="status-badge status-online">DRIVE</span>` : ''); list.innerHTML += `<div class="song-item" onclick="openViewModal(${s.id})"><div><b>${s.title}</b><div style="margin-top:2px;">${badge} <small style="color:#666;">${s.categories?s.categories.join(', '):''}</small></div></div><span class="material-icons-round" style="color:#ccc">description</span></div>`; }); }; }
         function openEditModal(id=null) { document.getElementById('editModal').classList.add('show'); document.getElementById('songId').value=""; document.getElementById('songTitle').value=""; document.getElementById('songLyrics').value=""; tempFilesList=[]; driveTempMeta=null; document.getElementById('fileStatus').innerText="Nessun file"; document.querySelectorAll('.chip-select').forEach(c=>c.classList.remove('selected')); document.getElementById('editModalTitle').innerText=id?"Modifica":"Nuovo"; if(id){ document.getElementById('songId').value=id; db.transaction("songs").objectStore("songs").get(id).onsuccess=e=>{const s=e.target.result; document.getElementById('songTitle').value=s.title; document.getElementById('songLyrics').value=s.lyrics||""; if(s.fileData){tempFilesList=[{data:s.fileData,type:s.type,name:s.title}];document.getElementById('fileStatus').innerText="File Presente";} else if(s.driveId)document.getElementById('fileStatus').innerText="File Drive";}} }
@@ -634,7 +649,6 @@
         function showToast(m, t="info") { const el=document.getElementById('toast'); el.innerText=m; el.classList.add('show'); if(t=='error')el.classList.add('error'); setTimeout(()=>el.className='', 3000); }
         function exportData(){ const tx=db.transaction(["songs","setlists"],"readonly"); Promise.all([new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)),new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result))]).then(([s,l])=>{const b=new Blob([JSON.stringify({songs:s,setlists:l})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup.json";a.click();}); }
         function importData(inp){ const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");tx.objectStore("songs").clear();tx.objectStore("setlists").clear();d.songs.forEach(s=>tx.objectStore("songs").put(s));d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{showToast("Fatto!");setTimeout(()=>location.reload(),1000);}}catch(x){alert("Errore file");}};r.readAsText(f); }
-        function filterLib(cat, el) { filterCatVar=cat; document.querySelectorAll('.chips-scroll .chip').forEach(c=>c.classList.remove('selected')); if(el) el.classList.add('selected'); renderLibrary(); }
     </script>
 </body>
 </html>
