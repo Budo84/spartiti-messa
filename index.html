@@ -21,6 +21,7 @@
     </script>
     
     <style>
+        /* STILE ORIGINALE INDEX 15 */
         :root { --primary: #673ab7; --bg: #f5f5f5; --white: #ffffff; --text: #333; --border: #ddd; }
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -34,11 +35,6 @@
         .card-body { padding: 15px; }
         .song-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; background: white; }
         .song-item:active { background: #f0f0f0; }
-        
-        /* FIX Z-INDEX PER GOOGLE PICKER */
-        .picker-dialog-bg { z-index: 3500 !important; }
-        .picker-dialog { z-index: 3501 !important; }
-
         .chips-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; }
         .chip { padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.85rem; cursor: pointer; white-space: nowrap; user-select: none; }
         .chip.selected { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; box-shadow: 0 2px 5px rgba(103, 58, 183, 0.3); }
@@ -58,12 +54,6 @@
         .nav-btn { background: none; border: none; color: #999; font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; width: 100%; cursor: pointer; }
         .nav-btn.active { color: var(--primary); }
         .nav-btn span { font-size: 26px; margin-bottom: 2px; }
-        .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 5px; font-weight: bold; display: inline-flex; align-items: center; gap: 3px; }
-        .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-        .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
-        .chips-container { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-        .chip-select { padding: 5px 10px; border: 1px solid #ccc; border-radius: 15px; font-size: 0.8rem; cursor:pointer; }
-        .chip-select.selected { background: var(--primary); color: white; }
         #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
         #readingContainer.active { display: flex; }
         .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
@@ -75,7 +65,18 @@
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; }
         #toast.show { opacity: 1; bottom: 90px; }
         #toast.error { background: #ef4444; }
+        .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 5px; font-weight: bold; display: inline-flex; align-items: center; gap: 3px; }
+        .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+        .chips-container { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+        .chip-select { padding: 5px 10px; border: 1px solid #ccc; border-radius: 15px; font-size: 0.8rem; cursor:pointer; }
+        .chip-select.selected { background: var(--primary); color: white; }
         .d-none { display: none !important; }
+        
+        /* FIX Z-INDEX PICKER */
+        .picker-dialog-bg { z-index: 20000 !important; }
+        .picker-dialog { z-index: 20001 !important; }
+        
         @media print { .no-print, .nav-bar, .top-bar { display: none !important; } #readingContainer { position: static; display: block; height: auto; } body.print-text-only canvas, body.print-text-only img { display: none; } }
     </style>
 </head>
@@ -266,10 +267,7 @@
         let filterCatVar = 'Tutti';
         let tokenClient; let accessToken = null; let gapiReady = false; let gisReady = false;
 
-        // PDF CONFIG
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-        // HELPER PDF
+        // PDF Helper
         function dataURItoBlob(dataURI) {
             try {
                 if(dataURI.startsWith('blob:')) return dataURI;
@@ -313,8 +311,8 @@
 
         window.onload = () => {
             document.getElementById('messaDate').valueAsDate = new Date();
-            document.getElementById('apiKey').value = localStorage.getItem('g_api')||"";
-            document.getElementById('clientId').value = localStorage.getItem('g_client')||"";
+            document.getElementById('apiKey').value = localStorage.getItem('g_api') || "";
+            document.getElementById('clientId').value = localStorage.getItem('g_client') || "";
             const r = indexedDB.open("SpartitiDB_V6", 1);
             r.onupgradeneeded = (e) => {
                 db = e.target.result;
@@ -330,7 +328,7 @@
         }
         function toggleChip(el) { el.classList.toggle('selected'); }
 
-        // AUTH & DRIVE
+        // --- AUTH & DRIVE (STEP 1 + 3) ---
         function saveKeys(){
             localStorage.setItem('g_api',document.getElementById('apiKey').value.trim());
             localStorage.setItem('g_client',document.getElementById('clientId').value.trim());
@@ -362,6 +360,7 @@
             } else if (action === 'picker') { openPicker(); }
         }
 
+        // --- STEP 3: SYNC, DOWNLOAD ---
         async function performSync(mode) {
             document.getElementById('syncErr').innerText = "Attendere...";
             const API_KEY = document.getElementById('apiKey').value.trim();
@@ -373,6 +372,7 @@
                     const l = await new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result));
                     const fileContent = JSON.stringify({songs:s, setlists:l});
                     const meta = {name: 'spartiti_db_master.json', mimeType: 'application/json'};
+                    
                     const search = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='spartiti_db_master.json' and trashed=false&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
                     if(search.files && search.files.length > 0) {
                         await fetch(`https://www.googleapis.com/upload/drive/v3/files/${search.files[0].id}?uploadType=media&key=${API_KEY}`, { method: 'PATCH', headers: {'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json'}, body: fileContent });
@@ -397,32 +397,41 @@
             } catch(e) { document.getElementById('syncErr').innerText = "Err: " + (e.message || JSON.stringify(e)); }
         }
 
-        // PICKER WITH MULTI UPLOAD
+        // --- STEP 4: PICKER CON FIX API KEY E MULTISELECT ---
         function openPicker() {
             if(!accessToken) return alert("Premi 'Connetti Account' nelle opzioni prima!");
-            const k = document.getElementById('apiKey').value.trim();
-            if(!k) return alert("API Key mancante!");
+            
+            // FIX: Recupera la chiave anche se l'input è vuoto
+            const k = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
+            if(!k) return alert("API Key mancante! Inseriscila nelle Opzioni.");
+
             gapi.load('client:picker', () => {
                 const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
-                new google.picker.PickerBuilder().setDeveloperKey(k).setOAuthToken(accessToken).addView(view).enableFeature(google.picker.Feature.MULTISELECT_ENABLED).setCallback((data) => {
-                    if (data.action === google.picker.Action.PICKED) {
-                        tempFilesList = data.docs.map(doc => ({
-                            name: doc.name.replace(/\.[^/.]+$/, ""),
-                            id: doc.id,
-                            type: doc.mimeType,
-                            data: null,
-                            source: 'drive'
-                        }));
-                        if(tempFilesList.length === 1) {
-                            document.getElementById('songTitle').value = tempFilesList[0].name;
-                            driveTempMeta = tempFilesList[0];
-                            document.getElementById('fileStatus').innerText = "Drive: " + tempFilesList[0].name;
-                        } else {
-                            document.getElementById('songTitle').value = "[Multiplo]";
-                            document.getElementById('fileStatus').innerText = `${tempFilesList.length} File Drive`;
+                new google.picker.PickerBuilder()
+                    .setDeveloperKey(k) // Usa la variabile k che è sicura
+                    .setOAuthToken(accessToken)
+                    .addView(view)
+                    .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+                    .setCallback((data) => {
+                        if (data.action === google.picker.Action.PICKED) {
+                            tempFilesList = data.docs.map(doc => ({
+                                name: doc.name.replace(/\.[^/.]+$/, ""),
+                                id: doc.id,
+                                type: doc.mimeType,
+                                data: null,
+                                source: 'drive'
+                            }));
+                            
+                            if(tempFilesList.length === 1) {
+                                document.getElementById('songTitle').value = tempFilesList[0].name;
+                                driveTempMeta = tempFilesList[0];
+                                document.getElementById('fileStatus').innerText = "Drive: " + tempFilesList[0].name;
+                            } else {
+                                document.getElementById('songTitle').value = "[Multiplo]";
+                                document.getElementById('fileStatus').innerText = `${tempFilesList.length} File Drive`;
+                            }
                         }
-                    }
-                }).build().setVisible(true);
+                    }).build().setVisible(true);
             });
         }
 
@@ -444,6 +453,7 @@
                         b.innerHTML = `<div id="pdf-view-container" style="width:100%"></div>`;
                         renderPdfToCanvas(blob, 'pdf-view-container');
                     } else b.innerHTML = `<img src="${s.fileData}" style="width:100%">`;
+                    
                     if(s.driveId) f.innerHTML = `<button onclick="toggleDownload(${s.id}, false)" class="btn-outline" style="border-color:orange; color:orange;">🗑️ Rimuovi Offline</button>`;
                 } 
                 // ONLINE
@@ -499,11 +509,7 @@
             };
         }
 
-        // APP LOGIC
-        function go(id, btn) { document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active')); if(btn) btn.classList.add('active'); if(id==='library') renderLibrary(); if(id==='history') renderFullHistory(); }
-        function renderLibrary() { const list = document.getElementById('songList'); list.innerHTML=""; const txt = document.getElementById('searchInput').value.toLowerCase(); db.transaction("songs").objectStore("songs").getAll().onsuccess = e => { e.target.result.forEach(s => { if(txt && !s.title.toLowerCase().includes(txt)) return; const badge = s.fileData ? `<span class="status-badge status-offline">OFFLINE</span>` : (s.driveId ? `<span class="status-badge status-online">DRIVE</span>` : ''); list.innerHTML += `<div class="song-item" onclick="openViewModal(${s.id})"><div><b>${s.title}</b><div style="margin-top:2px;">${badge} <small style="color:#666;">${s.categories?s.categories.join(', '):''}</small></div></div><span class="material-icons-round" style="color:#ccc">description</span></div>`; }); }; }
-        function openEditModal(id=null) { document.getElementById('editModal').classList.add('show'); document.getElementById('songId').value=""; document.getElementById('songTitle').value=""; document.getElementById('songLyrics').value=""; tempFilesList=[]; driveTempMeta=null; document.getElementById('fileStatus').innerText="Nessun file"; document.querySelectorAll('.chip-select').forEach(c=>c.classList.remove('selected')); document.getElementById('editModalTitle').innerText=id?"Modifica":"Nuovo"; if(id){ document.getElementById('songId').value=id; db.transaction("songs").objectStore("songs").get(id).onsuccess=e=>{const s=e.target.result; document.getElementById('songTitle').value=s.title; document.getElementById('songLyrics').value=s.lyrics||""; if(s.fileData){tempFilesList=[{data:s.fileData,type:s.type,name:s.title}];document.getElementById('fileStatus').innerText="File Presente";} else if(s.driveId)document.getElementById('fileStatus').innerText="File Drive";}} }
-        
+        // --- STEP 4: CARICAMENTO MULTIPLO LOCALE ---
         function handleFile(input){ 
             const files = input.files; 
             if(!files.length) return; 
@@ -572,12 +578,16 @@
             setTimeout(()=>{document.getElementById('editModal').classList.remove('show'); renderLibrary(); updateSuggestions();}, 500); 
         }
 
+        // APP LOGIC STANDARD (Index 15)
+        function go(id, btn) { document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active')); if(btn) btn.classList.add('active'); if(id==='library') renderLibrary(); if(id==='history') renderFullHistory(); }
+        function renderLibrary() { const list = document.getElementById('songList'); list.innerHTML=""; const txt = document.getElementById('searchInput').value.toLowerCase(); db.transaction("songs").objectStore("songs").getAll().onsuccess = e => { e.target.result.forEach(s => { if(txt && !s.title.toLowerCase().includes(txt)) return; const badge = s.fileData ? `<span class="status-badge status-offline">OFFLINE</span>` : (s.driveId ? `<span class="status-badge status-online">DRIVE</span>` : ''); list.innerHTML += `<div class="song-item" onclick="openViewModal(${s.id})"><div><b>${s.title}</b><div style="margin-top:2px;">${badge} <small style="color:#666;">${s.categories?s.categories.join(', '):''}</small></div></div><span class="material-icons-round" style="color:#ccc">description</span></div>`; }); }; }
+        function openEditModal(id=null) { document.getElementById('editModal').classList.add('show'); document.getElementById('songId').value=""; document.getElementById('songTitle').value=""; document.getElementById('songLyrics').value=""; tempFilesList=[]; driveTempMeta=null; document.getElementById('fileStatus').innerText="Nessun file"; document.querySelectorAll('.chip-select').forEach(c=>c.classList.remove('selected')); document.getElementById('editModalTitle').innerText=id?"Modifica":"Nuovo"; if(id){ document.getElementById('songId').value=id; db.transaction("songs").objectStore("songs").get(id).onsuccess=e=>{const s=e.target.result; document.getElementById('songTitle').value=s.title; document.getElementById('songLyrics').value=s.lyrics||""; if(s.fileData){tempFilesList=[{data:s.fileData,type:s.type,name:s.title}];document.getElementById('fileStatus').innerText="File Presente";} else if(s.driveId)document.getElementById('fileStatus').innerText="File Drive";}} }
         function deleteCurrentSong() { if(confirm("Eliminare?")) db.transaction("songs","readwrite").objectStore("songs").delete(currentSongId).onsuccess = () => { document.getElementById('viewModal').classList.remove('show'); renderLibrary(); }; }
         function editFromView() { document.getElementById('viewModal').classList.remove('show'); openEditModal(currentSongId); }
         function filterLib(cat, el) { filterCatVar=cat; document.querySelectorAll('.chips-scroll .chip').forEach(c=>c.classList.remove('selected')); if(el) el.classList.add('selected'); renderLibrary(); }
         function renderScalettaUI() { const c = document.getElementById('scalettaContainer'); c.innerHTML=""; CATS.forEach(cat => { if(cat === 'Altro') return; c.innerHTML += `<div style="margin-bottom:10px;" data-part="${cat}"><label style="font-size:0.8rem; font-weight:bold; color:#666;">${cat}</label><div style="display:flex; gap:5px;"><select class="form-control song-select" style="margin:0;"><option value="">Seleziona...</option></select><button onclick="this.previousElementSibling.value=''" class="btn-outline">X</button></div></div>`; }); setTimeout(updateSuggestions, 500); }
         function updateSuggestions() { const d = new Date(document.getElementById('messaDate').value); const m = d.getMonth()+1; const day = d.getDate(); let season = "Ordinario"; if (m===11&&day>=27||m===12&&day<=24) season="Avvento"; else if (m===12&&day>=25||m===1) season="Natale"; else if (m>=2&&m<=4) season="Quaresima"; else if (m===4||m===5) season="Pasqua"; db.transaction("songs").objectStore("songs").getAll().onsuccess=(e)=>{ const songs = e.target.result.sort((a,b)=>a.title.localeCompare(b.title)); document.querySelectorAll('.song-select').forEach(sel=>{ const part=sel.parentElement.parentElement.dataset.part; const old=sel.value; let sug="", oth=""; songs.forEach(s=>{ const cats = Array.isArray(s.categories)?s.categories:[s.category]; const seas = Array.isArray(s.seasons)?s.seasons:[s.season]; if(cats.includes(part)&&(seas.includes(season)||seas.includes("Tutti"))) sug+=`<option value="${s.id}">★ ${s.title}</option>`; else oth+=`<option value="${s.id}">${s.title}</option>`; }); sel.innerHTML=`<option value="">Seleziona...</option><optgroup label="Suggeriti (${season})">${sug}</optgroup><optgroup label="Altri">${oth}</optgroup>`; sel.value=old; }); } }
-        async function autoFetchReadings() { const d=new Date(document.getElementById('messaDate').value); const url=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`)}`; showToast("Ricerca..."); try { const r = await fetch(url); const j = await r.json(); const t = new DOMParser().parseFromString(j.contents,"text/html").body.innerText.replace(/\s+/g,' '); const f=(a,b)=>{let s=-1;for(let w of a){let r=new RegExp(w,"i").exec(t);if(r){s=r.index+r[0].length;break;}}if(s<0)return"";let e=-1;for(let w of b){let r=new RegExp(w,"i").exec(t.substring(s));if(r){e=s+r.index;break;}}return e<0?"":t.substring(s,e).trim();}; document.getElementById('r1').value=f(["Prima Lettura","Dagli Atti","1a Lettura"],["Salmo"]); document.getElementById('rps').value=f(["Salmo","Salmo Responsoriale"],["Seconda","Vangelo","2a Lettura"]); document.getElementById('r2').value=f(["Seconda Lettura","2a Lettura"],["Vangelo","Canto al Vangelo"]); document.getElementById('rg').value=f(["Vangelo","Dal Vangelo"],["PREGHIERA"]); showToast("Fatto!"); } catch(e) { alert("Errore letture"); } }
+        async function autoFetchReadings() { const d=new Date(document.getElementById('messaDate').value); const url=`https://api.allorigins.win/get?url=${encodeURIComponent(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`)}`; showToast("Ricerca..."); try { const r = await fetch(url); const j = await r.json(); const t = new DOMParser().parseFromString(j.contents,"text/html").body.innerText.replace(/\s+/g,' '); const f=(a,b)=>{let s=-1;for(let w of a){let r=new RegExp(w,"i").exec(t);if(r){s=r.index+r[0].length;break;}}if(s<0)return"";let e=-1;for(let w of b){let r=new RegExp(w,"i").exec(t.substring(s));if(r){e=s+r.index;break;}}return e<0?"":t.substring(s,e).trim();}; document.getElementById('r1').value=f(["Prima Lettura"],["Salmo"]);document.getElementById('rps').value=f(["Salmo"],["Seconda","Vangelo"]);document.getElementById('r2').value=f(["Seconda"],["Vangelo"]);document.getElementById('rg').value=f(["Vangelo"],["PREGHIERA"]);showToast("Letture Trovate!"); }catch(e){if(confirm("Errore. Aprire sito?"))window.open(`https://www.lachiesa.it/calendario/Detailed/${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.shtml`);} }
         function clearReadings(){ ['r1','rps','r2','rg'].forEach(i=>document.getElementById(i).value=""); }
         function saveSetlist() { const s={}; document.querySelectorAll('.song-select').forEach(sel=>{if(sel.value)s[sel.parentElement.parentElement.dataset.part]=Number(sel.value);}); const r={r1:document.getElementById('r1').value,rps:document.getElementById('rps').value,r2:document.getElementById('r2').value,rg:document.getElementById('rg').value}; db.transaction("setlists","readwrite").objectStore("setlists").add({title:document.getElementById('messaTitle').value,date:document.getElementById('messaDate').value,songs:s,readings:r}).onsuccess=()=>{showToast("Messa Salvata!");}; }
         function renderFullHistory() { const l=document.getElementById('fullHistoryList');l.innerHTML=""; db.transaction("setlists").objectStore("setlists").openCursor(null,'prev').onsuccess=e=>{const c=e.target.result;if(c){const s=c.value;l.innerHTML+=`<div class="song-item"><div onclick="loadSet(${s.id})" style="flex:1;"><b>${s.title}</b><br><small>${s.date}</small></div><span class="material-icons-round" onclick="delSet(${s.id})" style="color:red; cursor:pointer;">delete</span></div>`;c.continue();}} }
@@ -595,7 +605,6 @@
         function showToast(m, t="info") { const el=document.getElementById('toast'); el.innerText=m; el.classList.add('show'); if(t=='error')el.classList.add('error'); setTimeout(()=>el.className='', 3000); }
         function exportData(){ const tx=db.transaction(["songs","setlists"],"readonly"); Promise.all([new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)),new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result))]).then(([s,l])=>{const b=new Blob([JSON.stringify({songs:s,setlists:l})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup.json";a.click();}); }
         function importData(inp){ const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");tx.objectStore("songs").clear();tx.objectStore("setlists").clear();d.songs.forEach(s=>tx.objectStore("songs").put(s));d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{showToast("Fatto!");setTimeout(()=>location.reload(),1000);}}catch(x){alert("Errore file");}};r.readAsText(f); }
-        function filterLib(cat, el) { filterCatVar=cat; document.querySelectorAll('.chips-scroll .chip').forEach(c=>c.classList.remove('selected')); if(el) el.classList.add('selected'); renderLibrary(); }
     </script>
 </body>
 </html>
