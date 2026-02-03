@@ -37,7 +37,6 @@
         .song-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; background: white; }
         .song-item:active { background: #f0f0f0; }
 
-        /* Chips */
         .chips-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; }
         .chip { padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.85rem; cursor: pointer; white-space: nowrap; user-select: none; }
         .chip.selected { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; box-shadow: 0 2px 5px rgba(103, 58, 183, 0.3); }
@@ -69,9 +68,9 @@
         .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
         .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
 
-        /* FIX Z-INDEX AGGRESSIVO PER GOOGLE PICKER */
-        .picker-dialog-bg { z-index: 99999 !important; }
-        .picker-dialog { z-index: 100000 !important; }
+        /* FIX Z-INDEX PER PICKER */
+        .picker-dialog-bg { z-index: 20000 !important; }
+        .picker-dialog { z-index: 20001 !important; }
         
         .pdf-canvas { width: 100%; height: auto; display: block; border-bottom: 1px solid #eee; margin-bottom: 10px; background: white; }
         
@@ -319,13 +318,13 @@
             }
         }
 
-        // INIT & RESTORE SESSION
+        // INIT
         function onGapiLoad() { gapiReady = true; tryAutoLogin(); }
         function onGisLoad() { gisReady = true; tryAutoLogin(); }
 
         window.onload = () => {
             document.getElementById('messaDate').valueAsDate = new Date();
-            // Carica API Key salvate nel campo
+            // FILL FIELDS IF EMPTY
             if(localStorage.getItem('g_api')) document.getElementById('apiKey').value = localStorage.getItem('g_api');
             if(localStorage.getItem('g_client')) document.getElementById('clientId').value = localStorage.getItem('g_client');
             
@@ -341,7 +340,7 @@
         };
 
         function tryAutoLogin() {
-            // Tenta di ripristinare il token se valido
+            // Restore session if valid
             const t = localStorage.getItem('g_token');
             const e = localStorage.getItem('g_expiry');
             if(t && e && Date.now() < parseInt(e)) {
@@ -369,9 +368,8 @@
 
         function manualLogin() {
             const client_id = document.getElementById('clientId').value.trim() || localStorage.getItem('g_client');
-            
             if(!client_id) return alert("Inserisci il Client ID nelle Opzioni");
-            if(!gisReady) return alert("Attendere... Librerie Google in caricamento (Riprova tra 5 secondi)");
+            if(!gisReady) return alert("Attendere... Librerie Google in caricamento");
 
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: client_id,
@@ -380,7 +378,7 @@
                     if (resp.error) return alert("Err Auth: " + JSON.stringify(resp));
                     accessToken = resp.access_token;
                     
-                    // SAVE SESSION (1 hour expiry usually)
+                    // SAVE SESSION (1 hour expiry)
                     const expiresIn = resp.expires_in || 3599; 
                     localStorage.setItem('g_token', accessToken);
                     localStorage.setItem('g_expiry', Date.now() + (expiresIn * 1000));
@@ -406,8 +404,15 @@
         // --- SYNC ---
         async function performSync(mode) {
             document.getElementById('syncErr').innerText = "Attendere...";
-            const API_KEY = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
-            if(!API_KEY) return alert("API Key Mancante!");
+            
+            // FIX CRUCIALE MOBILE: Recupera Key dalla memoria
+            let API_KEY = document.getElementById('apiKey').value.trim();
+            if(!API_KEY) API_KEY = localStorage.getItem('g_api');
+            
+            // Clean up key (rimuovi spazi vuoti invisibili)
+            if(API_KEY) API_KEY = API_KEY.trim();
+            
+            if(!API_KEY) return alert("API Key Mancante! Controlla Opzioni.");
 
             if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
 
@@ -451,8 +456,13 @@
         // --- PICKER ---
         function openPicker() {
             if(!accessToken) return alert("Premi 'Connetti Account' nelle opzioni prima!");
-            const k = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
-            if(!k) return alert("API Key mancante!");
+            
+            // FIX CRUCIALE MOBILE
+            let k = document.getElementById('apiKey').value.trim();
+            if(!k) k = localStorage.getItem('g_api');
+            
+            if(k) k = k.trim();
+            if(!k) return alert("API Key mancante! Controlla Opzioni.");
 
             gapi.load('client:picker', () => {
                 const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
@@ -494,7 +504,9 @@
                 const f = document.getElementById('viewFooter');
                 b.innerHTML = ""; f.innerHTML = "";
                 
-                const API_KEY = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
+                let API_KEY = document.getElementById('apiKey').value.trim();
+                if(!API_KEY) API_KEY = localStorage.getItem('g_api');
+                if(API_KEY) API_KEY = API_KEY.trim();
 
                 // OFFLINE
                 if (s.fileData) {
@@ -531,7 +543,10 @@
         }
 
         async function toggleDownload(id, download) {
-            const API_KEY = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
+            let API_KEY = document.getElementById('apiKey').value.trim();
+            if(!API_KEY) API_KEY = localStorage.getItem('g_api');
+            if(API_KEY) API_KEY = API_KEY.trim();
+            
             db.transaction("songs","readwrite").objectStore("songs").get(id).onsuccess = async e => {
                 const s = e.target.result;
                 if(download) {
@@ -622,7 +637,7 @@
             setTimeout(()=>{document.getElementById('editModal').classList.remove('show'); renderLibrary(); updateSuggestions();}, 500); 
         }
 
-        // STANDARD APP LOGIC
+        // APP LOGIC STANDARD
         function go(id, btn) { document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active')); if(btn) btn.classList.add('active'); if(id==='library') renderLibrary(); if(id==='history') renderFullHistory(); }
         function renderLibrary() { const list = document.getElementById('songList'); list.innerHTML=""; const txt = document.getElementById('searchInput').value.toLowerCase(); db.transaction("songs").objectStore("songs").getAll().onsuccess = e => { e.target.result.forEach(s => { if(txt && !s.title.toLowerCase().includes(txt)) return; const badge = s.fileData ? `<span class="status-badge status-offline">OFFLINE</span>` : (s.driveId ? `<span class="status-badge status-online">DRIVE</span>` : ''); list.innerHTML += `<div class="song-item" onclick="openViewModal(${s.id})"><div><b>${s.title}</b><div style="margin-top:2px;">${badge} <small style="color:#666;">${s.categories?s.categories.join(', '):''}</small></div></div><span class="material-icons-round" style="color:#ccc">description</span></div>`; }); }; }
         function openEditModal(id=null) { document.getElementById('editModal').classList.add('show'); document.getElementById('songId').value=""; document.getElementById('songTitle').value=""; document.getElementById('songLyrics').value=""; tempFilesList=[]; driveTempMeta=null; document.getElementById('fileStatus').innerText="Nessun file"; document.querySelectorAll('.chip-select').forEach(c=>c.classList.remove('selected')); document.getElementById('editModalTitle').innerText=id?"Modifica":"Nuovo"; if(id){ document.getElementById('songId').value=id; db.transaction("songs").objectStore("songs").get(id).onsuccess=e=>{const s=e.target.result; document.getElementById('songTitle').value=s.title; document.getElementById('songLyrics').value=s.lyrics||""; if(s.fileData){tempFilesList=[{data:s.fileData,type:s.type,name:s.title}];document.getElementById('fileStatus').innerText="File Presente";} else if(s.driveId)document.getElementById('fileStatus').innerText="File Drive";}} }
@@ -649,6 +664,7 @@
         function showToast(m, t="info") { const el=document.getElementById('toast'); el.innerText=m; el.classList.add('show'); if(t=='error')el.classList.add('error'); setTimeout(()=>el.className='', 3000); }
         function exportData(){ const tx=db.transaction(["songs","setlists"],"readonly"); Promise.all([new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)),new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result))]).then(([s,l])=>{const b=new Blob([JSON.stringify({songs:s,setlists:l})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup.json";a.click();}); }
         function importData(inp){ const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");tx.objectStore("songs").clear();tx.objectStore("setlists").clear();d.songs.forEach(s=>tx.objectStore("songs").put(s));d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{showToast("Fatto!");setTimeout(()=>location.reload(),1000);}}catch(x){alert("Errore file");}};r.readAsText(f); }
+        function filterLib(cat, el) { filterCatVar=cat; document.querySelectorAll('.chips-scroll .chip').forEach(c=>c.classList.remove('selected')); if(el) el.classList.add('selected'); renderLibrary(); }
     </script>
 </body>
 </html>
