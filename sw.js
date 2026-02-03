@@ -1,5 +1,5 @@
-const CACHE_NAME = 'spartiti-messa-v44-step3-done';
-const ASSETS = [
+const CACHE_NAME = 'spartiti-messa-v45-final-fix';
+const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
@@ -13,7 +13,7 @@ const ASSETS = [
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
-  e.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
+  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE)));
 });
 
 self.addEventListener('activate', (e) => {
