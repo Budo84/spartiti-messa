@@ -21,7 +21,7 @@
     </script>
     
     <style>
-        /* STILE ORIGINALE INDEX 15 */
+        /* STILE BASE (Index 15) */
         :root { --primary: #673ab7; --bg: #f5f5f5; --white: #ffffff; --text: #333; --border: #ddd; }
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -29,54 +29,66 @@
         .view-section { display: none; padding: 15px; max-width: 1200px; margin: 0 auto; }
         .view-section.active { display: block; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
         .top-bar { background: var(--white); padding: 10px 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         .card { background: var(--white); border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 15px; border: 1px solid var(--border); overflow: hidden; }
         .card-header { background: #f9fafb; padding: 10px 15px; border-bottom: 1px solid var(--border); font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
         .card-body { padding: 15px; }
         .song-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; background: white; }
         .song-item:active { background: #f0f0f0; }
+
+        /* Chips */
         .chips-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; margin-bottom: 10px; -webkit-overflow-scrolling: touch; }
         .chip { padding: 6px 12px; border-radius: 20px; border: 1px solid #ccc; background: white; color: #555; font-size: 0.85rem; cursor: pointer; white-space: nowrap; user-select: none; }
         .chip.selected { background: var(--primary); color: white; border-color: var(--primary); font-weight: bold; box-shadow: 0 2px 5px rgba(103, 58, 183, 0.3); }
+        .chips-container { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+        .chip-select { padding: 5px 10px; border: 1px solid #ccc; border-radius: 15px; font-size: 0.8rem; cursor:pointer; }
+        .chip-select.selected { background: var(--primary); color: white; }
+
         .modal-wrap { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: none; align-items: center; justify-content: center; }
         .modal-wrap.show { display: flex; }
         .modal-box { background: var(--white); width: 95%; max-width: 900px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 25px rgba(0,0,0,0.2); }
         .modal-header { padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
         .modal-scroll { flex: 1; overflow-y: auto; padding: 20px; }
         .modal-footer { padding: 15px; border-top: 1px solid var(--border); background: #fff; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; margin-bottom: 10px; font-family: inherit; }
         textarea.form-control { resize: vertical; min-height: 100px; }
+        
         .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; justify-content: center; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-outline { background: transparent; border: 1px solid #ccc; color: #555; }
         .btn-icon { background: none; border: none; font-size: 1.4rem; padding: 5px; cursor: pointer; color: #555; }
+        
         .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 65px; background: var(--white); border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 500; }
         .nav-btn { background: none; border: none; color: #999; font-size: 0.7rem; font-weight: 500; display: flex; flex-direction: column; align-items: center; width: 100%; cursor: pointer; }
         .nav-btn.active { color: var(--primary); }
         .nav-btn span { font-size: 26px; margin-bottom: 2px; }
+        
+        .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 5px; font-weight: bold; display: inline-flex; align-items: center; gap: 3px; }
+        .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
+
+        /* FIX Z-INDEX PICKER */
+        .picker-dialog-bg { z-index: 20000 !important; }
+        .picker-dialog { z-index: 20001 !important; }
+        
+        /* PDF CANVAS */
+        .pdf-canvas { width: 100%; height: auto; display: block; border-bottom: 1px solid #eee; margin-bottom: 10px; background: white; }
+        
         #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
         #readingContainer.active { display: flex; }
         .reading-nav { height: 60px; padding: 0 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); background: #fff; }
         .reading-content { flex: 1; overflow-y: auto; padding: 20px; background: #f9f9f9; }
         .score-seq-item { margin-bottom: 40px; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); page-break-inside: avoid; }
-        .pdf-canvas { width: 100%; height: auto; display: block; border-bottom: 1px solid #eee; margin-bottom: 10px; background: white; }
+
         .workspace { display: grid; gap: 20px; grid-template-columns: 1fr; }
         @media(min-width: 900px) { .workspace { grid-template-columns: 1fr 1fr; } }
+        
         #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 12px 24px; border-radius: 50px; z-index: 6000; opacity: 0; pointer-events: none; transition: 0.3s; }
         #toast.show { opacity: 1; bottom: 90px; }
         #toast.error { background: #ef4444; }
-        .status-badge { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; margin-right: 5px; font-weight: bold; display: inline-flex; align-items: center; gap: 3px; }
-        .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-        .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
-        .chips-container { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-        .chip-select { padding: 5px 10px; border: 1px solid #ccc; border-radius: 15px; font-size: 0.8rem; cursor:pointer; }
-        .chip-select.selected { background: var(--primary); color: white; }
         .d-none { display: none !important; }
-        
-        /* FIX Z-INDEX PICKER */
-        .picker-dialog-bg { z-index: 20000 !important; }
-        .picker-dialog { z-index: 20001 !important; }
-        
         @media print { .no-print, .nav-bar, .top-bar { display: none !important; } #readingContainer { position: static; display: block; height: auto; } body.print-text-only canvas, body.print-text-only img { display: none; } }
     </style>
 </head>
@@ -159,7 +171,7 @@
             <div class="card">
                 <div class="card-header">Connessione Google Drive</div>
                 <div class="card-body">
-                    <button id="btnConnect" onclick="manualLogin()" class="btn-primary" style="width:100%; margin-bottom:15px; background:#4285F4;">1. CONNETTI ACCOUNT</button>
+                    <button id="btnConnect" onclick="manualLogin()" class="btn-primary" style="width:100%; margin-bottom:15px; background:#4285F4;">1. CONNETTI ACCOUNT GOOGLE</button>
                     <p style="font-size:0.85rem; color:#666;">API Key</p>
                     <input type="text" id="apiKey" class="form-control" placeholder="API Key">
                     <p style="font-size:0.85rem; color:#666;">Client ID</p>
@@ -311,8 +323,8 @@
 
         window.onload = () => {
             document.getElementById('messaDate').valueAsDate = new Date();
-            document.getElementById('apiKey').value = localStorage.getItem('g_api') || "";
-            document.getElementById('clientId').value = localStorage.getItem('g_client') || "";
+            document.getElementById('apiKey').value = localStorage.getItem('g_api')||"";
+            document.getElementById('clientId').value = localStorage.getItem('g_client')||"";
             const r = indexedDB.open("SpartitiDB_V6", 1);
             r.onupgradeneeded = (e) => {
                 db = e.target.result;
@@ -328,7 +340,7 @@
         }
         function toggleChip(el) { el.classList.toggle('selected'); }
 
-        // --- AUTH & DRIVE (STEP 1 + 3) ---
+        // --- AUTH ---
         function saveKeys(){
             localStorage.setItem('g_api',document.getElementById('apiKey').value.trim());
             localStorage.setItem('g_client',document.getElementById('clientId').value.trim());
@@ -360,11 +372,15 @@
             } else if (action === 'picker') { openPicker(); }
         }
 
-        // --- STEP 3: SYNC, DOWNLOAD ---
+        // --- SYNC & DOWNLOAD (FIXED API KEY) ---
         async function performSync(mode) {
             document.getElementById('syncErr').innerText = "Attendere...";
-            const API_KEY = document.getElementById('apiKey').value.trim();
+            // FIX: Recupera key anche da storage se input vuoto
+            const API_KEY = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
+            if(!API_KEY) return alert("API Key Mancante!");
+
             if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
+
             try {
                 if(mode === 'upload') {
                     const tx = db.transaction(["songs","setlists"],"readonly");
@@ -375,18 +391,23 @@
                     
                     const search = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='spartiti_db_master.json' and trashed=false&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
                     if(search.files && search.files.length > 0) {
-                        await fetch(`https://www.googleapis.com/upload/drive/v3/files/${search.files[0].id}?uploadType=media&key=${API_KEY}`, { method: 'PATCH', headers: {'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json'}, body: fileContent });
+                        await fetch(`https://www.googleapis.com/upload/drive/v3/files/${search.files[0].id}?uploadType=media&key=${API_KEY}`, { 
+                            method: 'PATCH', headers: {'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json'}, body: fileContent 
+                        });
                     } else {
                         const form = new FormData();
                         form.append('metadata', new Blob([JSON.stringify(meta)], {type: 'application/json'}));
                         form.append('file', new Blob([fileContent], {type: 'application/json'}));
-                        await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&key=${API_KEY}`, { method: 'POST', headers: {'Authorization': `Bearer ${accessToken}`}, body: form });
+                        await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&key=${API_KEY}`, { 
+                            method: 'POST', headers: {'Authorization': `Bearer ${accessToken}`}, body: form 
+                        });
                     }
                     showToast("Backup Completato!");
                 } else {
                     const search = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='spartiti_db_master.json' and trashed=false&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
                     if(!search.files || search.files.length === 0) throw { message: "Nessun backup trovato" };
                     const data = await fetch(`https://www.googleapis.com/drive/v3/files/${search.files[0].id}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
+                    
                     const tx = db.transaction(["songs","setlists"],"readwrite");
                     await new Promise(r=>tx.objectStore("songs").clear().onsuccess=r);
                     await new Promise(r=>tx.objectStore("setlists").clear().onsuccess=r);
@@ -397,18 +418,18 @@
             } catch(e) { document.getElementById('syncErr').innerText = "Err: " + (e.message || JSON.stringify(e)); }
         }
 
-        // --- STEP 4: PICKER CON FIX API KEY E MULTISELECT ---
+        // --- PICKER (FIXED API KEY + MULTISELECT) ---
         function openPicker() {
             if(!accessToken) return alert("Premi 'Connetti Account' nelle opzioni prima!");
             
-            // FIX: Recupera la chiave anche se l'input è vuoto
+            // FIX: Recupera chiave sicura
             const k = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
-            if(!k) return alert("API Key mancante! Inseriscila nelle Opzioni.");
+            if(!k) return alert("API Key mancante!");
 
             gapi.load('client:picker', () => {
                 const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
                 new google.picker.PickerBuilder()
-                    .setDeveloperKey(k) // Usa la variabile k che è sicura
+                    .setDeveloperKey(k) // Usa la chiave recuperata
                     .setOAuthToken(accessToken)
                     .addView(view)
                     .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
@@ -444,7 +465,8 @@
                 const b = document.getElementById('viewBody');
                 const f = document.getElementById('viewFooter');
                 b.innerHTML = ""; f.innerHTML = "";
-                const API_KEY = document.getElementById('apiKey').value.trim();
+                // FIX: Recupera key anche qui
+                const API_KEY = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
 
                 // OFFLINE
                 if (s.fileData) {
@@ -485,7 +507,7 @@
         }
 
         async function toggleDownload(id, download) {
-            const API_KEY = document.getElementById('apiKey').value.trim();
+            const API_KEY = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
             db.transaction("songs","readwrite").objectStore("songs").get(id).onsuccess = async e => {
                 const s = e.target.result;
                 if(download) {
@@ -509,12 +531,11 @@
             };
         }
 
-        // --- STEP 4: CARICAMENTO MULTIPLO LOCALE ---
+        // CARICAMENTO LOCALE MULTIPLO
         function handleFile(input){ 
             const files = input.files; 
             if(!files.length) return; 
             tempFilesList=[]; 
-            
             const promises = Array.from(files).map(file => new Promise(resolve => {
                 const fr = new FileReader();
                 fr.onload = e => resolve({
@@ -524,7 +545,6 @@
                 });
                 fr.readAsDataURL(file);
             }));
-
             Promise.all(promises).then(res => {
                 tempFilesList = res;
                 if(tempFilesList.length === 1) {
@@ -537,6 +557,7 @@
             });
         }
         
+        // SALVATAGGIO INTELLIGENTE
         function saveSong(){ 
             const cats=Array.from(document.querySelectorAll('#catChips .selected')).map(c=>c.dataset.val); if(!cats.length)cats.push("Altro"); 
             const seas=Array.from(document.querySelectorAll('#seasonChips .selected')).map(c=>c.dataset.val); if(!seas.length)seas.push("Ordinario"); 
@@ -578,7 +599,7 @@
             setTimeout(()=>{document.getElementById('editModal').classList.remove('show'); renderLibrary(); updateSuggestions();}, 500); 
         }
 
-        // APP LOGIC STANDARD (Index 15)
+        // APP LOGIC STANDARD
         function go(id, btn) { document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active')); if(btn) btn.classList.add('active'); if(id==='library') renderLibrary(); if(id==='history') renderFullHistory(); }
         function renderLibrary() { const list = document.getElementById('songList'); list.innerHTML=""; const txt = document.getElementById('searchInput').value.toLowerCase(); db.transaction("songs").objectStore("songs").getAll().onsuccess = e => { e.target.result.forEach(s => { if(txt && !s.title.toLowerCase().includes(txt)) return; const badge = s.fileData ? `<span class="status-badge status-offline">OFFLINE</span>` : (s.driveId ? `<span class="status-badge status-online">DRIVE</span>` : ''); list.innerHTML += `<div class="song-item" onclick="openViewModal(${s.id})"><div><b>${s.title}</b><div style="margin-top:2px;">${badge} <small style="color:#666;">${s.categories?s.categories.join(', '):''}</small></div></div><span class="material-icons-round" style="color:#ccc">description</span></div>`; }); }; }
         function openEditModal(id=null) { document.getElementById('editModal').classList.add('show'); document.getElementById('songId').value=""; document.getElementById('songTitle').value=""; document.getElementById('songLyrics').value=""; tempFilesList=[]; driveTempMeta=null; document.getElementById('fileStatus').innerText="Nessun file"; document.querySelectorAll('.chip-select').forEach(c=>c.classList.remove('selected')); document.getElementById('editModalTitle').innerText=id?"Modifica":"Nuovo"; if(id){ document.getElementById('songId').value=id; db.transaction("songs").objectStore("songs").get(id).onsuccess=e=>{const s=e.target.result; document.getElementById('songTitle').value=s.title; document.getElementById('songLyrics').value=s.lyrics||""; if(s.fileData){tempFilesList=[{data:s.fileData,type:s.type,name:s.title}];document.getElementById('fileStatus').innerText="File Presente";} else if(s.driveId)document.getElementById('fileStatus').innerText="File Drive";}} }
