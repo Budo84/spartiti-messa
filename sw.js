@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v56-mobile-api-fix';
+const CACHE_NAME = 'spartiti-messa-v57-arch-fix';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
