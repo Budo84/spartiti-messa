@@ -13,20 +13,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
     <script>
-        var gapiReady = false;
-        var gisReady = false;
-        
-        function onGapiLoad() { 
-            gapiReady = true; 
-            // Prova il login automatico se la funzione principale è già caricata
-            if(window.tryAutoLogin) window.tryAutoLogin();
+        var gapiLoadedFlag = false;
+        var gisLoadedFlag = false;
+
+        function onGapiLoad() {
+            // Carica SUBITO le librerie Picker e Drive, non aspettare il click
+            gapi.load('client:picker', function() {
+                gapiLoadedFlag = true;
+                console.log("GAPI (Picker/Client) Loaded");
+                if(window.tryAutoLogin) window.tryAutoLogin();
+            });
         }
-        function onGisLoad() { 
-            gisReady = true; 
+        function onGisLoad() {
+            gisLoadedFlag = true;
+            console.log("GIS Loaded");
             if(window.tryAutoLogin) window.tryAutoLogin();
         }
     </script>
-
     <script src="https://apis.google.com/js/api.js" async defer onload="onGapiLoad()"></script>
     <script src="https://accounts.google.com/gsi/client" async defer onload="onGisLoad()"></script>
     
@@ -36,7 +39,7 @@
     </script>
     
     <style>
-        /* STILE ORIGINALE INDEX 15 */
+        /* STILE BASE (Invariato) */
         :root { --primary: #673ab7; --bg: #f5f5f5; --white: #ffffff; --text: #333; --border: #ddd; }
         * { box-sizing: border-box; }
         body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -83,11 +86,10 @@
         .status-offline { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
         .status-online { background: #e3f2fd; color: #1976d2; border: 1px solid #bbdefb; }
 
-        /* Z-INDEX FIX per Picker su Mobile */
-        .picker-dialog-bg { z-index: 20000 !important; }
-        .picker-dialog { z-index: 20001 !important; }
+        /* FIX Z-INDEX AGGRESSIVO PER GOOGLE PICKER */
+        .picker-dialog-bg { z-index: 99999 !important; }
+        .picker-dialog { z-index: 100000 !important; }
         
-        /* PDF */
         .pdf-canvas { width: 100%; height: auto; display: block; border-bottom: 1px solid #eee; margin-bottom: 10px; background: white; }
         
         #readingContainer { position: fixed; inset: 0; background: var(--white); z-index: 4000; display: none; flex-direction: column; }
@@ -288,15 +290,15 @@
     </div>
 
     <script>
-        // GLOBAL CONFIG
+        // CONFIG
         let db; let tempFilesList=[]; let currentSongId=null; let driveTempMeta=null;
         const CATS = ["Ingresso", "Gloria", "Salmo", "Alleluia", "Offertorio", "Santo", "Comunione", "Finale", "Altro"];
         const SEASONS = ["Ordinario", "Avvento", "Natale", "Quaresima", "Pasqua"];
         const SYNC_FILE_NAME = "spartiti_db_master.json";
         let filterCatVar = 'Tutti';
-        let tokenClient; let accessToken = null; 
-        
-        // --- AUTH & PDF HELPERS ---
+        let tokenClient; let accessToken = null;
+
+        // PDF HELPER
         function dataURItoBlob(dataURI) {
             try {
                 if(dataURI.startsWith('blob:')) return dataURI;
@@ -334,35 +336,28 @@
             }
         }
 
-        // --- GLOBAL WINDOW.ONLOAD ---
+        // APP INIT
         window.onload = () => {
             document.getElementById('messaDate').valueAsDate = new Date();
             
-            // FILL FIELDS FROM STORAGE
+            // FILL FIELDS
             if(localStorage.getItem('g_api')) document.getElementById('apiKey').value = localStorage.getItem('g_api');
             if(localStorage.getItem('g_client')) document.getElementById('clientId').value = localStorage.getItem('g_client');
             
-            // DB INIT
             const r = indexedDB.open("SpartitiDB_V6", 1);
             r.onupgradeneeded = (e) => {
                 db = e.target.result;
                 if(!db.objectStoreNames.contains("songs")) db.createObjectStore("songs", {keyPath:"id", autoIncrement:true});
                 if(!db.objectStoreNames.contains("setlists")) db.createObjectStore("setlists", {keyPath:"id", autoIncrement:true});
             };
-            r.onsuccess = (e) => { 
-                db=e.target.result; 
-                renderLibrary(); 
-                renderScalettaUI(); 
-                renderFullHistory(); 
-                renderModalChips(); 
-            };
+            r.onsuccess = (e) => { db=e.target.result; renderLibrary(); renderScalettaUI(); renderFullHistory(); renderModalChips(); };
             
-            // TRY AUTO LOGIN IF SESSION VALID
+            // TENTATIVO DI LOGIN AUTOMATICO SE LE CALLBACK SONO GIA' SCATTATE
             if(window.tryAutoLogin) window.tryAutoLogin();
         };
 
-        // EXPOSED FUNCTION FOR AUTO-LOGIN (called by callbacks too)
         window.tryAutoLogin = function() {
+            if(!window.gapiLoadedFlag || !window.gisLoadedFlag) return;
             const t = localStorage.getItem('g_token');
             const e = localStorage.getItem('g_expiry');
             if(t && e && Date.now() < parseInt(e)) {
@@ -375,6 +370,12 @@
             }
         }
 
+        function renderModalChips() {
+            document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip-select" onclick="toggleChip(this)" data-val="${c}">${c}</div>`).join('');
+            document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip-select" onclick="toggleChip(this)" data-val="${s}">${s}</div>`).join('');
+        }
+        function toggleChip(el) { el.classList.toggle('selected'); }
+
         // --- AUTH ---
         function saveKeys(){
             localStorage.setItem('g_api',document.getElementById('apiKey').value.trim());
@@ -383,13 +384,12 @@
         }
 
         function manualLogin() {
-            // FIX: Recupera ID anche se l'input è vuoto visivamente
+            // Usa ID da storage se input vuoto
             let client_id = document.getElementById('clientId').value.trim();
             if(!client_id) client_id = localStorage.getItem('g_client');
 
             if(!client_id) return alert("Inserisci il Client ID nelle Opzioni");
-            // Check if gapiReady
-            if(!window.gisReady && !window.gapiReady) return alert("Attendere... Librerie Google in caricamento (Riprova tra 5 secondi)");
+            if(!window.gisLoadedFlag) return alert("Attendere... Librerie Google in caricamento");
 
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: client_id,
@@ -397,8 +397,7 @@
                 callback: (resp) => {
                     if (resp.error) return alert("Err Auth: " + JSON.stringify(resp));
                     accessToken = resp.access_token;
-                    
-                    // SAVE SESSION (1 hour expiry usually)
+                    // SAVE SESSION
                     const expiresIn = resp.expires_in || 3599; 
                     localStorage.setItem('g_token', accessToken);
                     localStorage.setItem('g_expiry', Date.now() + (expiresIn * 1000));
@@ -424,15 +423,9 @@
         // --- SYNC ---
         async function performSync(mode) {
             document.getElementById('syncErr').innerText = "Attendere...";
-            
-            // FIX CRUCIALE MOBILE: Recupera Key dalla memoria
             let API_KEY = document.getElementById('apiKey').value.trim();
             if(!API_KEY) API_KEY = localStorage.getItem('g_api');
-            if(API_KEY) API_KEY = API_KEY.trim();
-            
-            if(!API_KEY) return alert("API Key Mancante! Controlla Opzioni.");
-
-            if(!gapi.client.drive) await gapi.client.load('drive', 'v3');
+            if(!API_KEY) return alert("API Key Mancante!");
 
             try {
                 if(mode === 'upload') {
@@ -475,19 +468,27 @@
         function openPicker() {
             if(!accessToken) return alert("Premi 'Connetti Account' nelle opzioni prima!");
             
-            // FIX: Recupera chiave sicura
             let k = document.getElementById('apiKey').value.trim();
             if(!k) k = localStorage.getItem('g_api');
-            if(k) k = k.trim();
-            if(!k) return alert("API Key mancante! Controlla Opzioni.");
+            if(!k) return alert("API Key mancante!");
 
-            gapi.load('client:picker', () => {
-                const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
+            // Usa la variabile globale gapi (pre-caricata)
+            if(!gapi || !gapi.picker) {
+               // Fallback estremo se il preload ha fallito
+               gapi.load('client:picker', () => buildPicker(k));
+            } else {
+               buildPicker(k);
+            }
+        }
+        
+        function buildPicker(apiKey) {
+             const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
                 new google.picker.PickerBuilder()
-                    .setDeveloperKey(k) // Usa la chiave recuperata
+                    .setDeveloperKey(apiKey)
                     .setOAuthToken(accessToken)
                     .addView(view)
                     .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
+                    .setOrigin(window.location.protocol + '//' + window.location.host)
                     .setCallback((data) => {
                         if (data.action === google.picker.Action.PICKED) {
                             tempFilesList = data.docs.map(doc => ({
@@ -508,7 +509,6 @@
                             }
                         }
                     }).build().setVisible(true);
-            });
         }
 
         // VIEW & DOWNLOAD
@@ -587,7 +587,7 @@
             };
         }
 
-        // MULTI UPLOAD
+        // CARICAMENTO LOCALE MULTIPLO
         function handleFile(input){ 
             const files = input.files; 
             if(!files.length) return; 
@@ -655,11 +655,6 @@
         }
 
         // APP LOGIC STANDARD
-        function renderModalChips() {
-            document.getElementById('catChips').innerHTML = CATS.map(c => `<div class="chip-select" onclick="toggleChip(this)" data-val="${c}">${c}</div>`).join('');
-            document.getElementById('seasonChips').innerHTML = SEASONS.map(s => `<div class="chip-select" onclick="toggleChip(this)" data-val="${s}">${s}</div>`).join('');
-        }
-        function toggleChip(el) { el.classList.toggle('selected'); }
         function go(id, btn) { document.querySelectorAll('.view-section').forEach(x=>x.classList.remove('active')); document.getElementById('view-'+id).classList.add('active'); document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active')); if(btn) btn.classList.add('active'); if(id==='library') renderLibrary(); if(id==='history') renderFullHistory(); }
         function renderLibrary() { const list = document.getElementById('songList'); list.innerHTML=""; const txt = document.getElementById('searchInput').value.toLowerCase(); db.transaction("songs").objectStore("songs").getAll().onsuccess = e => { e.target.result.forEach(s => { if(txt && !s.title.toLowerCase().includes(txt)) return; const badge = s.fileData ? `<span class="status-badge status-offline">OFFLINE</span>` : (s.driveId ? `<span class="status-badge status-online">DRIVE</span>` : ''); list.innerHTML += `<div class="song-item" onclick="openViewModal(${s.id})"><div><b>${s.title}</b><div style="margin-top:2px;">${badge} <small style="color:#666;">${s.categories?s.categories.join(', '):''}</small></div></div><span class="material-icons-round" style="color:#ccc">description</span></div>`; }); }; }
         function openEditModal(id=null) { document.getElementById('editModal').classList.add('show'); document.getElementById('songId').value=""; document.getElementById('songTitle').value=""; document.getElementById('songLyrics').value=""; tempFilesList=[]; driveTempMeta=null; document.getElementById('fileStatus').innerText="Nessun file"; document.querySelectorAll('.chip-select').forEach(c=>c.classList.remove('selected')); document.getElementById('editModalTitle').innerText=id?"Modifica":"Nuovo"; if(id){ document.getElementById('songId').value=id; db.transaction("songs").objectStore("songs").get(id).onsuccess=e=>{const s=e.target.result; document.getElementById('songTitle').value=s.title; document.getElementById('songLyrics').value=s.lyrics||""; if(s.fileData){tempFilesList=[{data:s.fileData,type:s.type,name:s.title}];document.getElementById('fileStatus').innerText="File Presente";} else if(s.driveId)document.getElementById('fileStatus').innerText="File Drive";}} }
