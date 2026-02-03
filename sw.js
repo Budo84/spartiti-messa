@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v49-multi-fix';
+const CACHE_NAME = 'spartiti-messa-v50-picker-zindex';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
