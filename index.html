@@ -340,7 +340,7 @@
         }
         function toggleChip(el) { el.classList.toggle('selected'); }
 
-        // --- AUTH ---
+        // --- AUTH & DRIVE (STEP 1 + 3) ---
         function saveKeys(){
             localStorage.setItem('g_api',document.getElementById('apiKey').value.trim());
             localStorage.setItem('g_client',document.getElementById('clientId').value.trim());
@@ -372,10 +372,11 @@
             } else if (action === 'picker') { openPicker(); }
         }
 
-        // --- SYNC & DOWNLOAD (FIXED API KEY) ---
+        // --- STEP 3 IMPLEMENTATO: SYNC, DOWNLOAD, PICKER ---
         async function performSync(mode) {
             document.getElementById('syncErr').innerText = "Attendere...";
-            // FIX: Recupera key anche da storage se input vuoto
+            
+            // FIX CRUCIALE MOBILE: Recupera Key dalla memoria se l'input è vuoto
             const API_KEY = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
             if(!API_KEY) return alert("API Key Mancante!");
 
@@ -390,16 +391,21 @@
                     const meta = {name: 'spartiti_db_master.json', mimeType: 'application/json'};
                     
                     const search = await fetch(`https://www.googleapis.com/drive/v3/files?q=name='spartiti_db_master.json' and trashed=false&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} }).then(r=>r.json());
+                    
                     if(search.files && search.files.length > 0) {
                         await fetch(`https://www.googleapis.com/upload/drive/v3/files/${search.files[0].id}?uploadType=media&key=${API_KEY}`, { 
-                            method: 'PATCH', headers: {'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json'}, body: fileContent 
+                            method: 'PATCH', 
+                            headers: {'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json'}, 
+                            body: fileContent 
                         });
                     } else {
                         const form = new FormData();
                         form.append('metadata', new Blob([JSON.stringify(meta)], {type: 'application/json'}));
                         form.append('file', new Blob([fileContent], {type: 'application/json'}));
                         await fetch(`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&key=${API_KEY}`, { 
-                            method: 'POST', headers: {'Authorization': `Bearer ${accessToken}`}, body: form 
+                            method: 'POST', 
+                            headers: {'Authorization': `Bearer ${accessToken}`}, 
+                            body: form 
                         });
                     }
                     showToast("Backup Completato!");
@@ -418,18 +424,17 @@
             } catch(e) { document.getElementById('syncErr').innerText = "Err: " + (e.message || JSON.stringify(e)); }
         }
 
-        // --- PICKER (FIXED API KEY + MULTISELECT) ---
         function openPicker() {
             if(!accessToken) return alert("Premi 'Connetti Account' nelle opzioni prima!");
             
-            // FIX: Recupera chiave sicura
+            // FIX CRUCIALE MOBILE: Recupera Key dalla memoria se l'input è vuoto
             const k = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
             if(!k) return alert("API Key mancante!");
 
             gapi.load('client:picker', () => {
                 const view = new google.picker.DocsView(google.picker.ViewId.DOCS).setIncludeFolders(true).setMimeTypes("application/pdf,image/png,image/jpeg");
                 new google.picker.PickerBuilder()
-                    .setDeveloperKey(k) // Usa la chiave recuperata
+                    .setDeveloperKey(k)
                     .setOAuthToken(accessToken)
                     .addView(view)
                     .enableFeature(google.picker.Feature.MULTISELECT_ENABLED)
@@ -465,7 +470,8 @@
                 const b = document.getElementById('viewBody');
                 const f = document.getElementById('viewFooter');
                 b.innerHTML = ""; f.innerHTML = "";
-                // FIX: Recupera key anche qui
+                
+                // FIX: Recupera key anche qui per il download
                 const API_KEY = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
 
                 // OFFLINE
@@ -488,14 +494,10 @@
                             b.innerHTML = "Caricamento...";
                             const r = await fetch(`https://www.googleapis.com/drive/v3/files/${s.driveId}?alt=media&key=${API_KEY}`, { headers: {'Authorization': `Bearer ${accessToken}`} });
                             const blob = await r.blob();
-                            const mime = s.type;
-                            if(mime && mime.includes('image')) {
-                                const url = URL.createObjectURL(blob);
-                                b.innerHTML = `<img src="${url}" style="width:100%">`;
-                            } else {
+                            if(s.type && s.type.includes('pdf')) {
                                 b.innerHTML = `<div id="pdf-view-container" style="width:100%"></div>`;
                                 renderPdfToCanvas(blob, 'pdf-view-container');
-                            }
+                            } else b.innerHTML = `<img src="${URL.createObjectURL(blob)}" style="width:100%">`;
                         } catch(err) { b.innerText = "Err: " + err; }
                     }
                 } 
@@ -507,7 +509,9 @@
         }
 
         async function toggleDownload(id, download) {
+            // FIX: Recupera key anche qui
             const API_KEY = document.getElementById('apiKey').value.trim() || localStorage.getItem('g_api');
+            
             db.transaction("songs","readwrite").objectStore("songs").get(id).onsuccess = async e => {
                 const s = e.target.result;
                 if(download) {
@@ -557,7 +561,6 @@
             });
         }
         
-        // SALVATAGGIO INTELLIGENTE
         function saveSong(){ 
             const cats=Array.from(document.querySelectorAll('#catChips .selected')).map(c=>c.dataset.val); if(!cats.length)cats.push("Altro"); 
             const seas=Array.from(document.querySelectorAll('#seasonChips .selected')).map(c=>c.dataset.val); if(!seas.length)seas.push("Ordinario"); 
@@ -626,6 +629,7 @@
         function showToast(m, t="info") { const el=document.getElementById('toast'); el.innerText=m; el.classList.add('show'); if(t=='error')el.classList.add('error'); setTimeout(()=>el.className='', 3000); }
         function exportData(){ const tx=db.transaction(["songs","setlists"],"readonly"); Promise.all([new Promise(r=>tx.objectStore("songs").getAll().onsuccess=e=>r(e.target.result)),new Promise(r=>tx.objectStore("setlists").getAll().onsuccess=e=>r(e.target.result))]).then(([s,l])=>{const b=new Blob([JSON.stringify({songs:s,setlists:l})],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="backup.json";a.click();}); }
         function importData(inp){ const f=inp.files[0]; if(!f)return; const r=new FileReader(); r.onload=e=>{try{const d=JSON.parse(e.target.result);const tx=db.transaction(["songs","setlists"],"readwrite");tx.objectStore("songs").clear();tx.objectStore("setlists").clear();d.songs.forEach(s=>tx.objectStore("songs").put(s));d.setlists.forEach(s=>tx.objectStore("setlists").put(s));tx.oncomplete=()=>{showToast("Fatto!");setTimeout(()=>location.reload(),1000);}}catch(x){alert("Errore file");}};r.readAsText(f); }
+        function filterLib(cat, el) { filterCatVar=cat; document.querySelectorAll('.chips-scroll .chip').forEach(c=>c.classList.remove('selected')); if(el) el.classList.add('selected'); renderLibrary(); }
     </script>
 </body>
 </html>
