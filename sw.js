@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v40-step2-pdf';
+const CACHE_NAME = 'spartiti-messa-v42-step3-drive';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -7,7 +7,6 @@ const ASSETS_TO_CACHE = [
   './logo512.png',
   'https://fonts.googleapis.com/icon?family=Material+Icons+Round',
   'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap',
-  // Librerie PDF necessarie per lo Step 2
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js'
 ];
@@ -26,6 +25,7 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = e.request.url;
+  // Esclude Google per evitare errori di Auth su mobile
   if (url.includes('google') || url.includes('googleapis') || url.includes('gstatic')) return;
   e.respondWith(caches.match(e.request).then((r) => r || fetch(e.request)));
 });
