@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v48-multi-upload-only';
+const CACHE_NAME = 'spartiti-messa-v49-multi-fix';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
