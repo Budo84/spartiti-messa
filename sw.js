@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v64-booklet-safe';
+const CACHE_NAME = 'spartiti-messa-v65-booklet-safe';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
