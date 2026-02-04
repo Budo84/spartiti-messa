@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v59-reading-fix';
+const CACHE_NAME = 'spartiti-messa-v60-sort-alpha';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
