@@ -200,14 +200,6 @@
                 </div>
             </div>
             <div class="card">
-                <div class="card-header">Letture del giorno</div>
-                <div class="card-body">
-                    <p style="font-size:0.85rem; color:#666; margin-top:0;">Proxy personale (facoltativo). Se lo scaricamento delle letture non funziona, incolla qui l'indirizzo del tuo Worker, ad esempio <code>https://letture.tuonome.workers.dev/?url={url}</code>. Vuoto = si usano i proxy pubblici.</p>
-                    <input type="text" id="readingsProxy" class="form-control" placeholder="https://.../?url={url}">
-                    <button onclick="saveReadingsProxy()" class="btn-outline" style="width:100%;">Salva proxy</button>
-                </div>
-            </div>
-            <div class="card">
                 <div class="card-header">Backup Locale</div>
                 <div class="card-body" style="display:flex; gap:10px;">
                     <button onclick="exportData()" class="btn-outline" style="flex:1;">Scarica</button>
@@ -371,7 +363,6 @@
             // INIT INPUTS
             if(localStorage.getItem('g_api')) document.getElementById('apiKey').value = localStorage.getItem('g_api');
             if(localStorage.getItem('g_client')) document.getElementById('clientId').value = localStorage.getItem('g_client');
-            if(localStorage.getItem('readings_proxy')) document.getElementById('readingsProxy').value = localStorage.getItem('readings_proxy');
 
             const r = indexedDB.open("SpartitiDB_V6", 1);
             r.onupgradeneeded = (e) => {
@@ -864,7 +855,7 @@
         // LETTURE DEL GIORNO (fonte: lachiesa.it)
         // =====================================================================
         const READINGS_SOURCE = d => `https://www.lachiesa.it/calendario/Detailed/${d}.shtml`;
-        // Proxy CORS di ripiego, provati in ordine. Un proxy personale (Opzioni) ha la precedenza.
+        // Proxy CORS pubblici, provati in ordine: se uno non risponde si passa al successivo.
         const READINGS_PROXIES = [
             u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
             u => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(u)}`,
@@ -1008,10 +999,7 @@
         // Scarica l'HTML della pagina provando i proxy in ordine, con timeout
         async function fetchReadingsHtml(dkey) {
             const target = READINGS_SOURCE(dkey);
-            const custom = (localStorage.getItem('readings_proxy') || '').trim();
-            const makers = [];
-            if (custom) makers.push(u => custom.includes('{url}') ? custom.replace('{url}', encodeURIComponent(u)) : custom + encodeURIComponent(u));
-            makers.push(...READINGS_PROXIES);
+            const makers = READINGS_PROXIES;
             let lastErr = null;
             for (const make of makers) {
                 const ctrl = new AbortController();
@@ -1087,13 +1075,6 @@
             if (!result.rps) mancanti.push('Salmo');
             if (!result.rg) mancanti.push('Vangelo');
             showToast((fromCache ? "Offline, uso quelle salvate: " : "Trovate: ") + trovate.join(', ') + (mancanti.length ? ` (mancano: ${mancanti.join(', ')})` : ''), mancanti.length ? 'error' : 'info');
-        }
-
-        function saveReadingsProxy() {
-            const v = document.getElementById('readingsProxy').value.trim();
-            if (v && !/^https:\/\//i.test(v)) return alert("L'indirizzo deve iniziare con https://");
-            if (v) localStorage.setItem('readings_proxy', v); else localStorage.removeItem('readings_proxy');
-            showToast(v ? "Proxy salvato" : "Proxy rimosso: uso quelli pubblici");
         }
 
         function clearReadings(){
