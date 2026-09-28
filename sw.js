@@ -34,7 +34,7 @@ self.addEventListener('fetch', (e) => {
   // Google (login, Drive, Picker) e proxy delle letture: sempre in rete, mai dalla cache
   if (url.includes('google') || url.includes('googleapis') || url.includes('gstatic') ||
       url.includes('allorigins') || url.includes('codetabs') || url.includes('corsproxy') ||
-      url.includes('lachiesa.it')) return;
+      url.includes('lachiesa.it') || url.includes('evangelizo')) return;
 
   // Pagina dell'app: prima la rete (cosi' gli aggiornamenti arrivano subito), se offline la cache
   if (req.mode === 'navigate' || url.endsWith('/index.html')) {
