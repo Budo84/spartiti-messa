@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spartiti-messa-v62-letture';
+const CACHE_NAME = 'spartiti-messa-v63-letture';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
