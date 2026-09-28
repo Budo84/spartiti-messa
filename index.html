@@ -997,23 +997,52 @@
         }
 
         // Scarica l'HTML della pagina provando i proxy in ordine, con timeout
-        async function fetchReadingsHtml(dkey) {
-            const target = READINGS_SOURCE(dkey);
-            const makers = READINGS_PROXIES;
-            let lastErr = null;
+        // Scarica un indirizzo provando (se richiesto) la connessione diretta e poi i proxy, con timeout.
+        // Ogni tentativo fallito viene annotato in `attempts` per poter dire all'utente cosa non va.
+        async function fetchText(target, attempts, opts = {}) {
+            const label = opts.label || 'pagina';
+            const makers = (opts.direct ? [u => u] : []).concat(READINGS_PROXIES);
             for (const make of makers) {
+                const url = make(target);
+                const host = url === target ? 'diretto' : new URL(url).hostname;
                 const ctrl = new AbortController();
                 const timer = setTimeout(() => ctrl.abort(), 12000);
                 try {
-                    const res = await fetch(make(target), { signal: ctrl.signal });
+                    const res = await fetch(url, { signal: ctrl.signal });
                     if (!res.ok) throw new Error('HTTP ' + res.status);
-                    const html = decodeBytes(await res.arrayBuffer());
-                    if (html.length < 1500 || !/vangelo/i.test(html)) throw new Error('Risposta non valida');
-                    return html;
-                } catch(e) { lastErr = e; }
-                finally { clearTimeout(timer); }
+                    const text = decodeBytes(await res.arrayBuffer());
+                    if (!(opts.validate ? opts.validate(text) : text.length > 0)) throw new Error('risposta non valida (' + text.length + ' caratteri)');
+                    return text;
+                } catch(e) {
+                    const why = e.name === 'AbortError' ? 'nessuna risposta in 12 s' : (e.message === 'Failed to fetch' ? 'bloccato o non raggiungibile' : e.message);
+                    attempts.push(`${label} via ${host}: ${why}`);
+                } finally { clearTimeout(timer); }
             }
-            throw lastErr || new Error('Nessun proxy raggiungibile');
+            throw new Error('Nessun tentativo riuscito');
+        }
+
+        function fetchReadingsHtml(dkey, attempts) {
+            return fetchText(READINGS_SOURCE(dkey), attempts, {
+                label: 'lachiesa.it',
+                validate: t => t.length >= 1500 && /vangelo/i.test(t)
+            });
+        }
+
+        // Fonte alternativa: Evangelizo (feed pensato per essere letto da altri siti). La data non puo' superare 30 giorni da oggi.
+        const EVANGELIZO_URL = (d, c) => `https://feed.evangelizo.org/v2/reader.php?date=${d}&type=reading&lang=IT&content=${c}`;
+        async function fetchEvangelizo(dkey, attempts) {
+            const dt = new Date(+dkey.slice(0,4), +dkey.slice(4,6) - 1, +dkey.slice(6,8));
+            if ((dt - new Date()) / 86400000 > 30) { attempts.push('Evangelizo: data oltre i 30 giorni consentiti'); throw new Error('OLTRE30'); }
+            const codes = { r1: 'FR', rps: 'PS', r2: 'SR', rg: 'GSP' };
+            const out = {};
+            await Promise.all(Object.entries(codes).map(async ([k, c]) => {
+                try {
+                    const t = await fetchText(EVANGELIZO_URL(dkey, c), k === 'r1' ? attempts : [], { direct: true, label: 'Evangelizo', validate: x => x.trim().length > 20 && !/<(html|head|title|body)[\s>]/i.test(x) });   // scarta le pagine d'errore dei proxy
+                    out[k] = htmlToLines(t).join('\n').trim();
+                } catch(e) { out[k] = ''; }
+            }));
+            if (!(out.r1 || out.rg)) throw new Error('Evangelizo senza letture');
+            return { r1: out.r1, rps: out.rps, r2: out.r2, rg: out.rg, title: '', found: 4, source: 'Evangelizo' };
         }
 
         function readingsCacheGet(dkey) {
@@ -1051,19 +1080,24 @@
 
             showToast("Ricerca letture...");
             let result = null, fromCache = false;
+            const attempts = [];
             try {
-                const html = await fetchReadingsHtml(dkey);
+                const html = await fetchReadingsHtml(dkey, attempts);
                 const parsed = parseReadings(htmlToLines(html));
-                if (!parsed.found || !(parsed.r1 || parsed.rg)) throw new Error('STRUTTURA');
+                if (!parsed.found || !(parsed.r1 || parsed.rg)) { attempts.push('lachiesa.it: pagina scaricata ma letture non riconosciute'); throw new Error('STRUTTURA'); }
                 result = parsed;
-                readingsCachePut(dkey, parsed);
-            } catch(e) {
+            } catch(e1) {
+                showToast("Provo con la fonte alternativa...");
+                try { result = await fetchEvangelizo(dkey, attempts); } catch(e2) { /* i dettagli sono in attempts */ }
+            }
+            if (result) {
+                readingsCachePut(dkey, result);
+            } else {
+                console.warn('Letture: tutti i tentativi falliti', attempts);
                 const cached = readingsCacheGet(dkey);
                 if (cached && (cached.r1 || cached.rg)) { result = cached; fromCache = true; }
                 else {
-                    const msg = e && e.message === 'STRUTTURA'
-                        ? "Ho scaricato la pagina ma non riconosco le letture (il sito potrebbe aver cambiato formato)."
-                        : "Impossibile scaricare le letture (rete o proxy non raggiungibili).";
+                    const msg = "Impossibile scaricare le letture.\n\nDettagli:\n- " + attempts.slice(0, 8).join("\n- ");
                     if (confirm(msg + "\n\nAprire il sito originale per copiarle a mano?")) window.open(READINGS_SOURCE(dkey));
                     return;
                 }
@@ -1074,7 +1108,7 @@
             if (!result.r1) mancanti.push('I lettura');
             if (!result.rps) mancanti.push('Salmo');
             if (!result.rg) mancanti.push('Vangelo');
-            showToast((fromCache ? "Offline, uso quelle salvate: " : "Trovate: ") + trovate.join(', ') + (mancanti.length ? ` (mancano: ${mancanti.join(', ')})` : ''), mancanti.length ? 'error' : 'info');
+            showToast((fromCache ? "Offline, uso quelle salvate: " : (result.source ? "Da " + result.source + ": " : "Trovate: ")) + trovate.join(', ') + (mancanti.length ? ` (mancano: ${mancanti.join(', ')})` : ''), mancanti.length ? 'error' : 'info');
         }
 
         function clearReadings(){
